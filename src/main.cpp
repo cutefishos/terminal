@@ -24,6 +24,8 @@
 #include <QTranslator>
 #include <QFile>
 
+#include "processhelper.h"
+
 int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -44,6 +46,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    engine.rootContext()->setContextProperty("Process", new ProcessHelper);
     engine.addImportPath(QStringLiteral("qrc:/"));
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 

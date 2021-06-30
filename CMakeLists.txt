@@ -31,6 +31,8 @@ endif()
 
 set(SRCS
     src/main.cpp
+    src/processhelper.h
+    src/processhelper.cpp
 )
 
 set(RESOURCES
