@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/Terminal.qml</file>
+        <file>images/dark/add.svg</file>
+        <file>images/light/add.svg</file>
+        <file>qml/GlobalSettings.qml</file>
+        <file>images/light/close.svg</file>
+        <file>images/dark/close.svg</file>
+        <file>qml/ImageButton.qml</file>
+        <file>qml/ExitPromptDialog.qml</file>
+    </qresource>
+</RCC>
