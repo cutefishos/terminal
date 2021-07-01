@@ -2052,11 +2052,12 @@ void TerminalDisplay::mouseMoveEvent(QMouseEvent* ev)
    if ( ev->x() > dragInfo.start.x() + distance || ev->x() < dragInfo.start.x() - distance ||
         ev->y() > dragInfo.start.y() + distance || ev->y() < dragInfo.start.y() - distance)
    {
-      // we've left the drag square, we can start a real drag operation now
-      emit isBusySelecting(false); // Ok.. we can breath again.
+        // we've left the drag square, we can start a real drag operation now
+        emit isBusySelecting(false); // Ok.. we can breath again.
 
-       _screenWindow->clearSelection();
-      doDrag();
+        // Reion: Don't clear selection.
+        // _screenWindow->clearSelection();
+        doDrag();
     }
     return;
   }

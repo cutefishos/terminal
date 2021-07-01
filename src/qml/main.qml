@@ -34,7 +34,7 @@ FishUI.Window {
     height: settings.height
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
-    header.height: 40 + FishUI.Units.smallSpacing
+    header.height: 46
 
     property alias currentItem: _view.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem.terminal
@@ -48,8 +48,10 @@ FishUI.Window {
     }
 
     onClosing: {
-        settings.width = root.width
-        settings.height = root.height
+        if (!root.isMaximized) {
+            settings.width = root.width
+            settings.height = root.height
+        }
 
         // Exit prompt.
         for (var i = 0; i < tabsModel.count; ++i) {
