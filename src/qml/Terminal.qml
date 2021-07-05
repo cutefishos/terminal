@@ -89,7 +89,7 @@ Page {
     QMLTermWidget {
         id: _terminal
         anchors.fill: parent
-        colorScheme: "GreenOnBlack"
+        colorScheme: FishUI.Theme.darkMode ? "Cutefish-Dark" : "Cutefish-Light"
         font.family: "Noto Sans Mono"
         font.pointSize: settings.fontPointSize
         blinkingCursor: settings.blinkingCursor

@@ -34,8 +34,9 @@ FishUI.Window {
     height: settings.height
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
-    header.height: 46
+    header.height: 45
 
+    property int currentIndex: -1
     property alias currentItem: _view.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem.terminal
 
@@ -89,7 +90,7 @@ FishUI.Window {
 
                 delegate: Item {
                     id: _tabItem
-                    height: _tabView.height
+                    height: root.header.height - FishUI.Units.largeSpacing
                     width: Math.min(_layout.implicitWidth + FishUI.Units.largeSpacing,
                                     _tabView.width / _tabView.count - FishUI.Units.smallSpacing)
 
@@ -113,8 +114,8 @@ FishUI.Window {
                     RowLayout {
                         id: _layout
                         anchors.fill: parent
-                        anchors.margins: FishUI.Units.smallSpacing
-                        anchors.rightMargin: FishUI.Units.smallSpacing / 2
+                        anchors.leftMargin: FishUI.Units.smallSpacing
+                        anchors.rightMargin: FishUI.Units.smallSpacing
                         spacing: 0
 
                         Label {
@@ -170,7 +171,10 @@ FishUI.Window {
         highlightMoveVelocity: -1
         highlightResizeVelocity: -1
         onMovementEnded: _view.currentIndex = indexAt(contentX, contentY)
-        onCurrentItemChanged: currentItem.forceActiveFocus()
+        onCurrentItemChanged: {
+            if (currentItem)
+                currentItem.forceActiveFocus()
+        }
         interactive: false
     }
 
@@ -203,7 +207,17 @@ FishUI.Window {
 
     function closeTab(index) {
         tabsModel.remove(index)
-        if (tabsModel.count == 0) Qt.quit()
+
+        if (index === tabsModel.count) {
+            _view.currentIndex = tabsModel.count - 1
+        } else if (index === _view.currentIndex) {
+            // Reion: Need to reset index.
+            _view.currentIndex = -1
+            _view.currentIndex = index
+        }
+
+        if (tabsModel.count == 0)
+            Qt.quit()
     }
 
     function closeCurrentTab() {

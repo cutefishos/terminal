@@ -350,7 +350,7 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
 ,m_font("Monospace", 12)
 ,m_color_role(QPalette::Background)
 ,m_full_cursor_height(false)
-,_leftBaseMargin(1)
+,_leftBaseMargin(4)
 ,_topBaseMargin(1)
 {
   // terminal applications are not designed with Right-To-Left in mind,
