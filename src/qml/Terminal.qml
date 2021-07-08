@@ -122,6 +122,7 @@ Page {
             onPressed: {
                 if ((!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
                         && mouse.button == Qt.RightButton) {
+                    updateMenu()
                     terminalMenu.open()
                 } else {
                     var coord = correctDistortion(mouse.x, mouse.y)
@@ -141,8 +142,8 @@ Page {
 
             onClicked: {
                 if (mouse.button === Qt.RightButton) {
+                    updateMenu()
                     terminalMenu.open()
-
                 } else if(mouse.button === Qt.LeftButton) {
                     _terminal.forceActiveFocus()
                 }
@@ -215,5 +216,10 @@ Page {
 
         return Qt.point((x - cc.width  * (1 + distortion) * distortion) * _terminal.width,
                         (y - cc.height * (1 + distortion) * distortion) * _terminal.height)
+    }
+
+    function updateMenu() {
+        pasteAction.visible = Utils.text()
+        copyAction.visible = _terminal.selectedText
     }
 }

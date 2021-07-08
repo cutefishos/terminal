@@ -38,7 +38,7 @@ FishUI.Window {
 
     property int currentIndex: -1
     property alias currentItem: _view.currentItem
-    readonly property QMLTermWidget currentTerminal: currentItem.terminal
+    readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
     GlobalSettings { id: settings }
     ObjectModel { id: tabsModel }
@@ -71,7 +71,7 @@ FishUI.Window {
             anchors.leftMargin: FishUI.Units.smallSpacing
             anchors.rightMargin: FishUI.Units.smallSpacing
             anchors.topMargin: FishUI.Units.smallSpacing
-            anchors.bottomMargin: FishUI.Units.smallSpacing
+            anchors.bottomMargin: FishUI.Units.smallSpacing / 2
             spacing: FishUI.Units.smallSpacing
 
             ListView {
@@ -90,7 +90,7 @@ FishUI.Window {
 
                 delegate: Item {
                     id: _tabItem
-                    height: root.header.height - FishUI.Units.largeSpacing
+                    height: root.header.height - FishUI.Units.largeSpacing + FishUI.Units.smallSpacing / 2
                     width: Math.min(_layout.implicitWidth + FishUI.Units.largeSpacing,
                                     _tabView.width / _tabView.count - FishUI.Units.smallSpacing)
 
@@ -106,7 +106,8 @@ FishUI.Window {
 
                     Rectangle {
                         anchors.fill: parent
-                        color: isCurrent ? FishUI.Theme.secondBackgroundColor : "transparent"
+                        color: isCurrent ? FishUI.Theme.highlightColor : "transparent"
+                        opacity: 0.1
                         border.width: 0
                         radius: FishUI.Theme.smallRadius
                     }
@@ -151,6 +152,7 @@ FishUI.Window {
             }
         }
     }
+
 
     ListView {
         id: _view
@@ -202,7 +204,6 @@ FishUI.Window {
             _view.currentIndex = index
             object.terminalClosed.connect(() => closeTab(index))
         }
-
     }
 
     function closeTab(index) {

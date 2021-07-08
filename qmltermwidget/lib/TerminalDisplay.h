@@ -103,6 +103,8 @@ class KONSOLEPRIVATE_EXPORT TerminalDisplay : public QQuickPaintedItem
    Q_PROPERTY(bool antialiasText        READ antialias       WRITE setAntialias)
    Q_PROPERTY(QStringList availableColorSchemes READ availableColorSchemes NOTIFY availableColorSchemesChanged)
 
+    Q_PROPERTY(bool selectedText READ selectedText CONSTANT)
+
 public:
     /** Constructs a new terminal display widget with the specified parent. */
     TerminalDisplay(QQuickItem *parent=0);
@@ -362,6 +364,7 @@ public:
     };
 
     void setSelection(const QString &t);
+    bool selectedText();
 
     /**
      * Reimplemented.  Has no effect.  Use setVTFont() to change the font

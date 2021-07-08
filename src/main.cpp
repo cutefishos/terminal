@@ -25,6 +25,7 @@
 #include <QFile>
 
 #include "processhelper.h"
+#include "utils.h"
 
 int main(int argc, char *argv[])
 {
@@ -47,6 +48,8 @@ int main(int argc, char *argv[])
     }
 
     engine.rootContext()->setContextProperty("Process", new ProcessHelper);
+    engine.rootContext()->setContextProperty("Utils", new Utils);
+
     engine.addImportPath(QStringLiteral("qrc:/"));
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 

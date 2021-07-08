@@ -2674,7 +2674,12 @@ void TerminalDisplay::bracketText(QString& text)
 
 void TerminalDisplay::setSelection(const QString& t)
 {
-  QApplication::clipboard()->setText(t, QClipboard::Selection);
+    QApplication::clipboard()->setText(t, QClipboard::Selection);
+}
+
+bool TerminalDisplay::selectedText()
+{
+    return !_screenWindow->selectedText(false).isEmpty();
 }
 
 void TerminalDisplay::copyClipboard()
