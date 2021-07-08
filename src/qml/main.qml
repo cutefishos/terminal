@@ -88,6 +88,13 @@ FishUI.Window {
                 highlightResizeDuration: 0
                 clip: true
 
+                highlight: Rectangle {
+                    color: FishUI.Theme.highlightColor
+                    opacity: FishUI.Theme.darkMode ? 0.2 : 0.1
+                    border.width: 0
+                    radius: FishUI.Theme.smallRadius
+                }
+
                 delegate: Item {
                     id: _tabItem
                     height: root.header.height - FishUI.Units.largeSpacing + FishUI.Units.smallSpacing / 2
@@ -105,9 +112,10 @@ FishUI.Window {
                     }
 
                     Rectangle {
+                        id: hoveredRect
                         anchors.fill: parent
-                        color: isCurrent ? FishUI.Theme.highlightColor : "transparent"
-                        opacity: 0.1
+                        color: _mouseArea.containsMouse ? FishUI.Theme.textColor : "transparent"
+                        opacity: _mouseArea.pressed ? 0.1 : 0.05
                         border.width: 0
                         radius: FishUI.Theme.smallRadius
                     }
