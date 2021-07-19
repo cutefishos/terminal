@@ -34,6 +34,7 @@ FishUI.Window {
     height: settings.height
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
+    background.color: FishUI.Theme.secondBackgroundColor
     header.height: 45
 
     property int currentIndex: -1
@@ -71,7 +72,7 @@ FishUI.Window {
             anchors.leftMargin: FishUI.Units.smallSpacing
             anchors.rightMargin: FishUI.Units.smallSpacing
             anchors.topMargin: FishUI.Units.smallSpacing
-            anchors.bottomMargin: FishUI.Units.smallSpacing / 2
+            anchors.bottomMargin: FishUI.Units.smallSpacing
             spacing: FishUI.Units.smallSpacing
 
             ListView {

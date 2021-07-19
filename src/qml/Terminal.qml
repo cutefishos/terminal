@@ -175,7 +175,7 @@ Page {
 
         MenuItem {
             text: qsTr("Open File Manager")
-            onTriggered: Process.startDetached("gio", ["open", _session.currentDir])
+            onTriggered: Process.openUrl(_session.currentDir)
         }
     }
 

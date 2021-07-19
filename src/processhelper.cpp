@@ -18,7 +18,9 @@
  */
 
 #include "processhelper.h"
+#include <QDesktopServices>
 #include <QProcess>
+#include <QUrl>
 
 ProcessHelper *SELF = nullptr;
 
@@ -39,4 +41,14 @@ ProcessHelper::ProcessHelper(QObject *parent)
 bool ProcessHelper::startDetached(const QString &program, const QStringList &arguments)
 {
     return QProcess::startDetached(program, arguments);
+}
+
+bool ProcessHelper::openUrl(const QString &url)
+{
+    QUrl _url = QUrl::fromUserInput(url);
+
+    if (url.isNull())
+        return false;
+
+    return QDesktopServices::openUrl(_url);
 }

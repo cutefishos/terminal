@@ -31,6 +31,7 @@ public:
     explicit ProcessHelper(QObject *parent = nullptr);
 
     Q_INVOKABLE bool startDetached(const QString &program, const QStringList &arguments);
+    Q_INVOKABLE bool openUrl(const QString &url);
 
 };
 
