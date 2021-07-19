@@ -32,7 +32,7 @@ public:
 
     Q_INVOKABLE bool startDetached(const QString &program, const QStringList &arguments);
     Q_INVOKABLE bool openUrl(const QString &url);
-
+    Q_INVOKABLE bool openFileManager(const QString &url);
 };
 
 #endif // PROCESSHELPER_H

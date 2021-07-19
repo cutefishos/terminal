@@ -19,8 +19,14 @@
 
 #include "processhelper.h"
 #include <QDesktopServices>
+#include <QDBusInterface>
+#include <QApplication>
 #include <QProcess>
 #include <QUrl>
+
+#include <QDBusMessage>
+#include <QDBusConnection>
+#include <QDBusPendingReply>
 
 ProcessHelper *SELF = nullptr;
 
@@ -51,4 +57,20 @@ bool ProcessHelper::openUrl(const QString &url)
         return false;
 
     return QDesktopServices::openUrl(_url);
+}
+
+bool ProcessHelper::openFileManager(const QString &url)
+{
+    QDBusInterface iface(QStringLiteral("org.freedesktop.FileManager1"),
+                         QStringLiteral("/org/freedesktop/FileManager1"),
+                         QStringLiteral("org.freedesktop.FileManager1"));
+
+    if (iface.lastError().isValid())
+        return false;
+
+    iface.call("ShowFolders",
+               QStringList() << QUrl::fromLocalFile(url).toString(),
+               QString::number(QApplication::applicationPid()));
+
+    return true;
 }

@@ -175,7 +175,7 @@ Page {
 
         MenuItem {
             text: qsTr("Open File Manager")
-            onTriggered: Process.openUrl(_session.currentDir)
+            onTriggered: Process.openFileManager(_session.currentDir)
         }
     }
 

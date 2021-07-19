@@ -28,38 +28,37 @@ Dialog {
 
     modal: true
 
-    width: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 4
-    height: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
+    width: _mainLayout.childrenRect.width + FishUI.Units.largeSpacing * 4
+    height: _mainLayout.childrenRect.height + FishUI.Units.largeSpacing * 4
 
     x: (parent.width - control.width) / 2
     y: (parent.height - control.height) / 2
 
     signal okBtnClicked
 
-    Rectangle {
-        anchors.fill: parent
-        color: FishUI.Theme.backgroundColor
-    }
-
     ColumnLayout {
         id: _mainLayout
         anchors.fill: parent
+        anchors.leftMargin: FishUI.Units.largeSpacing
+        anchors.rightMargin: FishUI.Units.largeSpacing
 
         Label {
             text: qsTr("Process is running, are you sure you want to quit?")
             Layout.alignment: Qt.AlignHCenter
         }
 
-        DialogButtonBox {
-            Layout.alignment: Qt.AlignHCenter
+        RowLayout {
+            spacing: FishUI.Units.largeSpacing
 
             Button {
                 text: qsTr("Cancel")
+                Layout.fillWidth: true
                 onClicked: control.visible = false
             }
 
             Button {
                 text: qsTr("OK")
+                Layout.fillWidth: true
                 onClicked: {
                     control.visible = false
                     control.okBtnClicked()
