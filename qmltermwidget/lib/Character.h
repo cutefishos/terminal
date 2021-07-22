@@ -33,25 +33,26 @@ namespace Konsole
 {
 
 typedef unsigned char LineProperty;
+typedef quint16 RenditionFlags;
 
 static const int LINE_DEFAULT        = 0;
 static const int LINE_WRAPPED          = (1 << 0);
 static const int LINE_DOUBLEWIDTH      = (1 << 1);
 static const int LINE_DOUBLEHEIGHT    = (1 << 2);
 
-#define DEFAULT_RENDITION  0
-#define RE_BOLD            (1 << 0)
-#define RE_BLINK           (1 << 1)
-#define RE_UNDERLINE       (1 << 2)
-#define RE_REVERSE         (1 << 3) // Screen only
-#define RE_INTENSIVE       (1 << 3) // Widget only
-#define RE_ITALIC          (1 << 4)
-#define RE_CURSOR          (1 << 5)
-#define RE_EXTENDED_CHAR   (1 << 6)
-#define RE_FAINT           (1 << 7)
-#define RE_STRIKEOUT       (1 << 8)
-#define RE_CONCEAL         (1 << 9)
-#define RE_OVERLINE        (1 << 10)
+const RenditionFlags DEFAULT_RENDITION  = 0;
+const RenditionFlags RE_BOLD            = (1 << 0);
+const RenditionFlags RE_BLINK           = (1 << 1);
+const RenditionFlags RE_UNDERLINE       = (1 << 2);
+const RenditionFlags RE_REVERSE         = (1 << 3); // Screen only
+const RenditionFlags RE_INTENSIVE       = (1 << 3); // Widget only
+const RenditionFlags RE_ITALIC          = (1 << 4);
+const RenditionFlags RE_CURSOR          = (1 << 5);
+const RenditionFlags RE_EXTENDED_CHAR   = (1 << 6);
+const RenditionFlags RE_FAINT           = (1 << 7);
+const RenditionFlags RE_STRIKEOUT       = (1 << 8);
+const RenditionFlags RE_CONCEAL         = (1 << 9);
+const RenditionFlags RE_OVERLINE        = (1 << 10);
 
 /**
  * A single character in the terminal which consists of a unicode character
@@ -72,7 +73,7 @@ public:
   inline Character(quint16 _c = ' ',
             CharacterColor  _f = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_FORE_COLOR),
             CharacterColor  _b = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_BACK_COLOR),
-            quint8  _r = DEFAULT_RENDITION)
+            RenditionFlags  _r = DEFAULT_RENDITION)
        : character(_c), rendition(_r), foregroundColor(_f), backgroundColor(_b) {}
 
   union
@@ -90,7 +91,7 @@ public:
   };
 
   /** A combination of RENDITION flags which specify options for drawing the character. */
-  quint8  rendition;
+  RenditionFlags  rendition;
 
   /** The foreground color used to draw this character. */
   CharacterColor  foregroundColor;

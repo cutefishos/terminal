@@ -221,14 +221,14 @@ void TerminalDisplay::fontChange(const QFont&)
   // "Base character width on widest ASCII character. This prevents too wide
   //  characters in the presence of double wide (e.g. Japanese) characters."
   // Get the width from representative normal width characters
-  _fontWidth = qRound((double)fm.width(QLatin1String(REPCHAR))/(double)qstrlen(REPCHAR));
+  _fontWidth = qRound((double)fm.horizontalAdvance(QLatin1String(REPCHAR))/(double)qstrlen(REPCHAR));
 
   _fixedFont = true;
 
-  int fw = fm.width(QLatin1Char(REPCHAR[0]));
+  int fw = fm.horizontalAdvance(QLatin1Char(REPCHAR[0]));
   for(unsigned int i=1; i< qstrlen(REPCHAR); i++)
   {
-    if (fw != fm.width(QLatin1Char(REPCHAR[i])))
+    if (fw != fm.horizontalAdvance(QLatin1Char(REPCHAR[i])))
     {
       _fixedFont = false;
       break;
@@ -1611,7 +1611,7 @@ void TerminalDisplay::drawContents(QPainter &paint, const QRect &rect)
       bool doubleWidth = (_image[ qMin(loc(x,y)+1,_imageSize) ].character == 0);
       CharacterColor currentForeground = _image[loc(x,y)].foregroundColor;
       CharacterColor currentBackground = _image[loc(x,y)].backgroundColor;
-      quint8 currentRendition = _image[loc(x,y)].rendition;
+      RenditionFlags currentRendition = _image[loc(x,y)].rendition;
 
       while (x+len <= rlx &&
              _image[loc(x+len,y)].foregroundColor == currentForeground &&
