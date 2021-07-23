@@ -670,17 +670,15 @@ protected:
     void mouseTripleClickEvent(QMouseEvent* ev);
 
     // reimplemented
-    virtual void inputMethodEvent ( QInputMethodEvent* event );
-    virtual QVariant inputMethodQuery( Qt::InputMethodQuery query ) const;
+    void inputMethodEvent(QInputMethodEvent *event);
 
     // QMLTermWidget
     void paint(QPainter * painter);
-    virtual void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
+    void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
     void inputMethodQuery(QInputMethodQueryEvent *event);
     void itemChange(ItemChange change, const ItemChangeData & value);
 
 protected slots:
-
     void scrollBarPositionChanged(int value);
     void blinkEvent();
     void blinkCursorEvent();
@@ -690,7 +688,6 @@ protected slots:
     void enableBell();
 
 private slots:
-
     void swapColorTable();
     void tripleClickTimeout();  // resets possibleTripleClick
 

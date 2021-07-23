@@ -1,6 +1,7 @@
 /*
     This file is part of Konsole, a terminal emulator for KDE.
 
+    Copyright 2021 by Reion Wong <reionwong@gmail.com>
     Copyright 2006-2008 by Robert Knight <robertknight@gmail.com>
     Copyright 1997,1998 by Lars Doelle <lars.doelle@on-line.de>
 
@@ -2817,9 +2818,9 @@ void TerminalDisplay::keyPressEvent( QKeyEvent* event )
     event->accept();
 }
 
-void TerminalDisplay::inputMethodEvent( QInputMethodEvent* event )
+void TerminalDisplay::inputMethodEvent(QInputMethodEvent *event)
 {
-    QKeyEvent keyEvent(QEvent::KeyPress,0,Qt::NoModifier,event->commitString());
+    QKeyEvent keyEvent(QEvent::KeyPress, 0, Qt::NoModifier, event->commitString());
     emit keyPressedSignal(&keyEvent);
 
     _inputMethodData.preeditString = event->preeditString().toStdWString();
@@ -2830,46 +2831,19 @@ void TerminalDisplay::inputMethodEvent( QInputMethodEvent* event )
 
 void TerminalDisplay::inputMethodQuery(QInputMethodQueryEvent *event)
 {
+    QPoint cursorPos = _screenWindow ? _screenWindow->cursorPosition() : QPoint(0, 0);
+
     event->setValue(Qt::ImEnabled, true);
+
+    // Reion: Use ImCursorRectangle instead of ImMicroFocus.
+    event->setValue(Qt::ImCursorRectangle, imageToWidget(QRect(cursorPos.x(), cursorPos.y(), 1, 1)));
+
+    // cursor position within the current line
+    event->setValue(Qt::ImCursorPosition, cursorPos.x());
+
+    event->setValue(Qt::ImFont, font());
     event->setValue(Qt::ImHints, QVariant(Qt::ImhNoPredictiveText |  Qt::ImhNoAutoUppercase));
     event->accept();
-}
-
-QVariant TerminalDisplay::inputMethodQuery( Qt::InputMethodQuery query ) const
-{
-    const QPoint cursorPos = _screenWindow ? _screenWindow->cursorPosition() : QPoint(0,0);
-    switch ( query )
-    {
-        case Qt::ImMicroFocus:
-                return imageToWidget(QRect(cursorPos.x(),cursorPos.y(),1,1));
-            break;
-        case Qt::ImFont:
-                return font();
-            break;
-        case Qt::ImCursorPosition:
-                // return the cursor position within the current line
-                return cursorPos.x();
-            break;
-        case Qt::ImSurroundingText:
-            {
-                // return the text from the current line
-                QString lineText;
-                QTextStream stream(&lineText);
-                PlainTextDecoder decoder;
-                decoder.begin(&stream);
-                decoder.decodeLine(&_image[loc(0,cursorPos.y())],_usedColumns,_lineProperties[cursorPos.y()]);
-                decoder.end();
-                return lineText;
-            }
-            break;
-        case Qt::ImCurrentSelection:
-                return QString();
-            break;
-        default:
-            break;
-    }
-
-    return QVariant();
 }
 
 bool TerminalDisplay::handleShortcutOverrideEvent(QKeyEvent* keyEvent)
