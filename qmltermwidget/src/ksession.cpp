@@ -238,6 +238,10 @@ void KSession::sendText(QString text)
 
 void KSession::sendKey(int rep, int key, int mod) const
 {
+    Q_UNUSED(rep);
+    Q_UNUSED(key);
+    Q_UNUSED(mod);
+
     //TODO implement or remove this function.
 //    Qt::KeyboardModifier kbm = Qt::KeyboardModifier(mod);
 

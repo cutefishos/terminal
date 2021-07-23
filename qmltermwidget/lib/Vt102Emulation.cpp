@@ -1494,8 +1494,8 @@ char Vt102Emulation::eraseChar() const
 {
   KeyboardTranslator::Entry entry = _keyTranslator->findEntry(
                                             Qt::Key_Backspace,
-                                            0,
-                                            0);
+                                            Qt::NoModifier,
+                                            KeyboardTranslator::NoState);
   if ( entry.text().count() > 0 )
       return entry.text().at(0);
   else
