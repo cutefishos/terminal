@@ -154,7 +154,6 @@ FishUI.Window {
             }
 
             FishUI.RoundImageButton {
-                size: 35
                 source: "qrc:/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "add.svg"
                 onClicked: root.openNewTab()
                 Layout.alignment: Qt.AlignTop

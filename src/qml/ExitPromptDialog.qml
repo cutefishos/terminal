@@ -28,8 +28,8 @@ Dialog {
 
     modal: true
 
-    width: _mainLayout.childrenRect.width + FishUI.Units.largeSpacing * 4
-    height: _mainLayout.childrenRect.height + FishUI.Units.largeSpacing * 4
+    width: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 3
+    height: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 3
 
     x: (parent.width - control.width) / 2
     y: (parent.height - control.height) / 2
@@ -39,8 +39,11 @@ Dialog {
     ColumnLayout {
         id: _mainLayout
         anchors.fill: parent
-        anchors.leftMargin: FishUI.Units.largeSpacing
-        anchors.rightMargin: FishUI.Units.largeSpacing
+        spacing: FishUI.Units.largeSpacing
+        anchors.leftMargin: FishUI.Units.smallSpacing
+        anchors.rightMargin: FishUI.Units.smallSpacing
+        anchors.topMargin: FishUI.Units.smallSpacing
+        anchors.bottomMargin: FishUI.Units.smallSpacing
 
         Label {
             text: qsTr("Process is running, are you sure you want to quit?")
@@ -59,6 +62,7 @@ Dialog {
             Button {
                 text: qsTr("OK")
                 Layout.fillWidth: true
+                flat: true
                 onClicked: {
                     control.visible = false
                     control.okBtnClicked()

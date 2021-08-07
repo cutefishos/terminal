@@ -54,13 +54,13 @@ Page {
         if ((event.key === Qt.Key_C)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
-            copyAction.triggered()
+            _copyAction.trigger()
         }
 
         if ((event.key === Qt.Key_V)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
-            pasteAction.triggered()
+            _pasteAction.trigger()
         }
 
         if ((event.key === Qt.Key_Q)
@@ -97,10 +97,6 @@ Page {
 
         Keys.enabled: true
         Keys.onPressed: control.keyPressed(event)
-
-        onUsesMouseChanged: {
-            console.log(_terminal.getUsesMouse)
-        }
 
         session: QMLTermSession {
             id: _session
@@ -158,19 +154,30 @@ Page {
         }
     }
 
+    Action {
+        id: _copyAction
+        text: qsTr("Copy")
+        onTriggered: _terminal.copyClipboard()
+    }
+
+    Action {
+        id: _pasteAction
+        text: qsTr("Paste")
+        onTriggered: _terminal.pasteClipboard()
+    }
+
     FishUI.DesktopMenu {
         id: terminalMenu
 
         MenuItem {
-            id: copyAction
-            text: qsTr("Copy")
-            onTriggered: _terminal.copyClipboard()
+            id: copyMenuItem
+            action: _copyAction
         }
 
         MenuItem {
-            id: pasteAction
+            id: pasteMenuItem
             text: qsTr("Paste")
-            onTriggered: _terminal.pasteClipboard()
+            action: _pasteAction
         }
 
         MenuItem {
@@ -219,7 +226,7 @@ Page {
     }
 
     function updateMenu() {
-        pasteAction.visible = Utils.text()
-        copyAction.visible = _terminal.selectedText
+        copyMenuItem.visible = _terminal.selectedText
+        pasteMenuItem.visible = Utils.text()
     }
 }
