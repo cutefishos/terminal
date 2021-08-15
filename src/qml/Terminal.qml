@@ -55,12 +55,14 @@ Page {
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
             _copyAction.trigger()
+            event.accepted = true
         }
 
         if ((event.key === Qt.Key_V)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
             _pasteAction.trigger()
+            event.accepted = true
         }
 
         if ((event.key === Qt.Key_Q)
@@ -73,16 +75,19 @@ Page {
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
             root.openNewTab()
+            event.accepted = true
         }
 
         if ((event.key === Qt.Key_W)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
             root.closeCurrentTab()
+            event.accepted = true
         }
 
         if (event.key === Qt.Key_Tab && event.modifiers & Qt.ControlModifier) {
             root.toggleTab()
+            event.accepted = true
         }
     }
 

@@ -72,7 +72,7 @@ FishUI.Window {
             anchors.leftMargin: FishUI.Units.smallSpacing
             anchors.rightMargin: FishUI.Units.smallSpacing
             anchors.topMargin: FishUI.Units.smallSpacing
-            anchors.bottomMargin: FishUI.Units.smallSpacing
+//            anchors.bottomMargin: FishUI.Units.smallSpacing
             spacing: FishUI.Units.smallSpacing
 
             ListView {
@@ -156,7 +156,7 @@ FishUI.Window {
             FishUI.RoundImageButton {
                 source: "qrc:/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "add.svg"
                 onClicked: root.openNewTab()
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
             }
         }
     }
