@@ -72,7 +72,7 @@ FishUI.Window {
             anchors.leftMargin: FishUI.Units.smallSpacing
             anchors.rightMargin: FishUI.Units.smallSpacing
             anchors.topMargin: FishUI.Units.smallSpacing
-//            anchors.bottomMargin: FishUI.Units.smallSpacing
+            anchors.bottomMargin: FishUI.Units.smallSpacing
             spacing: FishUI.Units.smallSpacing
 
             ListView {
@@ -98,7 +98,7 @@ FishUI.Window {
 
                 delegate: Item {
                     id: _tabItem
-                    height: root.header.height - FishUI.Units.largeSpacing + FishUI.Units.smallSpacing / 2
+                    height: root.header.height - FishUI.Units.largeSpacing
                     width: Math.min(_layout.implicitWidth + FishUI.Units.largeSpacing,
                                     _tabView.width / _tabView.count - FishUI.Units.smallSpacing)
 
