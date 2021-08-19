@@ -355,6 +355,8 @@ public:
     void setSelection(const QString &t);
     bool selectedText();
 
+    Q_INVOKABLE void selectAll();
+
     /**
      * Reimplemented.  Has no effect.  Use setVTFont() to change the font
      * used to draw characters in the display.

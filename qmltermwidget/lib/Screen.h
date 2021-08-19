@@ -423,6 +423,8 @@ public:
      */
     void setSelectionEnd(const int column, const int line);
 
+    void selectAll();
+
     /**
      * Retrieves the start of the selection or the cursor position if there
      * is no selection.

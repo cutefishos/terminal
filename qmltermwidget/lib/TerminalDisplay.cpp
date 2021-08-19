@@ -2616,6 +2616,15 @@ bool TerminalDisplay::selectedText()
     return !m_screenWindow->selectedText(false).isEmpty();
 }
 
+void TerminalDisplay::selectAll()
+{
+    if (!m_screenWindow)
+        return;
+
+    m_screenWindow->selectAll();
+    setSelection(m_screenWindow->selectedText(_preserveLineBreaks));
+}
+
 void TerminalDisplay::copyClipboard()
 {
   if ( !m_screenWindow )

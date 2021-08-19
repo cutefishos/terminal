@@ -262,6 +262,14 @@ QRect ScreenWindow::scrollRegion() const
         return QRect(0,0,windowColumns(),windowLines());
 }
 
+void ScreenWindow::selectAll()
+{
+    _screen->selectAll();
+
+    _bufferNeedsUpdate = true;
+    emit selectionChanged();
+}
+
 void ScreenWindow::notifyOutputChanged()
 {
     // move window to the bottom of the screen and update scroll count

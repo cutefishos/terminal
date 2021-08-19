@@ -1110,6 +1110,14 @@ void Screen::setSelectionEnd( const int x, const int y)
     }
 }
 
+void Screen::selectAll()
+{
+    selBegin = 0;
+    selTopLeft = 0;
+    int endPos = (getHistLines() + getCursorY() + 1) * columns - 1;
+    selBottomRight = endPos;
+}
+
 bool Screen::isSelected( const int x,const int y) const
 {
     bool columnInSelection = true;
