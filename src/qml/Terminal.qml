@@ -51,6 +51,13 @@ Page {
     }
 
     onKeyPressed: {
+        if ((event.key === Qt.Key_A)
+                && (event.modifiers & Qt.ControlModifier)
+                && (event.modifiers & Qt.ShiftModifier)) {
+            _terminal.selectAll()
+            event.accepted = true
+        }
+
         if ((event.key === Qt.Key_C)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
@@ -183,6 +190,12 @@ Page {
             id: pasteMenuItem
             text: qsTr("Paste")
             action: _pasteAction
+        }
+
+        MenuItem {
+            id: selectAllItem
+            text: qsTr("Select All")
+            onTriggered: _terminal.selectAll()
         }
 
         MenuItem {
