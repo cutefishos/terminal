@@ -87,6 +87,7 @@ FishUI.Window {
                 maximumFlickVelocity: 900
                 highlightMoveDuration: 0
                 highlightResizeDuration: 0
+                interactive: false
                 clip: true
 
                 highlight: Rectangle {
