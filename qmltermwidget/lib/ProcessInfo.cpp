@@ -442,7 +442,11 @@ private:
                     uidLine = statusLine;
             } while (!statusLine.isNull() && uidLine.isNull());
 
-            uidStrings << uidLine.split('\t', Qt::SkipEmptyParts);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+      uidStrings << uidLine.split('\t', QString::SkipEmptyParts);
+#else
+      uidStrings << uidLine.split('\t', Qt::SkipEmptyParts);
+#endif
             // Must be 5 entries: 'Uid: %d %d %d %d' and
             // uid string must be less than 5 chars (uint)
             if (uidStrings.size() == 5)
