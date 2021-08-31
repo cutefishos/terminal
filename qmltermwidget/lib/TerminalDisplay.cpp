@@ -2447,7 +2447,12 @@ void TerminalDisplay::wheelEvent( QWheelEvent* ev )
         // terminal program wants notification of mouse activity
         int charLine;
         int charColumn;
-        getCharacterPosition(ev->position().toPoint() , charLine , charColumn);
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+        getCharacterPosition(ev->pos(), charLine, charColumn);
+#else
+        getCharacterPosition(ev->position().toPoint(), charLine, charColumn);
+#endif
 
         emit mouseSignal(ev->angleDelta().y() > 0 ? 4 : 5,
                          charColumn + 1,
