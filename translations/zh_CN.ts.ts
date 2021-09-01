@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_CN">
+<TS version="2.1" language="ts_ZA">
 <context>
     <name>ExitPromptDialog</name>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>有进程在运行中，您确定要退出吗？</translation>
-    </message>
-    <message>
-        <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
-        <source>OK</source>
-        <translation>确定</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -24,12 +24,12 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="43"/>
         <source>Transparency</source>
-        <translation>透明度</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="83"/>
         <source>Window Blur</source>
-        <translation>窗口模糊</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -37,28 +37,28 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="177"/>
         <source>Copy</source>
-        <translation>复制</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="183"/>
         <location filename="../src/qml/Terminal.qml" line="197"/>
         <source>Paste</source>
-        <translation>粘贴</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="203"/>
         <source>Select All</source>
-        <translation>全选</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
-        <translation>打开文件管理器</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="213"/>
         <source>Settings</source>
-        <translation>设置</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

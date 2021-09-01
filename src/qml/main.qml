@@ -34,7 +34,8 @@ FishUI.Window {
     height: settings.height
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
-    background.color: FishUI.Theme.secondBackgroundColor
+    background.color: FishUI.Theme.backgroundColor
+    background.opacity: settings.opacity
     header.height: 45
 
     property int currentIndex: -1
@@ -47,6 +48,17 @@ FishUI.Window {
     ExitPromptDialog {
         id: exitPrompt
         onOkBtnClicked: Qt.quit()
+    }
+
+    SettingsDialog {
+        id: settingsDialog
+    }
+
+    FishUI.WindowBlur {
+        view: root
+        geometry: Qt.rect(root.x, root.y, root.width, root.height)
+        windowRadius: root.background.radius
+        enabled: settings.blur
     }
 
     onClosing: {
@@ -92,7 +104,7 @@ FishUI.Window {
 
                 highlight: Rectangle {
                     color: FishUI.Theme.highlightColor
-                    opacity: FishUI.Theme.darkMode ? 0.2 : 0.1
+                    opacity: 1
                     border.width: 0
                     radius: FishUI.Theme.smallRadius
                 }
@@ -136,7 +148,7 @@ FishUI.Window {
                             elide: Label.ElideRight
                             font.pointSize: 9
                             font.family: "Noto Sans Mono"
-                            color: isCurrent ? FishUI.Theme.highlightColor : FishUI.Theme.textColor
+                            color: isCurrent ? FishUI.Theme.highlightedTextColor : FishUI.Theme.textColor
                         }
 
                         Item {
@@ -147,7 +159,7 @@ FishUI.Window {
                             Layout.preferredHeight: 24
                             Layout.preferredWidth: 24
                             size: 24
-                            source: "qrc:/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "close.svg"
+                            source: "qrc:/images/" + (FishUI.Theme.darkMode || isCurrent ? "dark/" : "light/") + "close.svg"
                             onClicked: closeTab(index)
                         }
                     }

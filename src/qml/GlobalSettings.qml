@@ -25,4 +25,7 @@ Settings {
     property int height: 500
     property int fontPointSize: 10
     property bool blinkingCursor: true
+
+    property real opacity: 1.0
+    property bool blur: false
 }

@@ -33,7 +33,12 @@ Page {
     focus: true
 
     // Drop effect
-    opacity: _dropArea.containsDrag ? 0.8 : 1
+    // opacity: _dropArea.containsDrag ? 0.8 : 1
+//    opacity: 0.5
+
+    background: Rectangle {
+        color: "transparent"
+    }
 
     signal urlsDropped(var urls)
     signal keyPressed(var event)
@@ -106,6 +111,7 @@ Page {
         font.pointSize: settings.fontPointSize
         blinkingCursor: settings.blinkingCursor
         fullCursorHeight: true
+        backgroundOpacity: 0
 
         Keys.enabled: true
         Keys.onPressed: control.keyPressed(event)
@@ -201,6 +207,14 @@ Page {
         MenuItem {
             text: qsTr("Open File Manager")
             onTriggered: Process.openFileManager(_session.currentDir)
+        }
+
+        MenuItem {
+            text: qsTr("Settings")
+            onTriggered: {
+                settingsDialog.show()
+                settingsDialog.raise()
+            }
         }
     }
 

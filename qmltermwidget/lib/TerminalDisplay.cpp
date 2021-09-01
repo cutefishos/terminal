@@ -336,6 +336,7 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
   , m_font("Monospace", 12)
   , m_colorRole(QPalette::Background)
   , m_full_cursor_height(false)
+  , m_backgroundOpacity(1.0)
 {
     // terminal applications are not designed with Right-To-Left in mind,
     // so the layout is forced to Left-To-Right
@@ -2843,11 +2844,37 @@ bool TerminalDisplay::handleShortcutOverrideEvent(QKeyEvent* keyEvent)
     return false;
 }
 
+qreal TerminalDisplay::backgroundOpacity() const
+{
+    return m_backgroundOpacity;
+}
+
+void TerminalDisplay::setBackgroundOpacity(const qreal &backgroundOpacity)
+{
+    if (m_backgroundOpacity != backgroundOpacity) {
+        m_backgroundOpacity = backgroundOpacity;
+
+        const ColorScheme *cs;
+        if (!availableColorSchemes().contains(_colorScheme))
+            cs = ColorSchemeManager::instance()->defaultColorScheme();
+        else
+            cs = ColorSchemeManager::instance()->findColorScheme(_colorScheme);
+
+        if (cs) {
+            QColor color = cs->backgroundColor();
+            color.setAlphaF(m_backgroundOpacity);
+            setFillColor(color);
+        }
+
+        emit backgroundOpacityChanged();
+    }
+}
+
 bool TerminalDisplay::event(QEvent* event)
 {
-  bool eventHandled = false;
-  switch (event->type())
-  {
+    bool eventHandled = false;
+    switch (event->type())
+    {
     case QEvent::ShortcutOverride:
         eventHandled = handleShortcutOverrideEvent((QKeyEvent*)event);
         break;
@@ -3259,7 +3286,9 @@ void TerminalDisplay::setColorScheme(const QString &name)
         cs->getColorTable(table);
         setColorTable(table);
 
-        setFillColor(cs->backgroundColor());
+        QColor bgColor = cs->backgroundColor();
+        bgColor.setAlphaF(m_backgroundOpacity);
+        setFillColor(bgColor);
         _colorScheme = name;
         emit colorSchemeChanged();
     }
