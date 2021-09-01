@@ -97,6 +97,8 @@ class TerminalDisplay : public QQuickPaintedItem
 
     Q_PROPERTY(bool selectedText READ selectedText CONSTANT)
 
+    Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity NOTIFY backgroundOpacityChanged)
+
 public:
     /** Constructs a new terminal display widget with the specified parent. */
     explicit TerminalDisplay(QQuickItem *parent = nullptr);
@@ -119,6 +121,9 @@ public:
 
     /** Sets the opacity of the terminal display. */
     void setOpacity(qreal opacity);
+
+    qreal backgroundOpacity() const;
+    void setBackgroundOpacity(const qreal &backgroundOpacity);
 
     /** 
      * This enum describes the location where the scroll bar is positioned in the display widget.
@@ -553,6 +558,7 @@ public slots:
     void simulateMouseDoubleClick(int x, int y, int button, int buttons, int modifiers);
 
 signals:
+    void backgroundOpacityChanged();
 
     /**
      * Emitted when the user presses a key whilst the terminal widget has focus.
@@ -887,6 +893,8 @@ private:
     QPalette::ColorRole m_colorRole;
     KSession *m_session;
     bool m_full_cursor_height;
+
+    qreal m_backgroundOpacity;
 
     QFont font() const { return m_font; }
 
