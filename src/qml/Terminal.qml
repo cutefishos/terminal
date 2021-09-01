@@ -208,6 +208,14 @@ Page {
             text: qsTr("Open File Manager")
             onTriggered: Process.openFileManager(_session.currentDir)
         }
+
+        MenuItem {
+            text: qsTr("Open Settings")
+            onTriggered: {
+                settingsDialog.show()
+                settingsDialog.raise()
+            }
+        }
     }
 
     ScrollBar {

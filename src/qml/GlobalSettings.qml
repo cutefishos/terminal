@@ -26,6 +26,6 @@ Settings {
     property int fontPointSize: 10
     property bool blinkingCursor: true
 
-    property real opacity: 0.8
-    property bool blur: true
+    property real opacity: 1.0
+    property bool blur: false
 }

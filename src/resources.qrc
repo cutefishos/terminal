@@ -9,5 +9,6 @@
         <file>images/dark/close.svg</file>
         <file>qml/ImageButton.qml</file>
         <file>qml/ExitPromptDialog.qml</file>
+        <file>qml/SettingsDialog.qml</file>
     </qresource>
 </RCC>

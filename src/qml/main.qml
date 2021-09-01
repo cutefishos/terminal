@@ -50,6 +50,10 @@ FishUI.Window {
         onOkBtnClicked: Qt.quit()
     }
 
+    SettingsDialog {
+        id: settingsDialog
+    }
+
     FishUI.WindowBlur {
         view: root
         geometry: Qt.rect(root.x, root.y, root.width, root.height)
