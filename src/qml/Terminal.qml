@@ -210,7 +210,7 @@ Page {
         }
 
         MenuItem {
-            text: qsTr("Open Settings")
+            text: qsTr("Settings")
             onTriggered: {
                 settingsDialog.show()
                 settingsDialog.raise()

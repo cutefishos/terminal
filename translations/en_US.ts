@@ -20,26 +20,44 @@
     </message>
 </context>
 <context>
+    <name>SettingsDialog</name>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="43"/>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="83"/>
+        <source>Window Blur</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Terminal</name>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="171"/>
+        <location filename="../src/qml/Terminal.qml" line="177"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="177"/>
-        <location filename="../src/qml/Terminal.qml" line="191"/>
+        <location filename="../src/qml/Terminal.qml" line="183"/>
+        <location filename="../src/qml/Terminal.qml" line="197"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="197"/>
+        <location filename="../src/qml/Terminal.qml" line="203"/>
         <source>Select All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="202"/>
+        <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/qml/Terminal.qml" line="213"/>
+        <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
