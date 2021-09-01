@@ -13,7 +13,7 @@ jobs:
     container: docker.io/library/archlinux:latest
     steps:
     - name: dependencies
-      run: pacman -Sy; pacman -S fishui qt5-svg extra-cmake-modules qt5-tools
+      run: pacman -Sy; pacman -S --noconfirm fishui qt5-svg extra-cmake-modules qt5-tools
     - name: Build
       run: mkdir build; cd build; cmake .. ; make -j$(nproc);
 
