@@ -7,6 +7,16 @@ on:
     branches: [ main ]
 
 jobs:
+  archlinux:
+    name: ArchLinux
+    runs-on: ubuntu-latest
+    container: docker.io/library/archlinux:latest
+    steps:
+    - name: dependencies
+      run: pacman -Sy; pacman -S fishui qt5-svg extra-cmake-modules qt5-tools
+    - name: Build
+      run: mkdir build; cd build; cmake .. ; make -j$(nproc);
+
   debian:
     name: Debian
     runs-on: ubuntu-latest
