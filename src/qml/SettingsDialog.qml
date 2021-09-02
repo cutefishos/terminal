@@ -40,6 +40,92 @@ FishUI.Window {
                 anchors.rightMargin: FishUI.Units.largeSpacing
 
                 Label {
+                    text: qsTr("Font")
+                }
+
+                Item {
+                    width: FishUI.Units.largeSpacing
+                }
+
+                ComboBox {
+                    id: fontsCombobox
+                    model: Fonts.families
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+
+                    onCurrentTextChanged: {
+                        settings.fontName = currentText
+                    }
+
+                    Component.onCompleted: {
+                        for (var i = 0; i <= fontsCombobox.model.length; ++i) {
+                            if (fontsCombobox.model[i] === settings.fontName) {
+                                fontsCombobox.currentIndex = i
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Font size
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 45
+
+            Rectangle {
+                anchors.fill: parent
+                color: FishUI.Theme.secondBackgroundColor
+                radius: FishUI.Theme.smallRadius
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: FishUI.Units.largeSpacing
+                anchors.rightMargin: FishUI.Units.largeSpacing
+
+                Label {
+                    text: qsTr("Font Size")
+                }
+
+                Item {
+                    width: FishUI.Units.largeSpacing
+                }
+
+                Slider {
+                    id: fontSizeSlider
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    from: 5
+                    to: 30
+                    stepSize: 1
+
+                    Component.onCompleted: {
+                        fontSizeSlider.value = settings.fontPointSize
+                    }
+
+                    onValueChanged: settings.fontPointSize = fontSizeSlider.value
+                }
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 45
+
+            Rectangle {
+                anchors.fill: parent
+                color: FishUI.Theme.secondBackgroundColor
+                radius: FishUI.Theme.smallRadius
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: FishUI.Units.largeSpacing
+                anchors.rightMargin: FishUI.Units.largeSpacing
+
+                Label {
                     text: qsTr("Transparency")
                 }
 

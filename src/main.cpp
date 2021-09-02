@@ -27,6 +27,7 @@
 
 #include "processhelper.h"
 #include "utils.h"
+#include "fonts.h"
 
 int main(int argc, char *argv[])
 {
@@ -52,6 +53,7 @@ int main(int argc, char *argv[])
 
     engine.rootContext()->setContextProperty("Process", new ProcessHelper);
     engine.rootContext()->setContextProperty("Utils", new Utils);
+    engine.rootContext()->setContextProperty("Fonts", new Fonts);
 
     engine.addImportPath(QStringLiteral("qrc:/"));
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));

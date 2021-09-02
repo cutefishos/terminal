@@ -23,11 +23,21 @@
     <name>SettingsDialog</name>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="43"/>
+        <source>Font</source>
+        <translation>字体</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="89"/>
+        <source>Font Size</source>
+        <translation>字体大小</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="129"/>
         <source>Transparency</source>
         <translation>透明度</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="83"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="169"/>
         <source>Window Blur</source>
         <translation>窗口模糊</translation>
     </message>

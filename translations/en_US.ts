@@ -23,11 +23,21 @@
     <name>SettingsDialog</name>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="43"/>
+        <source>Font</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="89"/>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="129"/>
         <source>Transparency</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="83"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="169"/>
         <source>Window Blur</source>
         <translation type="unfinished"></translation>
     </message>

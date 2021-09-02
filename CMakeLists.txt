@@ -34,6 +34,7 @@ set(SRCS
     src/processhelper.h
     src/processhelper.cpp
     src/utils.cpp
+    src/fonts.cpp
 )
 
 set(RESOURCES
