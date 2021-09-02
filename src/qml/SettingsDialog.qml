@@ -4,185 +4,108 @@ import QtQuick.Window 2.12
 import QtQuick.Controls 2.12
 import FishUI 1.0 as FishUI
 
-FishUI.Window {
+Window {
     id: control
 
-    width: 400
-    height: 400
+    title: qsTr("Settings")
 
-    maximumHeight: 400
+    width: 400
+    height: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
+
+    maximumHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
     maximumWidth: 400
     minimumWidth: 400
-    minimumHeight: 400
+    minimumHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
+
+    flags: Qt.Dialog
+    modality: Qt.WindowModal
 
     visible: false
 
-    ColumnLayout {
+    Rectangle {
+        anchors.fill: parent
+        color: FishUI.Theme.secondBackgroundColor
+    }
+
+    GridLayout {
         id: _mainLayout
         anchors.fill: parent
-        anchors.leftMargin: FishUI.Units.largeSpacing
-        anchors.rightMargin: FishUI.Units.largeSpacing
-        spacing: FishUI.Units.largeSpacing
+        anchors.margins: FishUI.Units.largeSpacing
+        columns: 2
+        columnSpacing: FishUI.Units.largeSpacing * 2
+        rowSpacing: FishUI.Units.largeSpacing * 2
 
-        Item {
+        Label {
+            text: qsTr("Font")
+        }
+
+        ComboBox {
+            id: fontsCombobox
+            model: Fonts.families
+            // Layout.fillHeight: true
             Layout.fillWidth: true
-            Layout.preferredHeight: 45
 
-            Rectangle {
-                anchors.fill: parent
-                color: FishUI.Theme.secondBackgroundColor
-                radius: FishUI.Theme.smallRadius
+            onCurrentTextChanged: {
+                settings.fontName = currentText
             }
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: FishUI.Units.largeSpacing
-                anchors.rightMargin: FishUI.Units.largeSpacing
-
-                Label {
-                    text: qsTr("Font")
-                }
-
-                Item {
-                    width: FishUI.Units.largeSpacing
-                }
-
-                ComboBox {
-                    id: fontsCombobox
-                    model: Fonts.families
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    onCurrentTextChanged: {
-                        settings.fontName = currentText
-                    }
-
-                    Component.onCompleted: {
-                        for (var i = 0; i <= fontsCombobox.model.length; ++i) {
-                            if (fontsCombobox.model[i] === settings.fontName) {
-                                fontsCombobox.currentIndex = i
-                                break
-                            }
-                        }
+            Component.onCompleted: {
+                for (var i = 0; i <= fontsCombobox.model.length; ++i) {
+                    if (fontsCombobox.model[i] === settings.fontName) {
+                        fontsCombobox.currentIndex = i
+                        break
                     }
                 }
             }
         }
 
-        // Font size
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 45
-
-            Rectangle {
-                anchors.fill: parent
-                color: FishUI.Theme.secondBackgroundColor
-                radius: FishUI.Theme.smallRadius
-            }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: FishUI.Units.largeSpacing
-                anchors.rightMargin: FishUI.Units.largeSpacing
-
-                Label {
-                    text: qsTr("Font Size")
-                }
-
-                Item {
-                    width: FishUI.Units.largeSpacing
-                }
-
-                Slider {
-                    id: fontSizeSlider
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    from: 5
-                    to: 30
-                    stepSize: 1
-
-                    Component.onCompleted: {
-                        fontSizeSlider.value = settings.fontPointSize
-                    }
-
-                    onValueChanged: settings.fontPointSize = fontSizeSlider.value
-                }
-            }
+        Label {
+            text: qsTr("Font Size")
         }
 
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 45
-
-            Rectangle {
-                anchors.fill: parent
-                color: FishUI.Theme.secondBackgroundColor
-                radius: FishUI.Theme.smallRadius
-            }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: FishUI.Units.largeSpacing
-                anchors.rightMargin: FishUI.Units.largeSpacing
-
-                Label {
-                    text: qsTr("Transparency")
-                }
-
-                Item {
-                    width: FishUI.Units.largeSpacing
-                }
-
-                Slider {
-                    id: transparencySlider
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    from: 0.1
-                    to: 1.0
-                    stepSize: 0.05
-
-                    Component.onCompleted: {
-                        transparencySlider.value = settings.opacity
-                    }
-
-                    onValueChanged: settings.opacity = transparencySlider.value
-                }
-            }
-        }
-
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 45
-
-            Rectangle {
-                anchors.fill: parent
-                color: FishUI.Theme.secondBackgroundColor
-                radius: FishUI.Theme.smallRadius
-            }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: FishUI.Units.largeSpacing
-                anchors.rightMargin: FishUI.Units.smallSpacing
-
-                Label {
-                    text: qsTr("Window Blur")
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Switch {
-                    Layout.fillHeight: true
-                    checked: settings.blur
-                    onCheckedChanged: settings.blur = checked
-                }
-            }
-        }
-
-        Item {
+        Slider {
+            id: fontSizeSlider
             Layout.fillHeight: true
+            Layout.fillWidth: true
+            from: 5
+            to: 30
+            stepSize: 1
+
+            Component.onCompleted: {
+                fontSizeSlider.value = settings.fontPointSize
+            }
+
+            onValueChanged: settings.fontPointSize = fontSizeSlider.value
+        }
+
+        Label {
+            text: qsTr("Transparency")
+        }
+
+        Slider {
+            id: transparencySlider
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            from: 0.1
+            to: 1.0
+            stepSize: 0.05
+
+            Component.onCompleted: {
+                transparencySlider.value = settings.opacity
+            }
+
+            onValueChanged: settings.opacity = transparencySlider.value
+        }
+
+        Label {
+            text: qsTr("Window Blur")
+        }
+
+        Switch {
+            Layout.alignment: Qt.AlignRight
+            Layout.fillHeight: true
+            checked: settings.blur
+            onCheckedChanged: settings.blur = checked
         }
     }
 }
