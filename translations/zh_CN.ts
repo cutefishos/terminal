@@ -22,22 +22,27 @@
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="43"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="10"/>
+        <source>Settings</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
         <translation>字体</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="89"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
         <translation>字体大小</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="129"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
         <translation>透明度</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="169"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
         <translation>窗口模糊</translation>
     </message>
