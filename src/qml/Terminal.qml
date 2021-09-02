@@ -107,7 +107,7 @@ Page {
         id: _terminal
         anchors.fill: parent
         colorScheme: FishUI.Theme.darkMode ? "Cutefish-Dark" : "Cutefish-Light"
-        font.family: "Noto Sans Mono"
+        font.family: settings.fontName
         font.pointSize: settings.fontPointSize
         blinkingCursor: settings.blinkingCursor
         fullCursorHeight: true
@@ -223,6 +223,7 @@ Page {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: FishUI.Units.smallSpacing * 1.5
         hoverEnabled: true
         active: hovered || pressed
         orientation: Qt.Vertical

@@ -17,16 +17,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.0
-import Qt.labs.settings 1.0
+#ifndef FONTS_H
+#define FONTS_H
 
-Settings {
-    property int width: 750
-    property int height: 500
-    property int fontPointSize: 10
-    property string fontName: "Noto Mono"
-    property bool blinkingCursor: true
+#include <QObject>
+#include <QList>
+#include <QFontDatabase>
+#include <QStringList>
 
-    property real opacity: 1.0
-    property bool blur: false
-}
+class Fonts : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QStringList families READ families NOTIFY familiesChanged)
+
+public:
+    explicit Fonts(QObject *parent = nullptr);
+
+    QStringList families() const;
+
+Q_SIGNALS:
+    void familiesChanged();
+
+protected:
+    void init();
+
+private:
+    QStringList m_families;
+    QFontDatabase m_fontDatabase;
+
+};
+
+#endif // FONTS_H
