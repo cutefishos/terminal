@@ -6,17 +6,17 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation>Há um processo em execução, tem a certeza de que pretende sair?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancelar</translation>
     </message>
 </context>
 <context>
@@ -24,27 +24,27 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Definições</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Fonte</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamanho da Fonte</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Transparência</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished"></translation>
+        <translation>Desfoque da Janela</translation>
     </message>
 </context>
 <context>
@@ -52,28 +52,28 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="177"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiar</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="183"/>
         <location filename="../src/qml/Terminal.qml" line="197"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Colar</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="203"/>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecionar Tudo</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Gestor de Ficheiros</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="213"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Definições</translation>
     </message>
 </context>
 </TS>
