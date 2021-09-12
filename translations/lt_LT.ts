@@ -1,45 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="hu">
+<TS version="2.1" language="lt">
 <context>
     <name>ExitPromptDialog</name>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>Egy folyamat még fut. Biztos ki szeretne lépni?</translation>
+        <translation>Vyksta procesas, ar tikrai norite išeiti?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Gerai</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation>Mégsem</translation>
+        <translation>Atsisakyti</translation>
     </message>
 </context>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="43"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="10"/>
+        <source>Settings</source>
+        <translation>Nuostatos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation>Betűtípus</translation>
+        <translation>Šriftas</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="89"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation>Betűméret</translation>
+        <translation>Šrifto dydis</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="129"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation>Áttetszőség</translation>
+        <translation>Permatomumas</translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="169"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation>Ablak elmosódása</translation>
+        <translation>Lango suliejimas</translation>
     </message>
 </context>
 <context>
@@ -47,28 +52,28 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="177"/>
         <source>Copy</source>
-        <translation>Másolás</translation>
+        <translation>Kopijuoti</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="183"/>
         <location filename="../src/qml/Terminal.qml" line="197"/>
         <source>Paste</source>
-        <translation>Beillesztés</translation>
+        <translation>Įdėti</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="203"/>
         <source>Select All</source>
-        <translation>Összes kijelölése</translation>
+        <translation>Pažymėti viską</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
-        <translation>Fájlkezelő megnyitása</translation>
+        <translation>Atverti failų tvarkytuvę</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="213"/>
         <source>Settings</source>
-        <translation>Beállítások</translation>
+        <translation>Nuostatos</translation>
     </message>
 </context>
 </TS>
