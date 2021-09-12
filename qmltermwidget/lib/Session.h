@@ -524,6 +524,8 @@ private:
     bool updateForegroundProcessInfo();
     WId windowId() const;
 
+    QString validDirectory(const QString &dir) const;
+
     int            _uniqueIdentifier;
 
     Pty     *_shellProcess;

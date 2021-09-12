@@ -44,7 +44,7 @@ Page {
     signal keyPressed(var event)
     signal terminalClosed()
 
-    property string path
+    property string path: "$PWD"
     property alias terminal: _terminal
     readonly property QMLTermSession session: _session
 

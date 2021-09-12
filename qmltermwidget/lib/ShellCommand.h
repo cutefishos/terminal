@@ -1,22 +1,6 @@
 /*
-    Copyright (C) 2007 by Robert Knight <robertknight@gmail.com>
-
-    Rewritten for QT4 by e_k <e_k at users.sourceforge.net>, Copyright (C)2008
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-    02110-1301  USA.
+    SPDX-FileCopyrightText: 2007-2008 Robert Knight <robertknight@gmail.com>
+    SPDX-License-Identifier: GPL-2.0-or-later
 */
 
 #ifndef SHELLCOMMAND_H
@@ -25,8 +9,8 @@
 // Qt
 #include <QStringList>
 
-namespace Konsole {
-
+namespace Konsole
+{
 /**
  * A class to parse and extract information about shell commands.
  *
@@ -48,18 +32,19 @@ namespace Konsole {
  *      </li>
  * </ul>
  */
-class ShellCommand {
+class ShellCommand
+{
 public:
     /**
      * Constructs a ShellCommand from a command line.
      *
-     * @param fullCommand The command line to parse.
+     * @param aCommand The command line to parse.
      */
-    ShellCommand(const QString & fullCommand);
+    explicit ShellCommand(const QString &aCommand);
     /**
-     * Constructs a ShellCommand with the specified @p command and @p arguments.
+     * Constructs a ShellCommand with the specified @p aCommand and @p aArguments.
      */
-    ShellCommand(const QString & command , const QStringList & arguments);
+    ShellCommand(const QString &aCommand, const QStringList &aArguments);
 
     /** Returns the command. */
     QString command() const;
@@ -71,22 +56,21 @@ public:
      */
     QString fullCommand() const;
 
-    /** Returns true if this is a root command. */
-    bool isRootCommand() const;
-    /** Returns true if the program specified by @p command() exists. */
-    bool isAvailable() const;
-
     /** Expands environment variables in @p text .*/
-    static QString expand(const QString & text);
+    static QString expand(const QString &text);
 
     /** Expands environment variables in each string in @p list. */
-    static QStringList expand(const QStringList & items);
+    static QStringList expand(const QStringList &items);
+
+    static bool isValidEnvCharacter(const QChar &ch);
+
+    static bool isValidLeadingEnvCharacter(const QChar &ch);
 
 private:
+    static bool expandEnv(QString &text);
+
     QStringList _arguments;
 };
-
 }
 
 #endif // SHELLCOMMAND_H
-
