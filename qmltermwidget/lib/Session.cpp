@@ -135,6 +135,21 @@ WId Session::windowId() const
     return 0;
 }
 
+QString Session::validDirectory(const QString &dir) const
+{
+    QString validDir = dir;
+    if (validDir.isEmpty()) {
+        validDir = QDir::currentPath();
+    }
+
+    const QFileInfo fi(validDir);
+    if (!fi.exists() || !fi.isDir()) {
+        validDir = QDir::homePath();
+    }
+
+    return validDir;
+}
+
 void Session::setDarkBackground(bool darkBackground)
 {
     _hasDarkBackground = darkBackground;
@@ -157,10 +172,12 @@ void Session::setProgram(const QString & program)
 {
     _program = ShellCommand::expand(program);
 }
+
 void Session::setInitialWorkingDirectory(const QString & dir)
 {
-    _initialWorkingDir = ShellCommand::expand(dir);
+    _initialWorkingDir = validDirectory(ShellCommand::expand(dir));
 }
+
 void Session::setArguments(const QStringList & arguments)
 {
     _arguments = ShellCommand::expand(arguments);

@@ -1,38 +1,20 @@
 /*
-    Copyright (C) 2007 by Robert Knight <robertknight@gmail.com>
-
-    Rewritten for QT4 by e_k <e_k at users.sourceforge.net>, Copyright (C)2008
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-    02110-1301  USA.
+    SPDX-FileCopyrightText: 2007-2008 Robert Knight <robertknight@gmail.com>
+    SPDX-License-Identifier: GPL-2.0-or-later
 */
 
 // Own
 #include "ShellCommand.h"
 
-//some versions of gcc(4.3) require explicit include
+// some versions of gcc(4.3) require explicit include
 #include <cstdlib>
 
+// Qt
+#include <QDir>
 
-using namespace Konsole;
+using Konsole::ShellCommand;
 
-// expands environment variables in 'text'
-// function copied from kdelibs/kio/kio/kurlcompletion.cpp
-static bool expandEnv(QString & text);
-
-ShellCommand::ShellCommand(const QString & fullCommand)
+ShellCommand::ShellCommand(const QString &fullCommand)
 {
     bool inQuotes = false;
 
@@ -58,55 +40,76 @@ ShellCommand::ShellCommand(const QString & fullCommand)
         }
     }
 }
-ShellCommand::ShellCommand(const QString & command , const QStringList & arguments)
-{
-    _arguments = arguments;
 
-    if ( !_arguments.isEmpty() ) {
-        _arguments[0] = command;
+ShellCommand::ShellCommand(const QString &aCommand, const QStringList &aArguments)
+{
+    _arguments = aArguments;
+
+    if (!_arguments.isEmpty()) {
+        _arguments[0] = aCommand;
     }
 }
+
 QString ShellCommand::fullCommand() const
 {
-    return _arguments.join(QLatin1Char(' '));
+    QStringList quotedArgs(_arguments);
+    for (int i = 0; i < quotedArgs.count(); i++) {
+        QString arg = quotedArgs.at(i);
+        bool hasSpace = false;
+        for (int j = 0; j < arg.count(); j++) {
+            if (arg[j].isSpace()) {
+                hasSpace = true;
+            }
+        }
+        if (hasSpace) {
+            quotedArgs[i] = QLatin1Char('\"') + arg + QLatin1Char('\"');
+        }
+    }
+    return quotedArgs.join(QLatin1Char(' '));
 }
+
 QString ShellCommand::command() const
 {
-    if ( !_arguments.isEmpty() ) {
+    if (!_arguments.isEmpty()) {
         return _arguments[0];
-    } else {
-        return QString();
     }
+    return QString();
 }
+
 QStringList ShellCommand::arguments() const
 {
     return _arguments;
 }
-bool ShellCommand::isRootCommand() const
-{
-    Q_ASSERT(0); // not implemented yet
-    return false;
-}
-bool ShellCommand::isAvailable() const
-{
-    Q_ASSERT(0); // not implemented yet
-    return false;
-}
-QStringList ShellCommand::expand(const QStringList & items)
+
+QStringList ShellCommand::expand(const QStringList &items)
 {
     QStringList result;
+    result.reserve(items.size());
 
-    for(const QString &item : items) {
+    for (const QString &item : items) {
         result << expand(item);
     }
 
     return result;
 }
-QString ShellCommand::expand(const QString & text)
+
+QString ShellCommand::expand(const QString &text)
 {
     QString result = text;
     expandEnv(result);
     return result;
+}
+
+bool ShellCommand::isValidEnvCharacter(const QChar &ch)
+{
+    const ushort code = ch.unicode();
+    return isValidLeadingEnvCharacter(ch) || ('0' <= code && code <= '9');
+}
+
+bool ShellCommand::isValidLeadingEnvCharacter(const QChar &ch)
+{
+    const ushort code = ch.unicode();
+    return (code == '_') || ('A' <= code && code <= 'Z');
 }
 
 /*
@@ -115,54 +118,55 @@ QString ShellCommand::expand(const QString & text)
  * Expand environment variables in text. Escaped '$' characters are ignored.
  * Return true if any variables were expanded
  */
-static bool expandEnv( QString & text )
+bool ShellCommand::expandEnv(QString &text)
 {
-    // Find all environment variables beginning with '$'
-    //
-    int pos = 0;
+    // Current path
+    if (text == "$PWD") {
+        text = QDir::currentPath();
+        return true;
+    }
 
+    const QLatin1Char dollarChar('$');
+    const QLatin1Char backslashChar('\\');
+
+    int dollarPos = 0;
     bool expanded = false;
 
-    while ( (pos = text.indexOf(QLatin1Char('$'), pos)) != -1 ) {
-
-        // Skip escaped '$'
-        //
-        if ( pos > 0 && text.at(pos-1) == QLatin1Char('\\') ) {
-            pos++;
+    // find and expand all environment variables beginning with '$'
+    while ((dollarPos = text.indexOf(dollarChar, dollarPos)) != -1) {
+        // if '$' is the last character, there is no way of expanding
+        if (dollarPos == text.length() - 1) {
+            break;
         }
-        // Variable found => expand
-        //
-        else {
-            // Find the end of the variable = next '/' or ' '
-            //
-            int pos2 = text.indexOf( QLatin1Char(' '), pos+1 );
-            int pos_tmp = text.indexOf( QLatin1Char('/'), pos+1 );
 
-            if ( pos2 == -1 || (pos_tmp != -1 && pos_tmp < pos2) ) {
-                pos2 = pos_tmp;
-            }
+        // skip escaped '$'
+        if (dollarPos > 0 && text.at(dollarPos - 1) == backslashChar) {
+            dollarPos++;
+            continue;
+        }
 
-            if ( pos2 == -1 ) {
-                pos2 = text.length();
-            }
+        // if '$' is followed by an invalid leading character, skip this '$'
+        if (!isValidLeadingEnvCharacter(text.at(dollarPos + 1))) {
+            dollarPos++;
+            continue;
+        }
 
-            // Replace if the variable is terminated by '/' or ' '
-            // and defined
-            //
-            if ( pos2 >= 0 ) {
-                int len = pos2 - pos;
-                QString key = text.mid( pos+1, len-1);
-                QString value =
-                    QString::fromLocal8Bit( qgetenv(key.toLocal8Bit().constData()) );
+        int endPos = dollarPos + 1;
+        Q_ASSERT(endPos < text.length());
+        while (endPos < text.length() && isValidEnvCharacter(text.at(endPos))) {
+            endPos++;
+        }
 
-                if ( !value.isEmpty() ) {
-                    expanded = true;
-                    text.replace( pos, len, value );
-                    pos = pos + value.length();
-                } else {
-                    pos = pos2;
-                }
-            }
+        const int len = endPos - dollarPos;
+        const QString key = text.mid(dollarPos + 1, len - 1);
+        const QString value = QString::fromLocal8Bit(qgetenv(key.toLocal8Bit().constData()));
+
+        if (!value.isEmpty()) {
+            text.replace(dollarPos, len, value);
+            expanded = true;
+            dollarPos = dollarPos + value.length();
+        } else {
+            dollarPos = endPos;
         }
     }
 

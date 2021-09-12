@@ -202,7 +202,7 @@ FishUI.Window {
     }
 
     Component.onCompleted: {
-        openTab("$HOME")
+        openTab("$PWD")
     }
 
     function openNewTab() {
