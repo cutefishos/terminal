@@ -50,28 +50,38 @@
 <context>
     <name>Terminal</name>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="177"/>
+        <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="183"/>
-        <location filename="../src/qml/Terminal.qml" line="197"/>
+        <location filename="../src/qml/Terminal.qml" line="184"/>
+        <location filename="../src/qml/Terminal.qml" line="198"/>
         <source>Paste</source>
         <translation>粘贴</translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="203"/>
+        <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
         <translation>全选</translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="208"/>
+        <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
         <translation>打开文件管理器</translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="213"/>
+        <location filename="../src/qml/Terminal.qml" line="214"/>
+        <source>Exit full screen</source>
+        <translation>退出全屏</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/Terminal.qml" line="214"/>
+        <source>Full screen</source>
+        <translation>全屏</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
