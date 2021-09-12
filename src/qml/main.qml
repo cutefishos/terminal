@@ -62,7 +62,7 @@ FishUI.Window {
     }
 
     onClosing: {
-        if (!root.isMaximized) {
+        if (!root.isMaximized && !root.isFullScreen) {
             settings.width = root.width
             settings.height = root.height
         }
