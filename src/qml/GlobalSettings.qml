@@ -23,10 +23,10 @@ import Qt.labs.settings 1.0
 Settings {
     property int width: 750
     property int height: 500
-    property int fontPointSize: 10
+    property int fontPointSize: 11
     property string fontName: "Noto Mono"
     property bool blinkingCursor: true
 
-    property real opacity: 1.0
+    property double opacity: 1.0
     property bool blur: false
 }

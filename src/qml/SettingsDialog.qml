@@ -75,7 +75,7 @@ Window {
                 fontSizeSlider.value = settings.fontPointSize
             }
 
-            onValueChanged: settings.fontPointSize = fontSizeSlider.value
+            onMoved: settings.fontPointSize = fontSizeSlider.value
         }
 
         Label {
@@ -94,7 +94,7 @@ Window {
                 transparencySlider.value = settings.opacity
             }
 
-            onValueChanged: settings.opacity = transparencySlider.value
+            onMoved: settings.opacity = transparencySlider.value
         }
 
         Label {
