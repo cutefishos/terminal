@@ -11,7 +11,7 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Aceitar</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
@@ -63,7 +63,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="203"/>
         <source>Select All</source>
-        <translation>Selecionar Tudo</translation>
+        <translation>Selecionar tudo</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
