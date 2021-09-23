@@ -39,12 +39,12 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Providnost</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamagljenje prozora</translation>
     </message>
 </context>
 <context>
@@ -52,23 +52,23 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiraj</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="184"/>
         <location filename="../src/qml/Terminal.qml" line="198"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Zalepi</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Označi sve</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Otvori upravljač datoteka</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
@@ -83,7 +83,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Podešavanja</translation>
     </message>
 </context>
 </TS>
