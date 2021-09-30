@@ -6,7 +6,7 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation>Processen körs, är du säker på att du vill avsluta?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished"></translation>
+        <translation>Gör fönstret suddigt</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppna filhanterare</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="213"/>
