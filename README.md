@@ -9,7 +9,7 @@ A terminal emulator for Cutefish.
 ## Dependencies
 
 ```sh
-sudo apt install extra-cmake-modules qtbase5-dev qtdeclarative5-dev qtquickcontrols2-5-dev
+sudo apt install extra-cmake-modules qtbase5-dev qtdeclarative5-dev qtquickcontrols2-5-dev qttools5-dev
 ```
 
 ## Build and install
