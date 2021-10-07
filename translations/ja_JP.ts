@@ -6,17 +6,17 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">プロセスが実行中です、 終了してもよいですか?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>はい</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">取り消し</translation>
     </message>
 </context>
 <context>
@@ -24,22 +24,22 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>設定</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>フォント</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>フォント サイズ</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">透明性</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
@@ -52,7 +52,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="184"/>
@@ -63,12 +63,12 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>すべて選択</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ファイル マネージャを開く</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
@@ -78,12 +78,12 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">全画面表示</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>設定</translation>
     </message>
 </context>
 </TS>
