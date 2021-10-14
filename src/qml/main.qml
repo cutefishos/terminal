@@ -35,7 +35,7 @@ FishUI.Window {
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
     background.color: FishUI.Theme.backgroundColor
-    background.opacity: settings.opacity
+    background.opacity: root.compositing ? settings.opacity : 1
     header.height: 45
 
     property int currentIndex: -1
