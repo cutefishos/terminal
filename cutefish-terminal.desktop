@@ -2,7 +2,7 @@
 Version=1.0
 Name=Terminal
 Name[zh_CN]=终端
-Exec=cutefish-terminal
+Exec=/usr/bin/cutefish-terminal
 Icon=utilities-terminal
 Terminal=false
 Type=Application
