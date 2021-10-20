@@ -23,31 +23,37 @@ import QtQuick.Layouts 1.12
 import QtQuick.Window 2.12
 import FishUI 1.0 as FishUI
 
-Dialog {
+Window {
     id: control
 
-    modal: true
+    property var contentWidth: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 2
+    property var contentHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 2
 
-    width: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 3
-    height: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 3
+    flags: Qt.WindowStaysOnTopHint
+    modality: Qt.WindowModal
 
-    x: (parent.width - control.width) / 2
-    y: (parent.height - control.height) / 2
+    width: contentWidth
+    height: contentHeight
+    minimumWidth: contentWidth
+    minimumHeight: contentHeight
+    maximumWidth: contentWidth
+    maximumHeight: contentHeight
 
     signal okBtnClicked
+
+    Rectangle {
+        anchors.fill: parent
+        color: FishUI.Theme.secondBackgroundColor
+    }
 
     ColumnLayout {
         id: _mainLayout
         anchors.fill: parent
         spacing: FishUI.Units.largeSpacing
-        anchors.leftMargin: FishUI.Units.smallSpacing
-        anchors.rightMargin: FishUI.Units.smallSpacing
-        anchors.topMargin: FishUI.Units.smallSpacing
-        anchors.bottomMargin: FishUI.Units.smallSpacing
+        anchors.margins: FishUI.Units.largeSpacing
 
         Label {
             text: qsTr("Process is running, are you sure you want to quit?")
-            Layout.alignment: Qt.AlignHCenter
         }
 
         RowLayout {

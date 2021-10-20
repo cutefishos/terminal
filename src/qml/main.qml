@@ -47,7 +47,16 @@ FishUI.Window {
 
     ExitPromptDialog {
         id: exitPrompt
-        onOkBtnClicked: Qt.quit()
+
+        property var index: -1
+
+        onOkBtnClicked: {
+            if (index != -1) {
+                closeTab(index)
+            } else {
+                onOkBtnClicked: Qt.quit()
+            }
+        }
     }
 
     SettingsDialog {
@@ -71,6 +80,7 @@ FishUI.Window {
         for (var i = 0; i < tabsModel.count; ++i) {
             var obj = tabsModel.get(i)
             if (obj.session.hasActiveProcess) {
+                exitPrompt.index = -1
                 exitPrompt.visible = true
                 close.accepted = false
                 break
@@ -160,7 +170,7 @@ FishUI.Window {
                             Layout.preferredWidth: 24
                             size: 24
                             source: "qrc:/images/" + (FishUI.Theme.darkMode || isCurrent ? "dark/" : "light/") + "close.svg"
-                            onClicked: closeTab(index)
+                            onClicked: closeProtection(index)
                         }
                     }
                 }
@@ -227,6 +237,17 @@ FishUI.Window {
         }
     }
 
+    function closeProtection(index) {
+        var obj = tabsModel.get(index)
+        if (obj.session.hasActiveProcess) {
+            exitPrompt.index = index
+            exitPrompt.visible = true
+            return
+        }
+
+        closeTab(index)
+    }
+
     function closeTab(index) {
         tabsModel.remove(index)
 
@@ -243,7 +264,7 @@ FishUI.Window {
     }
 
     function closeCurrentTab() {
-        closeTab(_view.currentIndex)
+        closeProtection(_view.currentIndex)
     }
 
     function toggleTab() {
