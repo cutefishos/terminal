@@ -6,17 +6,17 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation>فرآیند درحال اجراست، آیا مطمئنید میخواهید خارج شوید ؟</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>تایید</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>لغو</translation>
     </message>
 </context>
 <context>
@@ -24,27 +24,27 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>تنظیمات</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>قلم</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>اندازه قلم</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>شفافیت</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished"></translation>
+        <translation>مات کردن پنجره</translation>
     </message>
 </context>
 <context>
@@ -52,38 +52,38 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>کپی</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="184"/>
         <location filename="../src/qml/Terminal.qml" line="198"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>چسباندن</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>انتخاب همه</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>باز کردن مدیر فایل</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>خروج از نمای تمام صفحه</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>تمام صفحه</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>تنظیمات</translation>
     </message>
 </context>
 </TS>
