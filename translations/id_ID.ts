@@ -6,17 +6,17 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation>Proses sedang berjalan, apakah anda yakin ingin keluar</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>Ya</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batalkan</translation>
     </message>
 </context>
 <context>
@@ -24,27 +24,27 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Pengaturan</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>Font</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukuran Font</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Transparansi</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished"></translation>
+        <translation>Latar belakang jendela buram</translation>
     </message>
 </context>
 <context>
@@ -52,38 +52,38 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="184"/>
         <location filename="../src/qml/Terminal.qml" line="198"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempel</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih Semua</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka File Manager</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Keluar dari layar penuh</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Layar penuh</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Pengaturan</translation>
     </message>
 </context>
 </TS>
