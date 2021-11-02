@@ -36,10 +36,10 @@ FishUI.Window {
 
     background.color: FishUI.Theme.backgroundColor
     background.opacity: root.compositing ? settings.opacity : 1
-    header.height: 45
+    header.height: 40
 
     property int currentIndex: -1
-    property alias currentItem: _view.currentItem
+    property alias currentItem: _tabView.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
     GlobalSettings { id: settings }
@@ -89,126 +89,54 @@ FishUI.Window {
     }
 
     headerItem: Item {
-        RowLayout {
+        FishUI.TabBar {
+            id: _tabbar
             anchors.fill: parent
-            anchors.leftMargin: FishUI.Units.smallSpacing
-            anchors.rightMargin: FishUI.Units.smallSpacing
-            anchors.topMargin: FishUI.Units.smallSpacing
-            anchors.bottomMargin: FishUI.Units.smallSpacing
-            spacing: FishUI.Units.smallSpacing
+            anchors.margins: FishUI.Units.smallSpacing / 2
+            anchors.rightMargin: FishUI.Units.largeSpacing * 2
 
-            ListView {
-                id: _tabView
-                model: tabsModel.count
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                orientation: ListView.Horizontal
-                spacing: FishUI.Units.smallSpacing
-                currentIndex: _view.currentIndex
-                highlightFollowsCurrentItem: true
-                maximumFlickVelocity: 900
-                highlightMoveDuration: 0
-                highlightResizeDuration: 0
-                interactive: false
-                clip: true
+            currentIndex : _tabView.currentIndex
 
-                highlight: Rectangle {
-                    color: FishUI.Theme.highlightColor
-                    opacity: 1
-                    border.width: 0
-                    radius: FishUI.Theme.smallRadius
-                }
+            onNewTabClicked: openNewTab()
 
-                delegate: Item {
-                    id: _tabItem
-                    height: root.header.height - FishUI.Units.largeSpacing
-                    width: Math.min(_layout.implicitWidth + FishUI.Units.largeSpacing,
-                                    _tabView.width / _tabView.count - FishUI.Units.smallSpacing)
+            Repeater {
+                id: _repeater
+                model: _tabView.count
 
-                    property bool isCurrent: _tabView.currentIndex === index
-                    property var text: tabsModel.get(index).title
+                FishUI.TabButton {
+                    text: _tabView.contentModel.get(index).title
+                    implicitHeight: parent.height
+                    implicitWidth: _repeater.count === 1 ? 200
+                                                         : parent.width / _repeater.count
 
-                    MouseArea {
-                        id: _mouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: _view.currentIndex = index
+                    ToolTip.delay: 1000
+                    ToolTip.timeout: 5000
+
+                    checked: _tabView.currentIndex === index
+
+                    font.pointSize: 9
+                    font.family: "Noto Sans Mono"
+
+                    ToolTip.visible: hovered
+                    ToolTip.text: _tabView.contentModel.get(index).title
+
+                    onClicked: {
+                        _tabView.currentIndex = index
+                        _tabView.currentItem.forceActiveFocus()
                     }
 
-                    Rectangle {
-                        id: hoveredRect
-                        anchors.fill: parent
-                        color: _mouseArea.containsMouse ? FishUI.Theme.textColor : "transparent"
-                        opacity: _mouseArea.pressed ? 0.1 : 0.05
-                        border.width: 0
-                        radius: FishUI.Theme.smallRadius
-                    }
-
-                    RowLayout {
-                        id: _layout
-                        anchors.fill: parent
-                        anchors.leftMargin: FishUI.Units.smallSpacing
-                        anchors.rightMargin: FishUI.Units.smallSpacing
-                        spacing: 0
-
-                        Label {
-                            id: _tabName
-                            Layout.fillWidth: true
-                            text: _tabItem.text ? _tabItem.text : `Tab #${index + 1}`
-                            elide: Label.ElideRight
-                            font.pointSize: 9
-                            font.family: "Noto Sans Mono"
-                            color: isCurrent ? FishUI.Theme.highlightedTextColor : FishUI.Theme.textColor
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        FishUI.RoundImageButton {
-                            Layout.preferredHeight: 24
-                            Layout.preferredWidth: 24
-                            size: 24
-                            source: "qrc:/images/" + (FishUI.Theme.darkMode || isCurrent ? "dark/" : "light/") + "close.svg"
-                            onClicked: closeProtection(index)
-                        }
+                    onCloseClicked: {
+                        _tabView.closeTab(index)
                     }
                 }
-            }
-
-            FishUI.RoundImageButton {
-                source: "qrc:/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "add.svg"
-                onClicked: root.openNewTab()
-                Layout.alignment: Qt.AlignVCenter
             }
         }
     }
 
 
-    ListView {
-        id: _view
+    FishUI.TabView {
+        id: _tabView
         anchors.fill: parent
-        clip: true
-        focus: true
-        orientation: ListView.Horizontal
-        model: tabsModel
-        snapMode: ListView.SnapOneItem
-        spacing: 0
-        highlightFollowsCurrentItem: true
-        highlightMoveDuration: 0
-        highlightResizeDuration: 0
-        highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: 0
-        preferredHighlightEnd: width
-        highlight: Item {}
-        highlightMoveVelocity: -1
-        highlightResizeVelocity: -1
-        onMovementEnded: _view.currentIndex = indexAt(contentX, contentY)
-        onCurrentItemChanged: {
-            if (currentItem)
-                currentItem.forceActiveFocus()
-        }
-        interactive: false
     }
 
     Component.onCompleted: {
@@ -229,11 +157,13 @@ FishUI.Window {
 
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
-            const object = component.createObject(tabsModel, {'path': path})
-            tabsModel.append(object)
-            const index = tabsModel.count - 1
-            _view.currentIndex = index
-            object.terminalClosed.connect(() => closeTab(index))
+//            const object = component.createObject(tabsModel, {'path': path})
+//            tabsModel.append(object)
+//            const index = tabsModel.count - 1
+//            _view.currentIndex = index
+//            object.terminalClosed.connect(() => closeTab(index))
+
+            _tabView.addTab(component, {})
         }
     }
 
@@ -252,11 +182,11 @@ FishUI.Window {
         tabsModel.remove(index)
 
         if (index === tabsModel.count) {
-            _view.currentIndex = tabsModel.count - 1
-        } else if (index === _view.currentIndex) {
+            _tabView.currentIndex = tabsModel.count - 1
+        } else if (index === _tabView.currentIndex) {
             // Reion: Need to reset index.
-            _view.currentIndex = -1
-            _view.currentIndex = index
+            _tabView.currentIndex = -1
+            _tabView.currentIndex = index
         }
 
         if (tabsModel.count == 0)
@@ -264,15 +194,15 @@ FishUI.Window {
     }
 
     function closeCurrentTab() {
-        closeProtection(_view.currentIndex)
+        closeProtection(_tabView.currentIndex)
     }
 
     function toggleTab() {
-        var nextIndex = _view.currentIndex
+        var nextIndex = _tabView.currentIndex
         ++nextIndex
         if (nextIndex > tabsModel.count - 1)
             nextIndex = 0
 
-        _view.currentIndex = nextIndex
+        _tabView.currentIndex = nextIndex
     }
 }

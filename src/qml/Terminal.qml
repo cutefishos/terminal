@@ -29,8 +29,8 @@ import Cutefish.TermWidget 1.0
 Page {
     id: control
 
-    height: _view.height
-    width: _view.width
+    height: _tabView.height
+    width: _tabView.width
     focus: true
 
     // Drop effect
