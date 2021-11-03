@@ -43,7 +43,6 @@ FishUI.Window {
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
     GlobalSettings { id: settings }
-    ObjectModel { id: tabsModel }
 
     ExitPromptDialog {
         id: exitPrompt
@@ -77,8 +76,8 @@ FishUI.Window {
         }
 
         // Exit prompt.
-        for (var i = 0; i < tabsModel.count; ++i) {
-            var obj = tabsModel.get(i)
+        for (var i = 0; i < _tabView.contentModel.count; ++i) {
+            var obj = _tabView.contentModel.get(i)
             if (obj.session.hasActiveProcess) {
                 exitPrompt.index = -1
                 exitPrompt.visible = true
@@ -126,7 +125,7 @@ FishUI.Window {
                     }
 
                     onCloseClicked: {
-                        _tabView.closeTab(index)
+                        root.closeProtection(index)
                     }
                 }
             }
@@ -152,23 +151,19 @@ FishUI.Window {
     }
 
     function openTab(path) {
-        if (tabsModel.count > 7)
+        if (_tabView.contentModel.count > 7)
             return
 
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
-//            const object = component.createObject(tabsModel, {'path': path})
-//            tabsModel.append(object)
-//            const index = tabsModel.count - 1
-//            _view.currentIndex = index
-//            object.terminalClosed.connect(() => closeTab(index))
-
-            _tabView.addTab(component, {})
+            const index = _tabView.contentModel.count
+            const object = _tabView.addTab(component, {})
+            object.terminalClosed.connect(() => closeTab(index))
         }
     }
 
     function closeProtection(index) {
-        var obj = tabsModel.get(index)
+        var obj = _tabView.contentModel.get(index)
         if (obj.session.hasActiveProcess) {
             exitPrompt.index = index
             exitPrompt.visible = true
@@ -179,17 +174,9 @@ FishUI.Window {
     }
 
     function closeTab(index) {
-        tabsModel.remove(index)
+        _tabView.closeTab(index)
 
-        if (index === tabsModel.count) {
-            _tabView.currentIndex = tabsModel.count - 1
-        } else if (index === _tabView.currentIndex) {
-            // Reion: Need to reset index.
-            _tabView.currentIndex = -1
-            _tabView.currentIndex = index
-        }
-
-        if (tabsModel.count == 0)
+        if (_tabView.contentModel.count === 0)
             Qt.quit()
     }
 
@@ -200,7 +187,7 @@ FishUI.Window {
     function toggleTab() {
         var nextIndex = _tabView.currentIndex
         ++nextIndex
-        if (nextIndex > tabsModel.count - 1)
+        if (nextIndex > _tabView.contentModel.count - 1)
             nextIndex = 0
 
         _tabView.currentIndex = nextIndex
