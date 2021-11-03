@@ -132,10 +132,14 @@ FishUI.Window {
         }
     }
 
-
-    FishUI.TabView {
-        id: _tabView
+    ColumnLayout {
         anchors.fill: parent
+
+        FishUI.TabView {
+            id: _tabView
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
     }
 
     Component.onCompleted: {
@@ -143,8 +147,8 @@ FishUI.Window {
     }
 
     function openNewTab() {
-        if (currentTerminal) {
-            openTab(currentTerminal.session.currentDir)
+        if (_tabView.currentItem) {
+            openTab(_tabView.currentItem.session.currentDir)
         } else {
             openTab("$HOME")
         }
@@ -157,7 +161,7 @@ FishUI.Window {
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
             const index = _tabView.contentModel.count
-            const object = _tabView.addTab(component, {})
+            const object = _tabView.addTab(component, {path: path})
             object.terminalClosed.connect(() => closeTab(index))
         }
     }

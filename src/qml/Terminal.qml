@@ -33,10 +33,6 @@ Page {
     width: _tabView.width
     focus: true
 
-    // Drop effect
-    // opacity: _dropArea.containsDrag ? 0.8 : 1
-//    opacity: 0.5
-
     background: Rectangle {
         color: "transparent"
     }
