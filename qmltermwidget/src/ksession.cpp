@@ -25,6 +25,7 @@
 
 // Qt
 #include <QTextCodec>
+#include <QDir>
 
 // Konsole
 #include "KeyboardTranslator.h"
@@ -299,7 +300,16 @@ QString KSession::keyBindings()
 
 QString KSession::getTitle()
 {
-    return m_session->userTitle();
+    if (m_session->currentDir() == QDir::homePath()) {
+        return "~";
+    }
+
+    if (m_session->currentDir() == "/")
+        return m_session->currentDir();
+
+    return QDir(m_session->currentDir()).dirName();
+
+    // return m_session->userTitle();
 }
 
 bool KSession::hasActiveProcess() const
