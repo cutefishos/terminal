@@ -73,7 +73,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyjdź z pełnego ekranu</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
