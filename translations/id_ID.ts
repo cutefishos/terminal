@@ -6,7 +6,7 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>Proses sedang berjalan, apakah anda yakin ingin keluar</translation>
+        <translation>Proses sedang berjalan, apakah anda yakin ingin keluar?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
