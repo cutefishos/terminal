@@ -301,7 +301,7 @@ QString KSession::keyBindings()
 QString KSession::getTitle()
 {
     if (m_session->currentDir() == QDir::homePath()) {
-        return "~";
+        return m_session->currentDir();
     }
 
     if (m_session->currentDir() == "/")

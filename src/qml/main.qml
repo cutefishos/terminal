@@ -103,10 +103,14 @@ FishUI.Window {
                 model: _tabView.count
 
                 FishUI.TabButton {
+                    id: _tabBtn
                     text: _tabView.contentModel.get(index).title
                     implicitHeight: parent.height
-                    implicitWidth: _repeater.count === 1 ? 200
-                                                         : parent.width / _repeater.count
+//                    implicitWidth: _repeater.count === 1 ? 200
+//                                                         : parent.width / _repeater.count
+
+                    implicitWidth: Math.min(_tabBtn.contentWidth,
+                                            parent.width / _repeater.count)
 
                     ToolTip.delay: 1000
                     ToolTip.timeout: 5000
