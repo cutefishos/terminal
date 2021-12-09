@@ -6,17 +6,17 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>プロセスが実行中ので、 終了してもよいですか?</translation>
+        <translation>プロセスが実行中です。本当に終了しますか?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation>はい</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
         <source>Cancel</source>
-        <translation>取り消し</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -34,12 +34,12 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation>フォント サイズ</translation>
+        <translation>フォントサイズ</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation>透明性</translation>
+        <translation>透明度</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
@@ -68,12 +68,12 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation>ファイル マネージャを開く</translation>
+        <translation>ファイルマネージャーを開く</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation>フルスクリーンを終了する</translation>
+        <translation>全画面表示を終了</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
