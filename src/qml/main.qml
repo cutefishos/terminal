@@ -92,47 +92,77 @@ FishUI.Window {
             id: _tabbar
             anchors.fill: parent
             anchors.margins: FishUI.Units.smallSpacing / 2
-            anchors.rightMargin: FishUI.Units.largeSpacing * 2
+            anchors.rightMargin: FishUI.Units.largeSpacing * 4
 
-            currentIndex : _tabView.currentIndex
+            currentIndex: _tabView.currentIndex
+            model: _tabView.count
 
             onNewTabClicked: openNewTab()
 
-            Repeater {
-                id: _repeater
-                model: _tabView.count
+            delegate: FishUI.TabButton {
+                id: _tabBtn
+                text: _tabView.contentModel.get(index).title
+                Layout.fillHeight: true
+                height: _tabbar.height - FishUI.Units.smallSpacing / 2
+                width: Math.min(_tabbar.width / _tabbar.count,
+                                _tabBtn.contentWidth)
 
-                FishUI.TabButton {
-                    id: _tabBtn
-                    text: _tabView.contentModel.get(index).title
-                    implicitHeight: parent.height
-//                    implicitWidth: _repeater.count === 1 ? 200
-//                                                         : parent.width / _repeater.count
+                ToolTip.delay: 500
+                ToolTip.timeout: 5000
 
-                    implicitWidth: Math.min(_tabBtn.contentWidth,
-                                            parent.width / _repeater.count)
+                checked: _tabView.currentIndex === index
 
-                    ToolTip.delay: 1000
-                    ToolTip.timeout: 5000
+                font.pointSize: 9
+                font.family: "Noto Sans Mono"
 
-                    checked: _tabView.currentIndex === index
+                ToolTip.visible: hovered
+                ToolTip.text: _tabView.contentModel.get(index).title
 
-                    font.pointSize: 9
-                    font.family: "Noto Sans Mono"
+                onClicked: {
+                    _tabView.currentIndex = index
+                    _tabView.currentItem.forceActiveFocus()
+                }
 
-                    ToolTip.visible: hovered
-                    ToolTip.text: _tabView.contentModel.get(index).title
-
-                    onClicked: {
-                        _tabView.currentIndex = index
-                        _tabView.currentItem.forceActiveFocus()
-                    }
-
-                    onCloseClicked: {
-                        root.closeProtection(index)
-                    }
+                onCloseClicked: {
+                    root.closeProtection(index)
                 }
             }
+
+//            Repeater {
+//                id: _repeater
+//                model: _tabView.count
+
+//                FishUI.TabButton {
+//                    id: _tabBtn
+//                    text: _tabView.contentModel.get(index).title
+//                    implicitHeight: parent.height
+////                    implicitWidth: _repeater.count === 1 ? 200
+////                                                         : parent.width / _repeater.count
+
+//                    implicitWidth: Math.min(_tabBtn.contentWidth,
+//                                            parent.width / _repeater.count)
+
+//                    ToolTip.delay: 1000
+//                    ToolTip.timeout: 5000
+
+//                    checked: _tabView.currentIndex === index
+
+//                    font.pointSize: 9
+//                    font.family: "Noto Sans Mono"
+
+//                    ToolTip.visible: hovered
+//                    ToolTip.text: _tabView.contentModel.get(index).title
+
+//                    onClicked: {
+//                        _tabView.currentIndex = index
+//                        _tabView.currentItem.forceActiveFocus()
+//                    }
+
+//                    onCloseClicked: {
+//                        root.closeProtection(index)
+//                    }
+//                }
+//            }
         }
     }
 
