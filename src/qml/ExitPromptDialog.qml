@@ -23,14 +23,15 @@ import QtQuick.Layouts 1.12
 import QtQuick.Window 2.12
 import FishUI 1.0 as FishUI
 
-Window {
+FishUI.Window {
     id: control
 
     property var contentWidth: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 2
-    property var contentHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 2
+    property var contentHeight: _mainLayout.implicitHeight + header.height + FishUI.Units.largeSpacing * 2
 
-    flags: Qt.WindowStaysOnTopHint
+    flags: Qt.WindowStaysOnTopHint | Qt.Dialog | Qt.FramelessWindowHint
     modality: Qt.WindowModal
+    visible: false
 
     width: contentWidth
     height: contentHeight
@@ -38,13 +39,11 @@ Window {
     minimumHeight: contentHeight
     maximumWidth: contentWidth
     maximumHeight: contentHeight
+    minimizeButtonVisible: false
+
+    background.color: FishUI.Theme.secondBackgroundColor
 
     signal okBtnClicked
-
-    Rectangle {
-        anchors.fill: parent
-        color: FishUI.Theme.secondBackgroundColor
-    }
 
     ColumnLayout {
         id: _mainLayout
