@@ -98,6 +98,11 @@ Page {
             root.toggleTab()
             event.accepted = true
         }
+
+        if (event.key === Qt.Key_F11) {
+            root.visibility = root.isFullScreen ? Window.Windowed : Window.FullScreen
+            event.accepted = true
+        }
     }
 
     QMLTermWidget {
