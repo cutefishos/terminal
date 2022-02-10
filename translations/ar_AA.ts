@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation>ضبابية النافذة</translation>
+        <translation>نافذة ضبابية</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="208"/>
         <source>Open File Manager</source>
-        <translation>فتح مستعرض الملفات</translation>
+        <translation>فتح مدير الملفات</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="213"/>
