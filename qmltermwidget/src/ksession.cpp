@@ -74,7 +74,7 @@ Session *KSession::createSession(QString name)
     QString shellProg = envshell != NULL ? envshell : "/bin/bash";
     session->setProgram(shellProg);
 
-    setenv("TERM", "xterm", 1);
+    setenv("TERM", "xterm-256color", 1);
 
     //session->setProgram();
 
