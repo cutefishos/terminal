@@ -11,7 +11,7 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>WAXXA</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
