@@ -73,12 +73,12 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatvori ceo ekran</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ceo ekran</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
