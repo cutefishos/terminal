@@ -1,0 +1,21 @@
+name: sync-repo
+
+on: 
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch: # on button click  
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Fetch upstream
+      uses: 135e2/sync-upstream-repo@v0.1.5
+      with:
+      #Git upstream repo
+        upstream_repo: https://github.com/cutefishos/terminal.git
+        upstream_branch: main
+        local_branch: main
+        github_token: ${{ secrets.GITHUB_TOKEN }}
