@@ -24,27 +24,27 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished">Configuración</translation>
+        <translation>Configuración</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished">Fuente</translation>
+        <translation>Fuente</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished">Tamaño de la Fuente</translation>
+        <translation>Tamaño de la Fuente</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
         <source>Transparency</source>
-        <translation type="unfinished">Transparencia</translation>
+        <translation>Transparencia</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation type="unfinished">Difuminado de Pantalla</translation>
+        <translation>Difuminado de Pantalla</translation>
     </message>
 </context>
 <context>
@@ -52,38 +52,38 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="178"/>
         <source>Copy</source>
-        <translation type="unfinished">Copiar</translation>
+        <translation>Copiar</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="184"/>
         <location filename="../src/qml/Terminal.qml" line="198"/>
         <source>Paste</source>
-        <translation type="unfinished">Pegar</translation>
+        <translation>Pegar</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="204"/>
         <source>Select All</source>
-        <translation type="unfinished">Seleccionar todo</translation>
+        <translation>Seleccionar todo</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation type="unfinished">Abrir Explorador de Archivos</translation>
+        <translation>Abrir Explorador de Archivos</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished">Cerrar pantalla completa</translation>
+        <translation>Cerrar pantalla completa</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished">Pantalla completa</translation>
+        <translation>Pantalla completa</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished">Configuración</translation>
+        <translation>Configuración</translation>
     </message>
 </context>
 </TS>
