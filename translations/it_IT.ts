@@ -29,7 +29,7 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation>Caratteri</translation>
+        <translation>Carattere</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
