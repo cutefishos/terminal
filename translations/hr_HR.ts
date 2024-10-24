@@ -11,7 +11,7 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>U redu</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation>Prozirnost prozora</translation>
+        <translation>Neoštrina prozora</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation>Otvori upravitelj datoteka</translation>
+        <translation>Otvori upravljač datoteka</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
