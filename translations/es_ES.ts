@@ -6,12 +6,12 @@
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>El proceso está en marcha, seguro que quieres salir?</translation>
+        <translation>El proceso está en marcha. ¿Confirma que quiere salir?</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation>Aceptar</translation>
     </message>
     <message>
         <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
@@ -24,17 +24,17 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation>Configuraciones</translation>
+        <translation>Configuración</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation>Fuente</translation>
+        <translation>Tipo de letra</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation>Tamaño de fuente</translation>
+        <translation>Tamaño de letra</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="101"/>
         <source>Window Blur</source>
-        <translation>Desenfoque</translation>
+        <translation>Desenfoque de ventana</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="209"/>
         <source>Open File Manager</source>
-        <translation>Abrir Gestor de Archivos</translation>
+        <translation>Abrir gestor de archivos</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
@@ -83,7 +83,7 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation>Configuraciones</translation>
+        <translation>Configuración</translation>
     </message>
 </context>
 </TS>
