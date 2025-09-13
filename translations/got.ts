@@ -24,17 +24,17 @@
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="10"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>𐌻𐌰𐌲𐌴𐌹𐌽𐍉𐍃</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="39"/>
         <source>Font</source>
-        <translation type="unfinished"></translation>
+        <translation>𐍆𐌰𐌿𐌽𐍄</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="63"/>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>𐌼𐌹𐌺𐌹𐌻𐌴𐌹 𐍆𐌰𐌿𐌽𐍄𐌹𐍃</translation>
     </message>
     <message>
         <location filename="../src/qml/SettingsDialog.qml" line="82"/>
@@ -73,17 +73,17 @@
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Exit full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>𐍃𐌺𐌰𐌹𐍂𐌼 𐍆𐌿𐌻𐌻 𐌰𐍆𐌻𐌴𐌹𐌸𐌰𐌽</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="214"/>
         <source>Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>𐍃𐌺𐌰𐌹𐍂𐌼𐍃 𐍆𐌿𐌻𐌻𐍃</translation>
     </message>
     <message>
         <location filename="../src/qml/Terminal.qml" line="221"/>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>𐌻𐌰𐌲𐌴𐌹𐌽𐍉𐍃</translation>
     </message>
 </context>
 </TS>
