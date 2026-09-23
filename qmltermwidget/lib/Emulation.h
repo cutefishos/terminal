@@ -30,6 +30,7 @@
 #include <QKeyEvent>
 //#include <QPointer>
 #include <QTextStream>
+#include <QElapsedTimer>
 #include <QTimer>
 #include <QStringDecoder>
 
@@ -503,6 +504,7 @@ private:
   bool _bracketedPasteMode;
   QTimer _bulkTimer1{this};
   QTimer _bulkTimer2{this};
+  QElapsedTimer _lastShow;
   QStringDecoder _toUtf16;
 };
 

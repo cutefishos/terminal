@@ -325,6 +325,7 @@ void Emulation::showBulk()
 {
     _bulkTimer1.stop();
     _bulkTimer2.stop();
+    _lastShow.start();
 
     emit outputChanged();
 
@@ -336,9 +337,13 @@ void Emulation::bufferedUpdate()
 {
     static const int BULK_TIMEOUT1 = 10;
     static const int BULK_TIMEOUT2 = 40;
+    // Output after a quiet spell, such as an echoed keystroke, is shown almost at
+    // once; output that keeps coming is still batched, which keeps throughput up.
+    static const int QUIET_TIMEOUT = 2;
+    const bool quiet = !_lastShow.isValid() || _lastShow.elapsed() > BULK_TIMEOUT2;
 
    _bulkTimer1.setSingleShot(true);
-   _bulkTimer1.start(BULK_TIMEOUT1);
+   _bulkTimer1.start(quiet ? QUIET_TIMEOUT : BULK_TIMEOUT1);
    if (!_bulkTimer2.isActive())
    {
       _bulkTimer2.setSingleShot(true);
