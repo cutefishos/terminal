@@ -43,6 +43,16 @@ FishUI.Window {
     property alias currentItem: _tabView.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
+    // Zoom is for this window only; the size in Settings stays the default.
+    property int fontZoom: 0
+    readonly property int fontPointSize: Math.max(5, Math.min(40, settings.fontPointSize + fontZoom))
+
+    function zoom(step) {
+        const size = step === 0 ? settings.fontPointSize : fontPointSize + step
+        fontZoom = Math.max(5, Math.min(40, size)) - settings.fontPointSize
+        _zoomIndicator.show()
+    }
+
     // Settings saved before themes existed hold an empty name.
     readonly property string colorScheme: settings.colorScheme !== "" ? settings.colorScheme : "TokyoNight"
     readonly property var colorSchemeInfo: currentTerminal ? currentTerminal.colorSchemeInfo(colorScheme) : ({})
@@ -157,6 +167,48 @@ FishUI.Window {
     FishUI.TabView {
         id: _tabView
         anchors.fill: parent
+    }
+
+    // Shows the size briefly while zooming.
+    Rectangle {
+        id: _zoomIndicator
+        anchors.centerIn: parent
+        width: _zoomLabel.implicitWidth + FishUI.Units.largeSpacing * 2
+        height: 36
+        radius: height / 2
+        color: FishUI.Theme.secondBackgroundColor
+        border.width: 1
+        border.color: Qt.rgba(FishUI.Theme.textColor.r, FishUI.Theme.textColor.g, FishUI.Theme.textColor.b, 0.1)
+        opacity: 0
+        visible: opacity > 0
+
+        function show() {
+            _zoomFade.stop()
+            opacity = 1
+            _zoomHide.restart()
+        }
+
+        FishUI.Label {
+            id: _zoomLabel
+            anchors.centerIn: parent
+            text: qsTr("%1 pt").arg(root.fontPointSize)
+            font.pixelSize: 13
+            font.weight: Font.Medium
+        }
+
+        Timer {
+            id: _zoomHide
+            interval: 900
+            onTriggered: _zoomFade.start()
+        }
+
+        NumberAnimation {
+            id: _zoomFade
+            target: _zoomIndicator
+            property: "opacity"
+            to: 0
+            duration: 200
+        }
     }
 
     Component.onCompleted: {

@@ -93,6 +93,27 @@ Item {
             event.accepted = true
         }
 
+        if ((event.key === Qt.Key_F)
+                && (event.modifiers & Qt.ControlModifier)
+                && (event.modifiers & Qt.ShiftModifier)) {
+            control.openFind()
+            event.accepted = true
+        }
+
+        // Zoom: Ctrl+= (or Ctrl++), Ctrl+-, Ctrl+0.
+        if ((event.modifiers & Qt.ControlModifier) && !(event.modifiers & Qt.AltModifier)) {
+            if (event.key === Qt.Key_Equal || event.key === Qt.Key_Plus) {
+                root.zoom(1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Minus && !(event.modifiers & Qt.ShiftModifier)) {
+                root.zoom(-1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_0 && !(event.modifiers & Qt.ShiftModifier)) {
+                root.zoom(0)
+                event.accepted = true
+            }
+        }
+
         if (event.key === Qt.Key_F11) {
             root.visibility = root.isFullScreen ? Window.Windowed : Window.FullScreen
             event.accepted = true
@@ -108,7 +129,7 @@ Item {
         anchors.bottomMargin: 6
         colorScheme: root.colorScheme
         font.family: settings.fontName
-        font.pointSize: settings.fontPointSize
+        font.pointSize: root.fontPointSize
         blinkingCursor: settings.blinkingCursor
         fullCursorHeight: true
         backgroundOpacity: 0
@@ -249,6 +270,11 @@ Item {
         }
 
         FishUI.MenuItem {
+            text: qsTr("Find…")
+            onTriggered: control.openFind()
+        }
+
+        FishUI.MenuItem {
             text: qsTr("Clear Scrollback")
             visible: _terminal.scrollbarMaximum > 0
             onTriggered: _session.clearScrollback()
@@ -315,6 +341,22 @@ Item {
         }
     }
 
+    FindBar {
+        id: _findBar
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: FishUI.Units.smallSpacing
+        anchors.rightMargin: FishUI.Units.largeSpacing
+        z: 1
+        terminal: _terminal
+        backgroundColor: root.terminalBackground
+        textColor: root.chromeForeground
+        darkMode: root.chromeDark
+        errorColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[1] : FishUI.Theme.redColor
+        accentColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[4] : FishUI.Theme.highlightColor
+        onClosed: _terminal.forceActiveFocus()
+    }
+
     DropArea {
         id: _dropArea
         anchors.fill: parent
@@ -329,6 +371,12 @@ Item {
 
     function forceActiveFocus() {
         _terminal.forceActiveFocus()
+    }
+
+    // Starts from the selection when it is a single line, as a search term would be.
+    function openFind() {
+        const selection = _terminal.hasSelection ? _terminal.selectedText().trim() : ""
+        _findBar.open(selection.indexOf("\n") === -1 ? selection : "")
     }
 
     function openMenu(x, y) {

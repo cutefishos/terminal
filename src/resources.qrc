@@ -6,5 +6,6 @@
         <file>qml/ExitPromptDialog.qml</file>
         <file>qml/SettingsDialog.qml</file>
         <file>qml/TabBar.qml</file>
+        <file>qml/FindBar.qml</file>
     </qresource>
 </RCC>
