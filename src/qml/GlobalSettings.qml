@@ -26,6 +26,12 @@ Settings {
     property int fontPointSize: 10
     property string fontName: "Noto Mono"
     property bool blinkingCursor: true
+    // 0 block, 1 underline, 2 I-beam.
+    property int cursorShape: 0
+    // Lines kept above the screen; -1 keeps everything.
+    property int scrollbackLines: 10000
+    property bool visualBell: true
+    property bool confirmMultilinePaste: true
     // A bundled color scheme, by file name.
     property string colorScheme: "TokyoNight"
 

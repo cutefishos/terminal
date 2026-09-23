@@ -266,5 +266,57 @@ FishUI.Window {
                 }
             }
         }
+
+        Card {
+            SettingRow {
+                text: qsTr("Cursor Shape")
+
+                FishUI.ComboBox {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 160
+                    // In the order of the cursorShape values.
+                    model: [qsTr("Block"), qsTr("Underline"), qsTr("I-Beam")]
+                    currentIndex: settings.cursorShape
+
+                    onActivated: (index) => settings.cursorShape = index
+                }
+            }
+
+            SettingRow {
+                text: qsTr("Scrollback")
+
+                FishUI.ComboBox {
+                    readonly property var lines: [1000, 10000, 100000, -1]
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 160
+                    model: [qsTr("1,000 lines"), qsTr("10,000 lines"), qsTr("100,000 lines"), qsTr("Unlimited")]
+                    currentIndex: Math.max(0, lines.indexOf(settings.scrollbackLines))
+
+                    onActivated: (index) => settings.scrollbackLines = lines[index]
+                }
+            }
+
+            SettingRow {
+                text: qsTr("Flash on Bell")
+
+                FishUI.Switch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: settings.visualBell
+                    onToggled: settings.visualBell = checked
+                }
+            }
+
+            SettingRow {
+                text: qsTr("Warn Before Pasting Multiple Lines")
+                last: true
+
+                FishUI.Switch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: settings.confirmMultilinePaste
+                    onToggled: settings.confirmMultilinePaste = checked
+                }
+            }
+        }
     }
 }

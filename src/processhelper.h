@@ -34,6 +34,7 @@ public:
     Q_INVOKABLE bool openUrl(const QString &url);
     Q_INVOKABLE bool openFileManager(const QString &url);
     Q_INVOKABLE bool showInFileManager(const QString &path);
+    Q_INVOKABLE bool newWindow(const QString &directory);
 
     // The file or folder that selected text names, resolved against baseDir,
     // or an empty string when it does not name one.

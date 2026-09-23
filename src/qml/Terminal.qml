@@ -37,13 +37,28 @@ Item {
     signal terminalClosed()
 
     property string path: "$PWD"
+    // Program and arguments to run instead of the shell.
+    property var command: []
+    // Set by renaming the tab; empty follows the session.
+    property string customTitle: ""
     property alias terminal: _terminal
     readonly property QMLTermSession session: _session
-    readonly property string title: _session.title
+    readonly property string title: customTitle !== "" ? customTitle : _session.title
 
+    // Files arrive as paths the shell can take as one word each.
     onUrlsDropped: (urls) => {
-        for (var i in urls)
-            _session.sendText(urls[i].toString().replace("file://", "") + " ")
+        const words = []
+        for (const url of urls) {
+            const text = url.toString()
+            words.push(text.startsWith("file://") ? shellQuote(decodeURIComponent(text.substring(7))) : text)
+        }
+        _session.sendText(words.join(" ") + " ")
+    }
+
+    function shellQuote(text) {
+        if (/^[A-Za-z0-9_@%+=:,.\/-]+$/.test(text))
+            return text
+        return "'" + text.replace(/'/g, "'\\''") + "'"
     }
 
     onKeyPressed: (event) => {
@@ -71,7 +86,15 @@ Item {
         if ((event.key === Qt.Key_Q)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
-            Qt.quit()
+            root.close()
+            event.accepted = true
+        }
+
+        if ((event.key === Qt.Key_N)
+                && (event.modifiers & Qt.ControlModifier)
+                && (event.modifiers & Qt.ShiftModifier)) {
+            root.newWindow()
+            event.accepted = true
         }
 
         if ((event.key === Qt.Key_T)
@@ -88,8 +111,29 @@ Item {
             event.accepted = true
         }
 
-        if (event.key === Qt.Key_Tab && event.modifiers & Qt.ControlModifier) {
-            root.toggleTab()
+        // Tabs: Ctrl+Tab and Ctrl+PgDn go right, Ctrl+Shift+Tab and Ctrl+PgUp left;
+        // with Shift, Ctrl+PgUp and Ctrl+PgDn move the tab instead.
+        if (event.modifiers & Qt.ControlModifier) {
+            const shift = event.modifiers & Qt.ShiftModifier
+            if (event.key === Qt.Key_Tab) {
+                root.cycleTab(1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Backtab) {
+                root.cycleTab(-1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_PageDown) {
+                shift ? root.moveCurrentTab(1) : root.cycleTab(1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_PageUp) {
+                shift ? root.moveCurrentTab(-1) : root.cycleTab(-1)
+                event.accepted = true
+            }
+        }
+
+        // Alt+1 to Alt+8 pick a tab, Alt+9 the last one.
+        if ((event.modifiers & Qt.AltModifier) && !(event.modifiers & Qt.ControlModifier)
+                && event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && root.tabCount > 1) {
+            root.selectTab(event.key === Qt.Key_9 ? root.tabCount - 1 : event.key - Qt.Key_1)
             event.accepted = true
         }
 
@@ -130,7 +174,10 @@ Item {
         font.family: settings.fontName
         font.pointSize: root.fontPointSize
         blinkingCursor: settings.blinkingCursor
-        confirmMultilinePaste: true
+        cursorShape: settings.cursorShape
+        // NotifyBell hands the bell to onNotifyBell below; NoBell ignores it.
+        bellMode: settings.visualBell ? 1 : 3
+        confirmMultilinePaste: settings.confirmMultilinePaste
         fullCursorHeight: true
         backgroundOpacity: 0
 
@@ -146,6 +193,7 @@ Item {
         }
 
         onScrollbarParamsChanged: _linkHover.refresh()
+        onNotifyBell: _bellFlash.flash()
         onMultilinePasteRequested: (text) => root.confirmPaste(text, () => _terminal.confirmPaste())
 
         // The link under the pointer: underlined on hover, opened with Ctrl+click.
@@ -201,6 +249,7 @@ Item {
             id: _session
             onFinished: control.terminalClosed()
             initialWorkingDirectory: control.path
+            historySize: settings.scrollbackLines
         }
 
         MouseArea {
@@ -272,6 +321,11 @@ Item {
         }
 
         Component.onCompleted: {
+            if (control.command.length > 0) {
+                _session.shellProgram = control.command[0]
+                _session.shellProgramArgs = control.command.slice(1)
+            }
+
             _session.startShellProgram()
             _terminal.forceActiveFocus()
         }
@@ -368,11 +422,21 @@ Item {
                 onTriggered: _session.clearScrollback()
             }
 
+            FishUI.MenuItem {
+                text: qsTr("Reset Terminal")
+                onTriggered: _session.resetTerminal()
+            }
+
             FishUI.MenuSeparator {}
 
             FishUI.MenuItem {
                 text: qsTr("New Tab")
                 onTriggered: root.openNewTab()
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("New Window")
+                onTriggered: root.newWindow()
             }
 
             FishUI.MenuItem {
@@ -424,6 +488,25 @@ Item {
         Connections {
             target: _terminal
             function onScrollbarValueChanged() { _scrollActivity.restart() }
+        }
+    }
+
+    // The visual bell: the terminal briefly lightens, or darkens on a light scheme.
+    Rectangle {
+        id: _bellFlash
+        anchors.fill: parent
+        color: root.chromeForeground
+        opacity: 0
+        visible: opacity > 0
+
+        function flash() {
+            _bellFade.restart()
+        }
+
+        SequentialAnimation {
+            id: _bellFade
+            PropertyAction { target: _bellFlash; property: "opacity"; value: 0.12 }
+            NumberAnimation { target: _bellFlash; property: "opacity"; to: 0; duration: 180 }
         }
     }
 

@@ -28,7 +28,7 @@ FishUI.Window {
     minimumHeight: 300
     width: settings.width
     height: settings.height
-    title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
+    title: currentItem ? currentItem.title : ""
 
     blurEnabled: settings.blur
     background.color: terminalBackground
@@ -41,6 +41,7 @@ FishUI.Window {
 
     property int currentIndex: -1
     property alias currentItem: _tabView.currentItem
+    readonly property int tabCount: _tabView.count
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
     // Zoom is for this window only; the size in Settings stays the default.
@@ -78,10 +79,17 @@ FishUI.Window {
     property QtObject _settingsDialog: null
     property QtObject _pasteConfirm: null
 
-    function exitPrompt() {
+    // Asks before running action when a process is still running in one of pages.
+    function confirmClose(pages, action) {
+        if (!pages.some(page => page.session.hasActiveProcess)) {
+            action()
+            return
+        }
+
         if (!_exitPrompt)
             _exitPrompt = _exitPromptComponent.createObject(root)
-        return _exitPrompt
+        _exitPrompt.pendingAction = action
+        _exitPrompt.open()
     }
 
     function showSettings() {
@@ -98,14 +106,6 @@ FishUI.Window {
             parentWindow: root
             x: root.x + Math.round((root.width - width) / 2)
             y: root.y + Math.round((root.height - height) / 2)
-
-            onAccepted: {
-                if (index != -1) {
-                    closeTab(index)
-                } else {
-                    Qt.quit()
-                }
-            }
         }
     }
 
@@ -163,15 +163,16 @@ FishUI.Window {
             settings.height = root.height
         }
 
-        // Exit prompt.
-        for (var i = 0; i < _tabView.contentModel.count; ++i) {
-            var obj = _tabView.contentModel.get(i)
-            if (obj.session.hasActiveProcess) {
-                exitPrompt().index = -1
-                exitPrompt().open()
-                close.accepted = false
-                break
-            }
+        if (_quitting)
+            return
+
+        const pages = tabs()
+        if (pages.some(page => page.session.hasActiveProcess)) {
+            close.accepted = false
+            confirmClose(pages, () => {
+                _quitting = true
+                root.close()
+            })
         }
     }
 
@@ -209,6 +210,12 @@ FishUI.Window {
             anchors.verticalCenter: parent.verticalCenter
 
             onCloseRequested: (index) => root.closeProtection(index)
+            onCloseOthersRequested: (index) => root.closeOtherTabs(index)
+            onMoveRequested: (from, to) => root.moveTab(from, to)
+            onRenameRequested: (index, title) => {
+                _tabView.contentModel.get(index).customTitle = title.trim()
+                _tabView.currentItem.forceActiveFocus()
+            }
         }
 
         FishUI.RoundImageButton {
@@ -275,8 +282,14 @@ FishUI.Window {
         }
     }
 
+    // Set once the close has been confirmed, so closing does not ask again.
+    property bool _quitting: false
+
     Component.onCompleted: {
-        openTab("$PWD")
+        // Given on the command line: cutefish-terminal --workdir <dir> -e <command>.
+        const directory = typeof StartupDirectory === "string" && StartupDirectory !== "" ? StartupDirectory : "$PWD"
+        const command = typeof StartupCommand === "object" ? StartupCommand : []
+        openTab(directory, command)
     }
 
     function openNewTab() {
@@ -287,13 +300,10 @@ FishUI.Window {
         }
     }
 
-    function openTab(path) {
-        if (_tabView.contentModel.count > 7)
-            return
-
+    function openTab(path, command) {
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
-            const object = _tabView.addTab(component, {path: path})
+            const object = _tabView.addTab(component, { path: path, command: command || [] })
             // Looked up when the shell exits: closing other tabs shifts the index.
             object.terminalClosed.connect(() => closeTab(indexOfTab(object)))
         }
@@ -308,15 +318,52 @@ FishUI.Window {
         return -1
     }
 
-    function closeProtection(index) {
-        var obj = _tabView.contentModel.get(index)
-        if (obj.session.hasActiveProcess) {
-            exitPrompt().index = index
-            exitPrompt().open()
-            return
-        }
+    function tabs() {
+        const pages = []
+        for (let i = 0; i < _tabView.contentModel.count; ++i)
+            pages.push(_tabView.contentModel.get(i))
+        return pages
+    }
 
-        closeTab(index)
+    function closeProtection(index) {
+        const page = _tabView.contentModel.get(index)
+        if (page)
+            confirmClose([page], () => closeTab(indexOfTab(page)))
+    }
+
+    function closeOtherTabs(index) {
+        const keep = _tabView.contentModel.get(index)
+        const others = tabs().filter(page => page !== keep)
+        confirmClose(others, () => {
+            for (const page of others)
+                closeTab(indexOfTab(page))
+            _tabView.currentIndex = indexOfTab(keep)
+        })
+    }
+
+    function selectTab(index) {
+        if (index < 0 || index >= _tabView.count)
+            return
+        _tabView.currentIndex = index
+        _tabView.currentItem.forceActiveFocus()
+    }
+
+    // Moves the current tab by step, keeping it current.
+    function moveCurrentTab(step) {
+        moveTab(_tabView.currentIndex, _tabView.currentIndex + step)
+    }
+
+    function moveTab(from, to) {
+        if (from === to || from < 0 || to < 0 || from >= _tabView.count || to >= _tabView.count)
+            return
+        const page = _tabView.contentModel.get(from)
+        _tabView.moveItem(from, to)
+        _tabView.currentIndex = indexOfTab(page)
+        page.forceActiveFocus()
+    }
+
+    function newWindow() {
+        Process.newWindow(currentItem ? currentItem.session.currentDir : "")
     }
 
     function closeTab(index) {
@@ -333,12 +380,10 @@ FishUI.Window {
         closeProtection(_tabView.currentIndex)
     }
 
-    function toggleTab() {
-        var nextIndex = _tabView.currentIndex
-        ++nextIndex
-        if (nextIndex > _tabView.contentModel.count - 1)
-            nextIndex = 0
-
-        _tabView.currentIndex = nextIndex
+    // Next (step 1) or previous (step -1) tab, wrapping around.
+    function cycleTab(step) {
+        const count = _tabView.count
+        if (count > 1)
+            selectTab((_tabView.currentIndex + step + count) % count)
     }
 }

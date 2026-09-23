@@ -112,3 +112,10 @@ QString ProcessHelper::existingPath(const QString &text, const QString &baseDir)
     const QFileInfo info(QDir(baseDir), path);
     return info.exists() ? info.absoluteFilePath() : QString();
 }
+
+bool ProcessHelper::newWindow(const QString &directory)
+{
+    return ApplicationLauncher::startDetached({ QCoreApplication::applicationFilePath(),
+                                                QStringLiteral("--workdir"), directory },
+                                              directory, QStringLiteral("cutefish-terminal"));
+}
