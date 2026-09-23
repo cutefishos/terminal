@@ -113,6 +113,8 @@ public:
      */
     QString currentDir();
 
+    Konsole::Emulation *emulation() const;
+
 signals:
     void started();
     void finished();

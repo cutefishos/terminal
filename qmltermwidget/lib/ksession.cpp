@@ -336,6 +336,11 @@ QString KSession::foregroundProcessName()
     return m_session->foregroundProcessName();
 }
 
+Konsole::Emulation *KSession::emulation() const
+{
+    return m_session->emulation();
+}
+
 QString KSession::currentDir() 
 {
     return m_session->currentDir();

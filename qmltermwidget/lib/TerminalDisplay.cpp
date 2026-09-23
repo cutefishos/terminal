@@ -71,6 +71,8 @@
 #include "konsole_wcwidth.h"
 #include "ScreenWindow.h"
 #include "TerminalCharacterDecoder.h"
+#include "HistorySearch.h"
+#include "Screen.h"
 
 using namespace Konsole;
 using namespace Qt::Literals::StringLiterals;
@@ -3901,6 +3903,66 @@ QVariantMap TerminalDisplay::colorSchemeInfo(const QString &name) const
         { QStringLiteral("foreground"), table[DEFAULT_FORE_COLOR].color },
         { QStringLiteral("colors"), colors },
     };
+}
+
+void TerminalDisplay::find(const QString &text, bool forwards, bool fromSelection, bool caseSensitive)
+{
+    if (!_screenWindow || !m_session || !m_session->emulation())
+        return;
+
+    if (text.isEmpty()) {
+        clearFind();
+        return;
+    }
+
+    Emulation *emulation = m_session->emulation();
+    int startColumn = 0;
+    int startLine = emulation->lineCount();
+
+    if (fromSelection && hasSelection()) {
+        if (forwards) {
+            _screenWindow->screen()->getSelectionEnd(startColumn, startLine);
+            startColumn++;
+        } else {
+            _screenWindow->screen()->getSelectionStart(startColumn, startLine);
+        }
+    } else if (forwards) {
+        startLine = 0;
+    }
+
+    const QRegularExpression regExp(QRegularExpression::escape(text),
+                                    caseSensitive ? QRegularExpression::NoPatternOption
+                                                  : QRegularExpression::CaseInsensitiveOption);
+
+    auto *search = new HistorySearch(QPointer<Emulation>(emulation), regExp, forwards,
+                                     startColumn, startLine, this);
+
+    connect(search, &HistorySearch::matchFound, this,
+            [this](int startColumn, int startLine, int endColumn, int endLine) {
+        if (!_screenWindow)
+            return;
+
+        // Centre the match rather than pinning it to the top edge.
+        _screenWindow->scrollTo(qMax(0, startLine - _screenWindow->windowLines() / 2));
+        _screenWindow->setTrackOutput(false);
+        _screenWindow->notifyOutputChanged();
+        _screenWindow->setSelectionStart(startColumn, startLine - _screenWindow->currentLine(), false);
+        _screenWindow->setSelectionEnd(endColumn, endLine - _screenWindow->currentLine());
+        emit findResult(true);
+    });
+    connect(search, &HistorySearch::noMatchFound, this, [this]() {
+        if (_screenWindow)
+            _screenWindow->clearSelection();
+        emit findResult(false);
+    });
+
+    search->search();
+}
+
+void TerminalDisplay::clearFind()
+{
+    if (_screenWindow)
+        _screenWindow->clearSelection();
 }
 
 QStringList TerminalDisplay::availableColorSchemes()

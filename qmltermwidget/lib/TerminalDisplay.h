@@ -391,6 +391,14 @@ public:
     Q_INVOKABLE QVariantMap colorSchemeInfo(const QString &name) const;
 
     /**
+     * Selects the next match of @p text in the output and history and scrolls to it.
+     * A new search starts from the end of the output; @p fromSelection continues
+     * from the current match. The result arrives with findResult().
+     */
+    Q_INVOKABLE void find(const QString &text, bool forwards, bool fromSelection, bool caseSensitive);
+    Q_INVOKABLE void clearFind();
+
+    /**
      * Reimplemented.  Has no effect.  Use setVTFont() to change the font
      * used to draw characters in the display.
      */
@@ -632,6 +640,7 @@ public slots:
 
 signals:
     void backgroundOpacityChanged();
+    void findResult(bool found);
 
     /**
      * Emitted when the user presses a key whilst the terminal widget has focus.
