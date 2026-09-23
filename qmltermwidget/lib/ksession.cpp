@@ -271,6 +271,16 @@ void KSession::clearScrollback()
     m_session->clearHistory();
 }
 
+void KSession::resetTerminal()
+{
+    // Resetting clears the screen into the history, so the history goes after it.
+    m_session->emulation()->reset();
+    m_session->clearHistory();
+    // A size change makes the shell, or a full-screen program, draw itself again;
+    // Ctrl+L would clear the screen into the history once more.
+    m_session->refresh();
+}
+
 void KSession::search(const QString &regexp, int startLine, int startColumn, bool forwards)
 {
     HistorySearch *history = new HistorySearch(QPointer<Emulation>(m_session->emulation()),

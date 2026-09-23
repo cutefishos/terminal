@@ -741,6 +741,16 @@ void TerminalDisplay::setKeyboardCursorShape(QTermWidget::KeyboardCursorShape sh
 
     updateCursor();
 }
+void TerminalDisplay::setCursorShape(int shape)
+{
+    const auto cursorShape = QTermWidget::KeyboardCursorShape(qBound(0, shape, 2));
+    if (cursorShape == _cursorShape)
+        return;
+
+    setKeyboardCursorShape(cursorShape);
+    emit cursorShapeChanged();
+}
+
 QTermWidget::KeyboardCursorShape TerminalDisplay::keyboardCursorShape() const
 {
     return _cursorShape;

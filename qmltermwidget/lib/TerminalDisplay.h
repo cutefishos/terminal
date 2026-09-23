@@ -116,6 +116,10 @@ class KONSOLEPRIVATE_EXPORT TerminalDisplay : public QQuickPaintedItem
    Q_PROPERTY(bool hasSelection         READ hasSelection                         NOTIFY copyAvailable           )
    Q_PROPERTY(qreal backgroundOpacity   READ backgroundOpacity WRITE setBackgroundOpacity NOTIFY backgroundOpacityChanged)
    Q_PROPERTY(bool confirmMultilinePaste READ confirmMultilinePaste WRITE setConfirmMultilinePaste)
+   // 0 block, 1 underline, 2 I-beam.
+   Q_PROPERTY(int cursorShape READ cursorShape WRITE setCursorShape NOTIFY cursorShapeChanged)
+   // A BellMode; NotifyBell leaves the bell to notifyBell().
+   Q_PROPERTY(int bellMode READ bellMode WRITE setBellMode)
 
 public:
     /** Constructs a new terminal display widget with the specified parent. */
@@ -359,7 +363,10 @@ public:
      *
      * See setBellMode()
      */
-    int bellMode() { return _bellMode; }
+    int bellMode() const { return _bellMode; }
+
+    int cursorShape() const { return int(_cursorShape); }
+    void setCursorShape(int shape);
 
     /**
      * This enum describes the different types of sounds and visual effects which
@@ -656,6 +663,7 @@ public slots:
 signals:
     void backgroundOpacityChanged();
     void findResult(bool found);
+    void cursorShapeChanged();
     /** A paste with line breaks waits for confirmPaste() instead of running them. */
     void multilinePasteRequested(const QString &text);
 

@@ -45,6 +45,8 @@ class KSession : public QObject
     Q_PROPERTY(bool hasActiveProcess READ hasActiveProcess)
     Q_PROPERTY(QString foregroundProcessName READ foregroundProcessName)
     Q_PROPERTY(QString currentDir READ currentDir)
+    // Lines of scrollback; -1 keeps everything.
+    Q_PROPERTY(int historySize READ historySize WRITE setHistorySize NOTIFY historySizeChanged)
 
 public:
     KSession(QObject *parent = 0);
@@ -163,6 +165,9 @@ public slots:
     void clearScreen();
 
     void clearScrollback();
+
+    // Resets the terminal state and clears the screen and scrollback.
+    void resetTerminal();
 
     // Search history
     void search(const QString &regexp, int startLine = 0, int startColumn = 0, bool forwards = true );
