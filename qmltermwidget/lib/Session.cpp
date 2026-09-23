@@ -212,6 +212,8 @@ void Session::addView(TerminalDisplay * widget)
         widget->setScreenWindow(_emulation->createWindow());
     }
 
+    connect(this, &Session::bellRequest, widget, &TerminalDisplay::bell);
+
     //connect view signals and slots
     QObject::connect( widget ,SIGNAL(changedContentSizeSignal(int,int)),this,
                       SLOT(onViewSizeChange(int,int)));
