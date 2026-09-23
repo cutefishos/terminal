@@ -469,6 +469,11 @@ Item {
     }
 
     function openMenu(x, y) {
+        // A right click on a word outside the selection selects that word first,
+        // so Copy and the file and link items act on what was clicked.
+        if (!_terminal.isSelectedAt(x, y))
+            _terminal.selectWordAt(x, y)
+
         const selection = _terminal.hasSelection ? _terminal.selectedText().trim() : ""
         const selectionIsLink = /^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(selection)
 
