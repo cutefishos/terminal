@@ -21,6 +21,10 @@ import QtQuick
 import QtCore
 
 Settings {
+    // The default location follows the binary name, cutefish-terminal.
+    location: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation)
+              + "/cutefish/terminal.conf"
+
     property int width: 750
     property int height: 500
     property int fontPointSize: 10
