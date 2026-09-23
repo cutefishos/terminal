@@ -18,10 +18,10 @@
  */
 
 #include "processhelper.h"
+#include "applicationlauncher.h"
 #include <QDesktopServices>
 #include <QDBusInterface>
 #include <QApplication>
-#include <QProcess>
 #include <QUrl>
 #include <QDir>
 #include <QFileInfo>
@@ -48,7 +48,7 @@ ProcessHelper::ProcessHelper(QObject *parent)
 
 bool ProcessHelper::startDetached(const QString &program, const QStringList &arguments)
 {
-    return QProcess::startDetached(program, arguments);
+    return ApplicationLauncher::startDetached(QStringList{program} + arguments);
 }
 
 bool ProcessHelper::openUrl(const QString &url)
