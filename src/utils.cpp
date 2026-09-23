@@ -41,3 +41,8 @@ QString Utils::text() const
 {
     return qApp->clipboard()->text();
 }
+
+void Utils::setText(const QString &text)
+{
+    qApp->clipboard()->setText(text);
+}

@@ -128,37 +128,41 @@ Item {
             cursorShape: _terminal.terminalUsesMouse ? Qt.ArrowCursor : Qt.IBeamCursor
             acceptedButtons:  Qt.RightButton | Qt.LeftButton
 
+            // The menu opens on release: shown while the button is still down, it
+            // takes the release, leaving this area pressed and its cursor stale.
+            property bool menuPress: false
+
             onDoubleClicked: (mouse) => {
                  _terminal.simulateMouseDoubleClick(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onPressed: (mouse) => {
-                if ((!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
-                        && mouse.button == Qt.RightButton) {
-                    updateMenu()
-                    terminalMenu.popup()
-                } else {
+                menuPress = mouse.button === Qt.RightButton
+                        && (!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
+
+                if (!menuPress)
                     _terminal.simulateMousePress(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
-                }
             }
 
             onReleased: (mouse) => {
+                if (menuPress) {
+                    menuPress = false
+                    control.openMenu(mouse.x, mouse.y)
+                    return
+                }
+
                 _terminal.simulateMouseRelease(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onPositionChanged: (mouse) => {
-                _terminal.simulateMouseMove(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
+                if (!menuPress)
+                    _terminal.simulateMouseMove(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
+            // A right click the program took stays its own.
             onClicked: (mouse) => {
-                if (mouse.button === Qt.RightButton) {
-                    updateMenu()
-                    terminalMenu.popup()
-                } else if(mouse.button === Qt.LeftButton) {
+                if (mouse.button === Qt.LeftButton)
                     _terminal.forceActiveFocus()
-                }
-
-                // control.clicked()
             }
         }
 
@@ -180,23 +184,74 @@ Item {
         onTriggered: _terminal.pasteClipboard()
     }
 
+    // What the menu offers depends on what it was opened over; captured on open.
+    QtObject {
+        id: _menuContext
+
+        property string link
+        property string path
+        property bool canPaste: false
+
+        readonly property string pathName: {
+            const name = path.substring(path.lastIndexOf("/") + 1) || path
+            return name.length > 30 ? name.substring(0, 29) + "…" : name
+        }
+    }
+
     FishUI.DesktopMenu {
         id: terminalMenu
 
         FishUI.MenuItem {
-            id: copyMenuItem
+            text: qsTr("Open Link")
+            visible: _menuContext.link !== ""
+            onTriggered: Qt.openUrlExternally(_menuContext.link)
+        }
+
+        FishUI.MenuItem {
+            text: qsTr("Copy Link")
+            visible: _menuContext.link !== ""
+            onTriggered: Utils.setText(_menuContext.link)
+        }
+
+        FishUI.MenuSeparator {
+            visible: _menuContext.link !== ""
+        }
+
+        FishUI.MenuItem {
+            text: qsTr("Open “%1”").arg(_menuContext.pathName)
+            visible: _menuContext.path !== ""
+            onTriggered: Process.openUrl(_menuContext.path)
+        }
+
+        FishUI.MenuItem {
+            text: qsTr("Show in File Manager")
+            visible: _menuContext.path !== ""
+            onTriggered: Process.showInFileManager(_menuContext.path)
+        }
+
+        FishUI.MenuSeparator {
+            visible: _menuContext.path !== ""
+        }
+
+        FishUI.MenuItem {
             action: _copyAction
             visible: _terminal.hasSelection
         }
 
         FishUI.MenuItem {
-            id: pasteMenuItem
             action: _pasteAction
+            visible: _menuContext.canPaste
         }
 
         FishUI.MenuItem {
             text: qsTr("Select All")
             onTriggered: _terminal.selectAll()
+        }
+
+        FishUI.MenuItem {
+            text: qsTr("Clear Scrollback")
+            visible: _terminal.scrollbarMaximum > 0
+            onTriggered: _session.clearScrollback()
         }
 
         FishUI.MenuSeparator {}
@@ -275,7 +330,14 @@ Item {
         _terminal.forceActiveFocus()
     }
 
-    function updateMenu() {
-        pasteMenuItem.visible = Utils.text() !== ""
+    function openMenu(x, y) {
+        const selection = _terminal.hasSelection ? _terminal.selectedText().trim() : ""
+        const selectionIsLink = /^[a-z][a-z0-9+.-]*:\/\/\S+$/i.test(selection)
+
+        _menuContext.link = _terminal.linkAt(x, y) || (selectionIsLink ? selection : "")
+        _menuContext.path = _menuContext.link === "" ? Process.existingPath(selection, _session.currentDir) : ""
+        _menuContext.canPaste = Utils.text() !== ""
+
+        terminalMenu.popup()
     }
 }

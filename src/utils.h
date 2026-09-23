@@ -31,6 +31,7 @@ public:
     explicit Utils(QObject *parent = nullptr);
 
     Q_INVOKABLE QString text() const;
+    Q_INVOKABLE void setText(const QString &text);
 };
 
 #endif // UTILS_H

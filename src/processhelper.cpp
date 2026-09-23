@@ -23,6 +23,8 @@
 #include <QApplication>
 #include <QProcess>
 #include <QUrl>
+#include <QDir>
+#include <QFileInfo>
 
 #include <QDBusMessage>
 #include <QDBusConnection>
@@ -73,4 +75,40 @@ bool ProcessHelper::openFileManager(const QString &url)
                QString::number(QApplication::applicationPid()));
 
     return true;
+}
+
+bool ProcessHelper::showInFileManager(const QString &path)
+{
+    QDBusInterface iface(QStringLiteral("org.freedesktop.FileManager1"),
+                         QStringLiteral("/org/freedesktop/FileManager1"),
+                         QStringLiteral("org.freedesktop.FileManager1"));
+
+    if (iface.lastError().isValid())
+        return false;
+
+    iface.call("ShowItems",
+               QStringList() << QUrl::fromLocalFile(path).toString(),
+               QString::number(QApplication::applicationPid()));
+
+    return true;
+}
+
+QString ProcessHelper::existingPath(const QString &text, const QString &baseDir) const
+{
+    QString path = text.trimmed();
+
+    if (path.isEmpty() || path.contains(QLatin1Char('\n')) || path.length() > 4096)
+        return QString();
+
+    // Shells print quoted names for paths with spaces.
+    if (path.length() > 1
+            && (path.startsWith(QLatin1Char('\'')) || path.startsWith(QLatin1Char('"')))
+            && path.endsWith(path.at(0)))
+        path = path.mid(1, path.length() - 2);
+
+    if (path == QLatin1String("~") || path.startsWith(QLatin1String("~/")))
+        path.replace(0, 1, QDir::homePath());
+
+    const QFileInfo info(QDir(baseDir), path);
+    return info.exists() ? info.absoluteFilePath() : QString();
 }
