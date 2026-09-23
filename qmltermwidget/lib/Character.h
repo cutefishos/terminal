@@ -25,6 +25,7 @@
 
 // Qt
 #include <QHash>
+#include <QSet>
 
 // Local
 #include "CharacterColor.h"
@@ -33,26 +34,27 @@ namespace Konsole
 {
 
 typedef unsigned char LineProperty;
-typedef quint16 RenditionFlags;
 
 static const int LINE_DEFAULT        = 0;
 static const int LINE_WRAPPED          = (1 << 0);
 static const int LINE_DOUBLEWIDTH      = (1 << 1);
 static const int LINE_DOUBLEHEIGHT    = (1 << 2);
 
-const RenditionFlags DEFAULT_RENDITION  = 0;
-const RenditionFlags RE_BOLD            = (1 << 0);
-const RenditionFlags RE_BLINK           = (1 << 1);
-const RenditionFlags RE_UNDERLINE       = (1 << 2);
-const RenditionFlags RE_REVERSE         = (1 << 3); // Screen only
-const RenditionFlags RE_INTENSIVE       = (1 << 3); // Widget only
-const RenditionFlags RE_ITALIC          = (1 << 4);
-const RenditionFlags RE_CURSOR          = (1 << 5);
-const RenditionFlags RE_EXTENDED_CHAR   = (1 << 6);
-const RenditionFlags RE_FAINT           = (1 << 7);
-const RenditionFlags RE_STRIKEOUT       = (1 << 8);
-const RenditionFlags RE_CONCEAL         = (1 << 9);
-const RenditionFlags RE_OVERLINE        = (1 << 10);
+#define DEFAULT_RENDITION  0
+#define RE_BOLD            (1 << 0)
+#define RE_BLINK           (1 << 1)
+#define RE_UNDERLINE       (1 << 2)
+#define RE_REVERSE         (1 << 3) // Screen only
+#define RE_INTENSIVE       (1 << 3) // Widget only
+#define RE_ITALIC          (1 << 4)
+#define RE_CURSOR          (1 << 5)
+#define RE_EXTENDED_CHAR   (1 << 6)
+#define RE_FAINT           (1 << 7)
+#define RE_STRIKEOUT       (1 << 8)
+#define RE_CONCEAL         (1 << 9)
+#define RE_OVERLINE        (1 << 10)
+
+class ScreenWindow;
 
 /**
  * A single character in the terminal which consists of a unicode character
@@ -73,25 +75,18 @@ public:
   inline Character(quint16 _c = ' ',
             CharacterColor  _f = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_FORE_COLOR),
             CharacterColor  _b = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_BACK_COLOR),
-            RenditionFlags  _r = DEFAULT_RENDITION)
+            quint8  _r = DEFAULT_RENDITION)
        : character(_c), rendition(_r), foregroundColor(_f), backgroundColor(_b) {}
 
-  union
-  {
-    /** The unicode character value for this character. */
-    wchar_t character;
-    /**
-     * Experimental addition which allows a single Character instance to contain more than
-     * one unicode character.
-     *
-     * charSequence is a hash code which can be used to look up the unicode
-     * character sequence in the ExtendedCharTable used to create the sequence.
-     */
-    quint16 charSequence;
-  };
+  /** The unicode character value for this character.
+   *
+   * RE_EXTENDED_CHAR character is a hash code which can be used to look up the unicode
+   * character sequence in the ExtendedCharTable used to create the sequence.
+   */
+  wchar_t character;
 
   /** A combination of RENDITION flags which specify options for drawing the character. */
-  RenditionFlags  rendition;
+  quint8  rendition;
 
   /** The foreground color used to draw this character. */
   CharacterColor  foregroundColor;
@@ -125,6 +120,16 @@ public:
    * renditions or colors.
    */
   friend bool operator != (const Character& a, const Character& b);
+
+  inline bool isLineChar() const
+  {
+      return (rendition & RE_EXTENDED_CHAR) ? false : ((character & 0xFF80) == 0x2500);
+  }
+
+  inline bool isSpace() const
+  {
+      return (rendition & RE_EXTENDED_CHAR) ? false : QChar(character).isSpace();
+  }
 };
 
 inline bool operator == (const Character& a, const Character& b)
@@ -196,7 +201,7 @@ public:
      * @param unicodePoints An array of unicode character points
      * @param length Length of @p unicodePoints
      */
-    ushort createExtendedChar(ushort* unicodePoints , ushort length);
+    uint createExtendedChar(uint* unicodePoints , ushort length);
     /**
      * Looks up and returns a pointer to a sequence of unicode characters
      * which was added to the table using createExtendedChar().
@@ -207,20 +212,26 @@ public:
      *
      * @return A unicode character sequence of size @p length.
      */
-    ushort* lookupExtendedChar(ushort hash , ushort& length) const;
+    uint* lookupExtendedChar(uint hash , ushort& length) const;
+
+    /**
+     * Keeps track of all screens.
+     * Used in createExtendedChar for checking all screens.
+     */
+    QSet<ScreenWindow*> windows;
 
     /** The global ExtendedCharTable instance. */
     static ExtendedCharTable instance;
 private:
     // calculates the hash key of a sequence of unicode points of size 'length'
-    ushort extendedCharHash(ushort* unicodePoints , ushort length) const;
+    uint extendedCharHash(uint* unicodePoints , ushort length) const;
     // tests whether the entry in the table specified by 'hash' matches the
     // character sequence 'unicodePoints' of size 'length'
-    bool extendedCharMatch(ushort hash , ushort* unicodePoints , ushort length) const;
+    bool extendedCharMatch(uint hash , uint* unicodePoints , ushort length) const;
     // internal, maps hash keys to character sequence buffers.  The first ushort
     // in each value is the length of the buffer, followed by the ushorts in the buffer
     // themselves.
-    QHash<ushort,ushort*> extendedCharTable;
+    QHash<uint,uint*> extendedCharTable;
 };
 
 }

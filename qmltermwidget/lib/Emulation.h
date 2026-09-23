@@ -24,23 +24,20 @@
 #define EMULATION_H
 
 // System
-#include <stdio.h>
+#include <cstdio>
 
 // Qt
 #include <QKeyEvent>
 //#include <QPointer>
-#include <QTextCodec>
 #include <QTextStream>
 #include <QTimer>
+#include <QStringDecoder>
 
-// Konsole
-//#include "konsole_export.h"
-#define KONSOLEPRIVATE_EXPORT
+#include "KeyboardTranslator.h"
 
 namespace Konsole
 {
 
-class KeyboardTranslator;
 class HistoryType;
 class Screen;
 class ScreenWindow;
@@ -120,7 +117,7 @@ enum
  * how long the emulation has been active/idle for and also respond to
  * a 'bell' event in different ways.
  */
-class KONSOLEPRIVATE_EXPORT Emulation : public QObject
+class Emulation : public QObject
 {
 Q_OBJECT
 
@@ -148,7 +145,7 @@ public:
 
    /** Constructs a new terminal emulation */
    Emulation();
-  ~Emulation();
+  ~Emulation() override;
 
   /**
    * Creates a new window onto the output from this emulation.  The contents
@@ -202,20 +199,6 @@ public:
    */
   virtual void writeToStream(TerminalCharacterDecoder* decoder);
 
-  /** Returns the codec used to decode incoming characters.  See setCodec() */
-  const QTextCodec* codec() const { return _codec; }
-  /** Sets the codec used to decode incoming characters.  */
-  void setCodec(const QTextCodec*);
-
-  /**
-   * Convenience method.
-   * Returns true if the current codec used to decode incoming
-   * characters is UTF-8
-   */
-  bool utf8() const
-  { Q_ASSERT(_codec); return _codec->mibEnum() == 106; }
-
-
   /** TODO Document me */
   virtual char eraseChar() const;
 
@@ -265,7 +248,7 @@ public slots:
    * Interprets a key press event and emits the sendData() signal with
    * the resulting character stream.
    */
-  virtual void sendKeyEvent(QKeyEvent*);
+  virtual void sendKeyEvent(QKeyEvent*, bool fromPaste);
 
   /**
    * Converts information about a mouse event into an xterm-compatible escape
@@ -454,6 +437,9 @@ signals:
    */
   void cursorChanged(KeyboardCursorShape cursorShape, bool blinkingCursorEnabled);
 
+  void handleCommandFromKeyboard(KeyboardTranslator::Command command);
+  void outputFromKeypressEvent(void);
+
 protected:
   virtual void setMode(int mode) = 0;
   virtual void resetMode(int mode) = 0;
@@ -492,10 +478,6 @@ protected:
                             //                      scrollbars are not enabled in this mode )
 
 
-  //decodes an incoming C-style character stream into a unicode QString using
-  //the current text codec.  (this allows for rendering of non-ASCII characters in text files etc.)
-  const QTextCodec* _codec;
-  QTextDecoder* _decoder;
   const KeyboardTranslator* _keyTranslator; // the keyboard layout
 
 protected slots:
@@ -519,9 +501,9 @@ private slots:
 private:
   bool _usesMouse;
   bool _bracketedPasteMode;
-  QTimer _bulkTimer1;
-  QTimer _bulkTimer2;
-
+  QTimer _bulkTimer1{this};
+  QTimer _bulkTimer2{this};
+  QStringDecoder _toUtf16;
 };
 
 }

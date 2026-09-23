@@ -53,7 +53,7 @@ public:
 
   virtual void add(const unsigned char* bytes, int len);
   virtual void get(unsigned char* bytes, int len, int loc);
-  virtual int  len();
+  virtual int  len() const;
 
   //mmaps the file in read-only mode
   void map();
@@ -71,11 +71,11 @@ private:
   //pointer to start of mmap'ed file data, or 0 if the file is not mmap'ed
   char* fileMap;
 
-  //incremented whenver 'add' is called and decremented whenever
+  //incremented whenever 'add' is called and decremented whenever
   //'get' is called.
   //this is used to detect when a large number of lines are being read and processed from the history
   //and automatically mmap the file for better performance (saves the overhead of many lseek-read calls).
-  int readWriteBalance;
+  int readWriteBalance = 0;
 
   //when readWriteBalance goes below this threshold, the file will be mmap'ed automatically
   static const int MAP_THRESHOLD = -1000;
@@ -95,16 +95,16 @@ public:
   HistoryScroll(HistoryType*);
  virtual ~HistoryScroll();
 
-  virtual bool hasScroll();
+  virtual bool hasScroll() const;
 
   // access to history
-  virtual int  getLines() = 0;
-  virtual int  getLineLen(int lineno) = 0;
-  virtual void getCells(int lineno, int colno, int count, Character res[]) = 0;
-  virtual bool isWrappedLine(int lineno) = 0;
+  virtual int  getLines() const = 0;
+  virtual int  getLineLen(int lineno) const = 0;
+  virtual void getCells(int lineno, int colno, int count, Character res[]) const = 0;
+  virtual bool isWrappedLine(int lineno) const = 0;
 
   // backward compatibility (obsolete)
-  Character   getCell(int lineno, int colno) { Character res; getCells(lineno,colno,1,&res); return res; }
+  Character   getCell(int lineno, int colno) const { Character res; getCells(lineno,colno,1,&res); return res; }
 
   // adding lines.
   virtual void addCells(const Character a[], int count) = 0;
@@ -122,7 +122,7 @@ public:
   // is very unsafe, because those references will no longer
   // be valid if the history scroll is deleted.
   //
-  const HistoryType& getType() { return *m_histType; }
+  const HistoryType& getType() const { return *m_histType; }
 
 protected:
   HistoryType* m_histType;
@@ -139,23 +139,23 @@ class HistoryScrollFile : public HistoryScroll
 {
 public:
   HistoryScrollFile(const QString &logFileName);
-  virtual ~HistoryScrollFile();
+  ~HistoryScrollFile() override;
 
-  virtual int  getLines();
-  virtual int  getLineLen(int lineno);
-  virtual void getCells(int lineno, int colno, int count, Character res[]);
-  virtual bool isWrappedLine(int lineno);
+  int  getLines() const override;
+  int  getLineLen(int lineno) const override;
+  void getCells(int lineno, int colno, int count, Character res[]) const override;
+  bool isWrappedLine(int lineno) const override;
 
-  virtual void addCells(const Character a[], int count);
-  virtual void addLine(bool previousWrapped=false);
+  void addCells(const Character a[], int count) override;
+  void addLine(bool previousWrapped=false) override;
 
 private:
-  int startOfLine(int lineno);
+  int startOfLine(int lineno) const;
 
   QString m_logFileName;
-  HistoryFile index; // lines Row(int)
-  HistoryFile cells; // text  Row(Character)
-  HistoryFile lineflags; // flags Row(unsigned char)
+  mutable HistoryFile index; // lines Row(int)
+  mutable HistoryFile cells; // text  Row(Character)
+  mutable HistoryFile lineflags; // flags Row(unsigned char)
 };
 
 
@@ -168,23 +168,23 @@ public:
   typedef QVector<Character> HistoryLine;
 
   HistoryScrollBuffer(unsigned int maxNbLines = 1000);
-  virtual ~HistoryScrollBuffer();
+  ~HistoryScrollBuffer() override;
 
-  virtual int  getLines();
-  virtual int  getLineLen(int lineno);
-  virtual void getCells(int lineno, int colno, int count, Character res[]);
-  virtual bool isWrappedLine(int lineno);
+  int  getLines() const override;
+  int  getLineLen(int lineno) const override;
+  void getCells(int lineno, int colno, int count, Character res[]) const override;
+  bool isWrappedLine(int lineno) const override;
 
-  virtual void addCells(const Character a[], int count);
-  virtual void addCellsVector(const QVector<Character>& cells);
-  virtual void addLine(bool previousWrapped=false);
+  void addCells(const Character a[], int count) override;
+  void addCellsVector(const QVector<Character>& cells) override;
+  void addLine(bool previousWrapped=false) override;
 
   void setMaxNbLines(unsigned int nbLines);
   unsigned int maxNbLines() const { return _maxLineCount; }
 
 
 private:
-  int bufferIndex(int lineNumber);
+  int bufferIndex(int lineNumber) const;
 
   HistoryLine* _historyBuffer;
   QBitArray _wrappedLine;
@@ -223,17 +223,17 @@ class HistoryScrollNone : public HistoryScroll
 {
 public:
   HistoryScrollNone();
-  virtual ~HistoryScrollNone();
+  ~HistoryScrollNone() override;
 
-  virtual bool hasScroll();
+  bool hasScroll() const override;
 
-  virtual int  getLines();
-  virtual int  getLineLen(int lineno);
-  virtual void getCells(int lineno, int colno, int count, Character res[]);
-  virtual bool isWrappedLine(int lineno);
+  int  getLines() const override;
+  int  getLineLen(int lineno) const override;
+  void getCells(int lineno, int colno, int count, Character res[]) const override;
+  bool isWrappedLine(int lineno) const override;
 
-  virtual void addCells(const Character a[], int count);
-  virtual void addLine(bool previousWrapped=false);
+  void addCells(const Character a[], int count) override;
+  void addLine(bool previousWrapped=false) override;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -243,18 +243,18 @@ class HistoryScrollBlockArray : public HistoryScroll
 {
 public:
   HistoryScrollBlockArray(size_t size);
-  virtual ~HistoryScrollBlockArray();
+  ~HistoryScrollBlockArray() override;
 
-  virtual int  getLines();
-  virtual int  getLineLen(int lineno);
-  virtual void getCells(int lineno, int colno, int count, Character res[]);
-  virtual bool isWrappedLine(int lineno);
+  int  getLines() const override;
+  int  getLineLen(int lineno) const override;
+  void getCells(int lineno, int colno, int count, Character res[]) const override;
+  bool isWrappedLine(int lineno) const override;
 
-  virtual void addCells(const Character a[], int count);
-  virtual void addLine(bool previousWrapped=false);
+  void addCells(const Character a[], int count) override;
+  void addLine(bool previousWrapped=false) override;
 
 protected:
-  BlockArray m_blockArray;
+  mutable BlockArray m_blockArray;
   QHash<int,size_t> m_lineLengths;
 };
 
@@ -293,7 +293,7 @@ public:
 
   CompactHistoryBlock(){
     blockLength = 4096*64; // 256kb
-    head = (quint8*) mmap(0, blockLength, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
+    head = (quint8*) mmap(nullptr, blockLength, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
     //head = (quint8*) malloc(blockLength);
     Q_ASSERT(head != MAP_FAILED);
     tail = blockStart = head;
@@ -363,16 +363,16 @@ class CompactHistoryScroll : public HistoryScroll
 
 public:
   CompactHistoryScroll(unsigned int maxNbLines = 1000);
-  virtual ~CompactHistoryScroll();
+  ~CompactHistoryScroll() override;
 
-  virtual int  getLines();
-  virtual int  getLineLen(int lineno);
-  virtual void getCells(int lineno, int colno, int count, Character res[]);
-  virtual bool isWrappedLine(int lineno);
+  int  getLines() const override;
+  int  getLineLen(int lineno) const override;
+  void getCells(int lineno, int colno, int count, Character res[]) const override;
+  bool isWrappedLine(int lineno) const override;
 
-  virtual void addCells(const Character a[], int count);
-  virtual void addCellsVector(const TextLine& cells);
-  virtual void addLine(bool previousWrapped=false);
+  void addCells(const Character a[], int count) override;
+  void addCellsVector(const TextLine& cells) override;
+  void addLine(bool previousWrapped=false) override;
 
   void setMaxNbLines(unsigned int nbLines);
   unsigned int maxNbLines() const { return _maxLineCount; }
@@ -418,10 +418,10 @@ class HistoryTypeNone : public HistoryType
 public:
   HistoryTypeNone();
 
-  virtual bool isEnabled() const;
-  virtual int maximumLineCount() const;
+  bool isEnabled() const override;
+  int maximumLineCount() const override;
 
-  virtual HistoryScroll* scroll(HistoryScroll *) const;
+  HistoryScroll* scroll(HistoryScroll *) const override;
 };
 
 class HistoryTypeBlockArray : public HistoryType
@@ -429,10 +429,10 @@ class HistoryTypeBlockArray : public HistoryType
 public:
   HistoryTypeBlockArray(size_t size);
 
-  virtual bool isEnabled() const;
-  virtual int maximumLineCount() const;
+  bool isEnabled() const override;
+  int maximumLineCount() const override;
 
-  virtual HistoryScroll* scroll(HistoryScroll *) const;
+  HistoryScroll* scroll(HistoryScroll *) const override;
 
 protected:
   size_t m_size;
@@ -444,11 +444,11 @@ class HistoryTypeFile : public HistoryType
 public:
   HistoryTypeFile(const QString& fileName=QString());
 
-  virtual bool isEnabled() const;
+  bool isEnabled() const override;
   virtual const QString& getFileName() const;
-  virtual int maximumLineCount() const;
+  int maximumLineCount() const override;
 
-  virtual HistoryScroll* scroll(HistoryScroll *) const;
+  HistoryScroll* scroll(HistoryScroll *) const override;
 
 protected:
   QString m_fileName;
@@ -462,10 +462,10 @@ class HistoryTypeBuffer : public HistoryType
 public:
   HistoryTypeBuffer(unsigned int nbLines);
 
-  virtual bool isEnabled() const;
-  virtual int maximumLineCount() const;
+  bool isEnabled() const override;
+  int maximumLineCount() const override;
 
-  virtual HistoryScroll* scroll(HistoryScroll *) const;
+  HistoryScroll* scroll(HistoryScroll *) const override;
 
 protected:
   unsigned int m_nbLines;
@@ -476,10 +476,10 @@ class CompactHistoryType : public HistoryType
 public:
   CompactHistoryType(unsigned int size);
 
-  virtual bool isEnabled() const;
-  virtual int maximumLineCount() const;
+  bool isEnabled() const override;
+  int maximumLineCount() const override;
 
-  virtual HistoryScroll* scroll(HistoryScroll *) const;
+  HistoryScroll* scroll(HistoryScroll *) const override;
 
 protected:
   unsigned int m_nbLines;

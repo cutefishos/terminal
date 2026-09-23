@@ -70,15 +70,15 @@ Q_OBJECT
      * To start the terminal process, call the run() method with the
      * name of the program to start and appropriate arguments.
      */
-    explicit Pty(QObject* parent = 0);
+    explicit Pty(QObject* parent = nullptr);
 
     /**
      * Construct a process using an open pty master.
      * See KPtyProcess::KPtyProcess()
      */
-    explicit Pty(int ptyMasterFd, QObject* parent = 0);
+    explicit Pty(int ptyMasterFd, QObject* parent = nullptr);
 
-    ~Pty();
+    ~Pty() override;
 
     /**
      * Starts the terminal process.
@@ -150,6 +150,11 @@ Q_OBJECT
      */
     int foregroundProcessGroup() const;
 
+    /**
+     * Close the underlying pty master/slave pair.
+     */
+    void closePty();
+
   public slots:
 
     /**
@@ -187,9 +192,6 @@ Q_OBJECT
      * @param length Length of @p buffer
      */
     void receivedData(const char* buffer, int length);
-
-  protected:
-      void setupChildProcess();
 
   private slots:
     // called when data is received from the terminal process

@@ -24,12 +24,13 @@
 #define VT102EMULATION_H
 
 // Standard Library
-#include <stdio.h>
+#include <cstdio>
 
 // Qt
 #include <QKeyEvent>
 #include <QHash>
 #include <QTimer>
+#include <QStringEncoder>
 
 // Konsole
 #include "Emulation.h"
@@ -39,7 +40,7 @@
 #define MODE_AppCuKeys       (MODES_SCREEN+1)   // Application cursor keys (DECCKM)
 #define MODE_AppKeyPad       (MODES_SCREEN+2)   //
 #define MODE_Mouse1000       (MODES_SCREEN+3)   // Send mouse X,Y position on press and release
-#define MODE_Mouse1001       (MODES_SCREEN+4)   // Use Hilight mouse tracking
+#define MODE_Mouse1001       (MODES_SCREEN+4)   // Use Highlight mouse tracking
 #define MODE_Mouse1002       (MODES_SCREEN+5)   // Use cell motion mouse tracking
 #define MODE_Mouse1003       (MODES_SCREEN+6)   // Use all motion mouse tracking
 #define MODE_Mouse1005       (MODES_SCREEN+7)   // Xterm-style extended coordinates
@@ -82,27 +83,27 @@ Q_OBJECT
 public:
   /** Constructs a new emulation */
   Vt102Emulation();
-  ~Vt102Emulation();
+  ~Vt102Emulation() override;
 
   // reimplemented from Emulation
-  virtual void clearEntireScreen();
-  virtual void reset();
-  virtual char eraseChar() const;
+  void clearEntireScreen() override;
+  void reset() override;
+  char eraseChar() const override;
 
 public slots:
   // reimplemented from Emulation
-  virtual void sendString(const char*,int length = -1);
-  virtual void sendText(const QString& text);
-  virtual void sendKeyEvent(QKeyEvent*);
-  virtual void sendMouseEvent(int buttons, int column, int line, int eventType);
+  void sendString(const char*,int length = -1) override;
+  void sendText(const QString& text) override;
+  void sendKeyEvent(QKeyEvent*, bool fromPaste) override;
+  void sendMouseEvent(int buttons, int column, int line, int eventType) override;
   virtual void focusLost();
   virtual void focusGained();
 
 protected:
   // reimplemented from Emulation
-  virtual void setMode(int mode);
-  virtual void resetMode(int mode);
-  virtual void receiveChar(wchar_t cc);
+  void setMode(int mode) override;
+  void resetMode(int mode) override;
+  void receiveChar(wchar_t cc) override;
 
 private slots:
   //causes changeTitle() to be emitted for each (int,QString) pair in pendingTitleUpdates
@@ -195,7 +196,9 @@ private:
   QHash<int,QString> _pendingTitleUpdates;
   QTimer* _titleUpdateTimer;
 
-    bool _reportFocusEvents;
+  bool _reportFocusEvents;
+
+  QStringEncoder _toUtf8;
 };
 
 }

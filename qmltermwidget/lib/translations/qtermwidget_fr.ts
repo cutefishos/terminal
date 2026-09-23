@@ -2,61 +2,102 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="fr">
 <context>
+    <name>Konsole::Session</name>
+    <message>
+        <location filename="../Session.cpp" line="448"/>
+        <source>Bell in session &apos;%1&apos;</source>
+        <translation>Sonnerie dans la session &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="630"/>
+        <source>Session &apos;%1&apos; exited with code %2.</source>
+        <translation>La session « %1 » s&apos;est terminée avec le code %2.</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="632"/>
+        <source>Session &apos;%1&apos; crashed.</source>
+        <translation>La session &apos;% 1&apos; a planté.</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="637"/>
+        <source>Session &apos;%1&apos; exited unexpectedly.</source>
+        <translation>Session &apos;%1&apos; s&apos;est terminée de manière inattendue.</translation>
+    </message>
+</context>
+<context>
     <name>Konsole::TerminalDisplay</name>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="1277"/>
+        <location filename="../TerminalDisplay.cpp" line="1311"/>
         <source>Size: XXX x XXX</source>
         <translation>Taille : XXX x XXX</translation>
     </message>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="1289"/>
+        <location filename="../TerminalDisplay.cpp" line="1323"/>
         <source>Size: %1 x %2</source>
         <translation>Taille : %1 x %2</translation>
     </message>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="3174"/>
+        <location filename="../TerminalDisplay.cpp" line="2987"/>
+        <source>Paste multiline text</source>
+        <translation>Coller des textes multiligne</translation>
+    </message>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="2988"/>
+        <source>Are you sure you want to paste this text?</source>
+        <translation>Êtes-vous sûr de vouloir coller ce texte ?</translation>
+    </message>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="3459"/>
         <source>&lt;qt&gt;Output has been &lt;a href=&quot;http://en.wikipedia.org/wiki/Flow_control&quot;&gt;suspended&lt;/a&gt; by pressing Ctrl+S.  Press &lt;b&gt;Ctrl+Q&lt;/b&gt; to resume.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;La sortie a été &lt;a href=&quot;http://en.wikipedia.org/wiki/Flow_control&quot;&gt;suspendue&lt;/a&gt; en pressant Ctrl+S.  Pressez &lt;b&gt;Ctrl+Q&lt;/b&gt; pour reprendre.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;La sortie a été &lt;a href=&quot;http://en.wikipedia.org/wiki/Flow_control&quot;&gt;suspendue&lt;/a&gt; en pressant Ctrl+S.  Presser &lt;b&gt;Ctrl+Q&lt;/b&gt; pour reprendre.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>Konsole::Vt102Emulation</name>
     <message>
-        <location filename="../Vt102Emulation.cpp" line="1096"/>
+        <location filename="../Vt102Emulation.cpp" line="1106"/>
         <source>No keyboard translator available.  The information needed to convert key presses into characters to send to the terminal is missing.</source>
-        <translation>Aucun traducteur disponible.  L&apos;information nécessaire à la conversion des touches pressées en caractères à envoyer au terminal est absente.</translation>
+        <translation>Aucun traducteur de clavier disponible. Les informations nécessaires pour convertir les touches utilisées en caractères à envoyer au terminal sont manquantes.</translation>
+    </message>
+</context>
+<context>
+    <name>QMessageBox</name>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="2994"/>
+        <source>Show Details...</source>
+        <translation>Voir les détails...</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../ColorScheme.cpp" line="278"/>
-        <location filename="../ColorScheme.cpp" line="293"/>
+        <location filename="../ColorScheme.cpp" line="275"/>
+        <location filename="../ColorScheme.cpp" line="290"/>
         <source>Un-named Color Scheme</source>
-        <translation>Schéma des couleurs non nommé</translation>
+        <translation>Jeu de couleurs non nommé</translation>
     </message>
     <message>
-        <location filename="../ColorScheme.cpp" line="464"/>
+        <location filename="../ColorScheme.cpp" line="461"/>
         <source>Accessible Color Scheme</source>
-        <translation>Schéma des couleur accessible</translation>
+        <translation>Schéma de couleur accessible</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="544"/>
+        <location filename="../Filter.cpp" line="522"/>
         <source>Open Link</source>
         <translation>Ouvrir le lien</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="545"/>
+        <location filename="../Filter.cpp" line="523"/>
         <source>Copy Link Address</source>
         <translation>Copier l&apos;adresse du lien</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="549"/>
+        <location filename="../Filter.cpp" line="527"/>
         <source>Send Email To...</source>
-        <translation>Envoyer un courriel à ...</translation>
+        <translation>Envoyer un courriel à...</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="550"/>
+        <location filename="../Filter.cpp" line="528"/>
         <source>Copy Email Address</source>
         <translation>Copier l&apos;adresse du courriel</translation>
     </message>

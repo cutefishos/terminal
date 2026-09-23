@@ -2,61 +2,102 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ja">
 <context>
+    <name>Konsole::Session</name>
+    <message>
+        <location filename="../Session.cpp" line="448"/>
+        <source>Bell in session &apos;%1&apos;</source>
+        <translation>セッション &apos;%1&apos; のベル</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="630"/>
+        <source>Session &apos;%1&apos; exited with code %2.</source>
+        <translation>セッション &apos;%1&apos; はコード %2 で終了しました。</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="632"/>
+        <source>Session &apos;%1&apos; crashed.</source>
+        <translation>セッション &apos;%1&apos; がクラッシュしました。</translation>
+    </message>
+    <message>
+        <location filename="../Session.cpp" line="637"/>
+        <source>Session &apos;%1&apos; exited unexpectedly.</source>
+        <translation>セッション &apos;%1&apos; が予期せず終了しました。</translation>
+    </message>
+</context>
+<context>
     <name>Konsole::TerminalDisplay</name>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="1277"/>
+        <location filename="../TerminalDisplay.cpp" line="1311"/>
         <source>Size: XXX x XXX</source>
-        <translation type="unfinished"></translation>
+        <translation>サイズ: XXX x XXX</translation>
     </message>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="1289"/>
+        <location filename="../TerminalDisplay.cpp" line="1323"/>
         <source>Size: %1 x %2</source>
-        <translation type="unfinished"></translation>
+        <translation>サイズ: %1 x %2</translation>
     </message>
     <message>
-        <location filename="../TerminalDisplay.cpp" line="3174"/>
+        <location filename="../TerminalDisplay.cpp" line="2987"/>
+        <source>Paste multiline text</source>
+        <translation>複数行テキストの貼り付け</translation>
+    </message>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="2988"/>
+        <source>Are you sure you want to paste this text?</source>
+        <translation>このテキストを貼り付けますか？</translation>
+    </message>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="3459"/>
         <source>&lt;qt&gt;Output has been &lt;a href=&quot;http://en.wikipedia.org/wiki/Flow_control&quot;&gt;suspended&lt;/a&gt; by pressing Ctrl+S.  Press &lt;b&gt;Ctrl+Q&lt;/b&gt; to resume.&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Ctrl+S を押して出力を&lt;a href=&quot;http://en.wikipedia.org/wiki/Flow_control&quot;&gt;中断&lt;/a&gt; しました 。再開するには &lt;b&gt;Ctrl+Q&lt;/b&gt; を押します。&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
     <name>Konsole::Vt102Emulation</name>
     <message>
-        <location filename="../Vt102Emulation.cpp" line="1096"/>
+        <location filename="../Vt102Emulation.cpp" line="1106"/>
         <source>No keyboard translator available.  The information needed to convert key presses into characters to send to the terminal is missing.</source>
-        <translation type="unfinished"></translation>
+        <translation>キーボードトランスレーターがありません。押されたキーを文字に変換してターミナルへ送信するために必要な情報がありません。</translation>
+    </message>
+</context>
+<context>
+    <name>QMessageBox</name>
+    <message>
+        <location filename="../TerminalDisplay.cpp" line="2994"/>
+        <source>Show Details...</source>
+        <translation>詳細の表示...</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../ColorScheme.cpp" line="278"/>
-        <location filename="../ColorScheme.cpp" line="293"/>
+        <location filename="../ColorScheme.cpp" line="275"/>
+        <location filename="../ColorScheme.cpp" line="290"/>
         <source>Un-named Color Scheme</source>
-        <translation>名前のないカラースキーム</translation>
+        <translation>名前のない配色</translation>
     </message>
     <message>
-        <location filename="../ColorScheme.cpp" line="464"/>
+        <location filename="../ColorScheme.cpp" line="461"/>
         <source>Accessible Color Scheme</source>
-        <translation>アクセス可能なカラースキーム</translation>
+        <translation>アクセス可能な配色</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="544"/>
+        <location filename="../Filter.cpp" line="522"/>
         <source>Open Link</source>
         <translation>リンクを開く</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="545"/>
+        <location filename="../Filter.cpp" line="523"/>
         <source>Copy Link Address</source>
         <translation>リンクのアドレスをコピー</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="549"/>
+        <location filename="../Filter.cpp" line="527"/>
         <source>Send Email To...</source>
         <translation>メールを送信...</translation>
     </message>
     <message>
-        <location filename="../Filter.cpp" line="550"/>
+        <location filename="../Filter.cpp" line="528"/>
         <source>Copy Email Address</source>
         <translation>メールアドレスをコピー</translation>
     </message>
@@ -66,12 +107,12 @@
     <message>
         <location filename="../qtermwidget.cpp" line="465"/>
         <source>Color Scheme Error</source>
-        <translation>カラースキームのエラー</translation>
+        <translation>配色のエラー</translation>
     </message>
     <message>
         <location filename="../qtermwidget.cpp" line="466"/>
         <source>Cannot load color scheme: %1</source>
-        <translation>カラースキームをロードすることができません: %1</translation>
+        <translation>配色をロードできません: %1</translation>
     </message>
 </context>
 <context>
@@ -79,7 +120,7 @@
     <message>
         <location filename="../SearchBar.cpp" line="39"/>
         <source>Match case</source>
-        <translation type="unfinished"></translation>
+        <translation>大文字と小文字の区別</translation>
     </message>
     <message>
         <location filename="../SearchBar.cpp" line="45"/>
@@ -89,7 +130,7 @@
     <message>
         <location filename="../SearchBar.cpp" line="49"/>
         <source>Highlight all matches</source>
-        <translation>一致するものをハイライト</translation>
+        <translation>一致する全ての文字列を強調表示</translation>
     </message>
     <message>
         <location filename="../SearchBar.ui" line="14"/>
@@ -104,22 +145,22 @@
     <message>
         <location filename="../SearchBar.ui" line="32"/>
         <source>Find:</source>
-        <translation>探す:</translation>
+        <translation>検索:</translation>
     </message>
     <message>
         <location filename="../SearchBar.ui" line="42"/>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <location filename="../SearchBar.ui" line="54"/>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <location filename="../SearchBar.ui" line="66"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
 </context>
 </TS>

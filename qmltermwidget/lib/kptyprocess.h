@@ -33,7 +33,8 @@
 #include "kprocess.h"
 #include "kptydevice.h"
 
-#include <signal.h>
+#include <csignal>
+#include <memory>
 
 class KPtyDevice;
 
@@ -74,7 +75,7 @@ public:
     /**
      * Constructor
      */
-    explicit KPtyProcess(QObject *parent = 0);
+    explicit KPtyProcess(QObject *parent = nullptr);
 
     /**
      * Construct a process using an open pty master.
@@ -83,12 +84,12 @@ public:
      *   The process does not take ownership of the descriptor;
      *   it will not be automatically closed at any point.
      */
-    KPtyProcess(int ptyMasterFd, QObject *parent = 0);
+    KPtyProcess(int ptyMasterFd, QObject *parent = nullptr);
 
     /**
      * Destructor
      */
-    virtual ~KPtyProcess();
+    ~KPtyProcess() override;
 
     /**
      * Set to which channels the PTY should be assigned.
@@ -102,7 +103,7 @@ public:
     bool isRunning() const
     {
         bool rval;
-        (pid() > 0) ? rval= true : rval= false;
+        (processId() > 0) ? rval= true : rval= false;
         return rval;
 
     }
@@ -141,13 +142,9 @@ public:
     KPtyDevice *pty() const;
 
 protected:
-    /**
-     * @reimp
-     */
-    virtual void setupChildProcess();
 
 private:
-    Q_PRIVATE_SLOT(d_func(), void _k_onStateChanged(QProcess::ProcessState))
+    std::unique_ptr<KPtyProcessPrivate> const d_ptr;
 };
 
 
@@ -155,23 +152,15 @@ private:
 // private data //
 //////////////////
 
-class KPtyProcessPrivate : public KProcessPrivate {
+class KPtyProcessPrivate {
 public:
-    KPtyProcessPrivate() :
-        ptyChannels(KPtyProcess::NoChannels),
-        addUtmp(false)
+    KPtyProcessPrivate()
     {
     }
 
-    void _k_onStateChanged(QProcess::ProcessState newState)
-    {
-        if (newState == QProcess::NotRunning && addUtmp)
-            pty->logout();
-    }
-
-    KPtyDevice *pty;
-    KPtyProcess::PtyChannels ptyChannels;
-    bool addUtmp : 1;
+    std::unique_ptr<KPtyDevice> pty;
+    KPtyProcess::PtyChannels ptyChannels = KPtyProcess::NoChannels;
+    bool addUtmp = false;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(KPtyProcess::PtyChannels)

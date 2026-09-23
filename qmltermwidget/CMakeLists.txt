@@ -3,6 +3,7 @@ include_directories(
 )
 add_definitions(-DHAVE_POSIX_OPENPT -DHAVE_SYS_TIME_H)
 
+# Mirrors lib.pri from upstream; the QTermWidget widget and search bar are not built.
 set(TERMWIDGET_SRCS
     lib/BlockArray.h
     lib/CharacterColor.h
@@ -22,6 +23,7 @@ set(TERMWIDGET_SRCS
     lib/kpty.h
     lib/kpty_p.h
     lib/kptyprocess.h
+    lib/ksession.h
     lib/LineFont.h
     lib/Pty.h
     lib/ProcessInfo.h
@@ -46,6 +48,7 @@ set(TERMWIDGET_SRCS
     lib/kpty.cpp
     lib/kptydevice.cpp
     lib/kptyprocess.cpp
+    lib/ksession.cpp
     lib/ProcessInfo.cpp
     lib/Pty.cpp
     lib/Screen.cpp
@@ -56,9 +59,7 @@ set(TERMWIDGET_SRCS
     lib/TerminalDisplay.cpp
     lib/tools.cpp
     lib/Vt102Emulation.cpp
-    src/ksession.h
     src/qmltermwidget_plugin.h
-    src/ksession.cpp
     src/qmltermwidget_plugin.cpp
 )
 
@@ -67,10 +68,12 @@ add_library(cutefishqmltermwidget MODULE
 )
 
 target_link_libraries(cutefishqmltermwidget
-    Qt5::Core
-    Qt5::Quick
-    Qt5::Gui
-    Qt5::Widgets
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::Widgets
 )
 
 install(TARGETS cutefishqmltermwidget DESTINATION ${INSTALL_QMLDIR}/Cutefish/TermWidget)

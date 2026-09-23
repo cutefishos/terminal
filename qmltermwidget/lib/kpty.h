@@ -25,6 +25,8 @@
 
 #include <QObject>
 
+#include <memory>
+
 class KPtyPrivate;
 struct termios;
 
@@ -49,6 +51,9 @@ public:
      *  an utmp registration is @em not undone.
     */
     ~KPty();
+
+    KPty(const KPty &) = delete;
+    KPty &operator=(const KPty &) = delete;
 
     /**
      * Create a pty master/slave pair.
@@ -95,7 +100,7 @@ public:
      *  of the client. For local logins from inside an X session it should
      *  be the name of the X display. Otherwise it should be empty.
      */
-    void login(const char * user = 0, const char * remotehost = 0);
+    void login(const char * user = nullptr, const char * remotehost = nullptr);
 
     /**
      * Removes the utmp entry for this tty.
@@ -184,7 +189,7 @@ protected:
     /**
      * @internal
      */
-    KPtyPrivate * const d_ptr;
+    std::unique_ptr<KPtyPrivate> const d_ptr;
 };
 
 #endif

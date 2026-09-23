@@ -25,8 +25,8 @@
 #ifndef SESSION_H
 #define SESSION_H
 
+#include <QProcess>
 #include <QStringList>
-#include <QWidget>
 
 #include "Emulation.h"
 #include "History.h"
@@ -72,8 +72,8 @@ public:
      * falls back to using the program specified in the SHELL environment
      * variable.
      */
-    Session(QObject* parent = 0);
-    virtual ~Session();
+    Session(QObject* parent = nullptr);
+    ~Session() override;
 
     /**
      * Returns true if the session is currently running.  This will be true
@@ -163,7 +163,7 @@ public:
     /**
      * Sets the format used by this session for tab titles.
      *
-     * @param context The context whoose format should be set.
+     * @param context The context whose format should be set.
      * @param format The tab title format.  This may be a mixture
      * of plain text and dynamic elements denoted by a '%' character
      * followed by a letter.  (eg. %d for directory).  The dynamic
@@ -315,6 +315,8 @@ public:
      */
     void sendText(const QString & text) const;
 
+    void sendKeyEvent(QKeyEvent* e) const;
+
     /**
      * Returns the process id of the terminal process.
      * This is the id used by the system API to refer to the process.
@@ -347,9 +349,6 @@ public:
      * @param size The size in lines and columns to request.
      */
     void setSize(const QSize & size);
-
-    /** Sets the text codec used by this session's terminal emulation. */
-    void setCodec(QTextCodec * codec);
 
     /**
      * Sets whether the session has a dark background or not.  The session
@@ -498,7 +497,7 @@ signals:
     void activity();
 
 private slots:
-    void done(int);
+    void done(int, QProcess::ExitStatus );
 
 //  void fireZModemDetected();
 
@@ -597,7 +596,7 @@ public:
     /** Constructs an empty session group. */
     SessionGroup();
     /** Destroys the session group and removes all connections between master and slave sessions. */
-    ~SessionGroup();
+    ~SessionGroup() override;
 
     /** Adds a session to the group. */
     void addSession( Session * session );
@@ -612,7 +611,7 @@ public:
      * Changes or activity in the group's master sessions may be propagated
      * to all the sessions in the group, depending on the current masterMode()
      *
-     * @param session The session whoose master status should be changed.
+     * @param session The session whose master status should be changed.
      * @param master True to make this session a master or false otherwise
      */
     void setMasterStatus( Session * session , bool master );
@@ -645,8 +644,8 @@ public:
     int masterMode() const;
 
 private:
-    void connectPair(Session * master , Session * other);
-    void disconnectPair(Session * master , Session * other);
+    void connectPair(Session * master , Session * other) const;
+    void disconnectPair(Session * master , Session * other) const;
     void connectAll(bool connect);
     QList<Session *> masters() const;
 
