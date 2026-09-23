@@ -23,24 +23,22 @@
 
 Fonts::Fonts(QObject *parent) : QObject(parent)
 {
-    init();
 }
 
 QStringList Fonts::families() const
 {
-    return m_families;
-}
+    // Built on first use: checking every family for fixed pitch loads the
+    // fonts, and only the settings dialog needs the list.
+    if (!m_loaded) {
+        m_loaded = true;
 
-void Fonts::init()
-{
-    m_families.clear();
-
-    const QStringList families = QFontDatabase::families();
-    for (const QString &family : families) {
-        if (QFontDatabase::isFixedPitch(family)) {
-            m_families << family;
+        const QStringList families = QFontDatabase::families();
+        for (const QString &family : families) {
+            if (QFontDatabase::isFixedPitch(family)) {
+                m_families << family;
+            }
         }
     }
 
-    emit familiesChanged();
+    return m_families;
 }

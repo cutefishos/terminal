@@ -304,93 +304,95 @@ Item {
         }
     }
 
-    FishUI.DesktopMenu {
-        id: terminalMenu
+    // The menu is a window of its own; it is made on the first right click.
+    property QtObject _terminalMenu: null
 
-        FishUI.MenuItem {
-            text: qsTr("Open Link")
-            visible: _menuContext.link !== ""
-            onTriggered: Qt.openUrlExternally(_menuContext.link)
-        }
+    Component {
+        id: _terminalMenuComponent
 
-        FishUI.MenuItem {
-            text: qsTr("Copy Link")
-            visible: _menuContext.link !== ""
-            onTriggered: Utils.setText(_menuContext.link)
-        }
-
-        FishUI.MenuSeparator {
-            visible: _menuContext.link !== ""
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Open “%1”").arg(_menuContext.pathName)
-            visible: _menuContext.path !== ""
-            onTriggered: Process.openUrl(_menuContext.path)
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Show in File Manager")
-            visible: _menuContext.path !== ""
-            onTriggered: Process.showInFileManager(_menuContext.path)
-        }
-
-        FishUI.MenuSeparator {
-            visible: _menuContext.path !== ""
-        }
-
-        FishUI.MenuItem {
-            action: _copyAction
-            visible: _terminal.hasSelection
-        }
-
-        FishUI.MenuItem {
-            action: _pasteAction
-            visible: _menuContext.canPaste
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Select All")
-            onTriggered: _terminal.selectAll()
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Find…")
-            onTriggered: control.openFind()
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Clear Scrollback")
-            visible: _terminal.scrollbarMaximum > 0
-            onTriggered: _session.clearScrollback()
-        }
-
-        FishUI.MenuSeparator {}
-
-        FishUI.MenuItem {
-            text: qsTr("New Tab")
-            onTriggered: root.openNewTab()
-        }
-
-        FishUI.MenuItem {
-            text: qsTr("Open File Manager")
-            onTriggered: Process.openFileManager(_session.currentDir)
-        }
-
-        FishUI.MenuSeparator {}
-
-        FishUI.MenuItem {
-            text: root.isFullScreen ? qsTr("Exit full screen") : qsTr("Full screen")
-            onTriggered: {
-                root.visibility = root.isFullScreen ? Window.Windowed : Window.FullScreen
+        FishUI.DesktopMenu {
+            FishUI.MenuItem {
+                text: qsTr("Open Link")
+                visible: _menuContext.link !== ""
+                onTriggered: Qt.openUrlExternally(_menuContext.link)
             }
-        }
 
-        FishUI.MenuItem {
-            text: qsTr("Settings")
-            onTriggered: {
-                settingsDialog.show()
-                settingsDialog.raise()
+            FishUI.MenuItem {
+                text: qsTr("Copy Link")
+                visible: _menuContext.link !== ""
+                onTriggered: Utils.setText(_menuContext.link)
+            }
+
+            FishUI.MenuSeparator {
+                visible: _menuContext.link !== ""
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Open “%1”").arg(_menuContext.pathName)
+                visible: _menuContext.path !== ""
+                onTriggered: Process.openUrl(_menuContext.path)
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Show in File Manager")
+                visible: _menuContext.path !== ""
+                onTriggered: Process.showInFileManager(_menuContext.path)
+            }
+
+            FishUI.MenuSeparator {
+                visible: _menuContext.path !== ""
+            }
+
+            FishUI.MenuItem {
+                action: _copyAction
+                visible: _terminal.hasSelection
+            }
+
+            FishUI.MenuItem {
+                action: _pasteAction
+                visible: _menuContext.canPaste
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Select All")
+                onTriggered: _terminal.selectAll()
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Find…")
+                onTriggered: control.openFind()
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Clear Scrollback")
+                visible: _terminal.scrollbarMaximum > 0
+                onTriggered: _session.clearScrollback()
+            }
+
+            FishUI.MenuSeparator {}
+
+            FishUI.MenuItem {
+                text: qsTr("New Tab")
+                onTriggered: root.openNewTab()
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Open File Manager")
+                onTriggered: Process.openFileManager(_session.currentDir)
+            }
+
+            FishUI.MenuSeparator {}
+
+            FishUI.MenuItem {
+                text: root.isFullScreen ? qsTr("Exit full screen") : qsTr("Full screen")
+                onTriggered: {
+                    root.visibility = root.isFullScreen ? Window.Windowed : Window.FullScreen
+                }
+            }
+
+            FishUI.MenuItem {
+                text: qsTr("Settings")
+                onTriggered: root.showSettings()
             }
         }
     }
@@ -426,20 +428,24 @@ Item {
         }
     }
 
-    FindBar {
+    Loader {
         id: _findBar
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.topMargin: FishUI.Units.smallSpacing
         anchors.rightMargin: FishUI.Units.largeSpacing
         z: 1
-        terminal: _terminal
-        backgroundColor: root.terminalBackground
-        textColor: root.chromeForeground
-        darkMode: root.chromeDark
-        errorColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[1] : FishUI.Theme.redColor
-        accentColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[4] : FishUI.Theme.highlightColor
-        onClosed: _terminal.forceActiveFocus()
+        active: false
+
+        sourceComponent: FindBar {
+            terminal: _terminal
+            backgroundColor: root.terminalBackground
+            textColor: root.chromeForeground
+            darkMode: root.chromeDark
+            errorColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[1] : FishUI.Theme.redColor
+            accentColor: root.colorSchemeInfo.colors ? root.colorSchemeInfo.colors[4] : FishUI.Theme.highlightColor
+            onClosed: _terminal.forceActiveFocus()
+        }
     }
 
     DropArea {
@@ -465,7 +471,8 @@ Item {
     // Starts from the selection when it is a single line, as a search term would be.
     function openFind() {
         const selection = _terminal.hasSelection ? _terminal.selectedText().trim() : ""
-        _findBar.open(selection.indexOf("\n") === -1 ? selection : "")
+        _findBar.active = true
+        _findBar.item.open(selection.indexOf("\n") === -1 ? selection : "")
     }
 
     function openMenu(x, y) {
@@ -481,6 +488,8 @@ Item {
         _menuContext.path = _menuContext.link === "" ? Process.existingPath(selection, _session.currentDir) : ""
         _menuContext.canPaste = Utils.text() !== ""
 
-        terminalMenu.popup()
+        if (!_terminalMenu)
+            _terminalMenu = _terminalMenuComponent.createObject(control)
+        _terminalMenu.popup()
     }
 }

@@ -36,11 +36,9 @@ public:
 Q_SIGNALS:
     void familiesChanged();
 
-protected:
-    void init();
-
 private:
-    QStringList m_families;
+    mutable QStringList m_families;
+    mutable bool m_loaded = false;
 };
 
 #endif // FONTS_H

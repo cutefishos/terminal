@@ -73,47 +73,73 @@ FishUI.Window {
 
     GlobalSettings { id: settings }
 
-    ExitPromptDialog {
-        id: exitPrompt
-        parentWindow: root
-        x: root.x + Math.round((root.width - width) / 2)
-        y: root.y + Math.round((root.height - height) / 2)
+    // Each dialog is a window of its own, so it is made the first time it is needed.
+    property QtObject _exitPrompt: null
+    property QtObject _settingsDialog: null
+    property QtObject _pasteConfirm: null
 
-        onAccepted: {
-            if (index != -1) {
-                closeTab(index)
-            } else {
-                Qt.quit()
+    function exitPrompt() {
+        if (!_exitPrompt)
+            _exitPrompt = _exitPromptComponent.createObject(root)
+        return _exitPrompt
+    }
+
+    function showSettings() {
+        if (!_settingsDialog)
+            _settingsDialog = _settingsDialogComponent.createObject(root)
+        _settingsDialog.show()
+        _settingsDialog.raise()
+    }
+
+    Component {
+        id: _exitPromptComponent
+
+        ExitPromptDialog {
+            parentWindow: root
+            x: root.x + Math.round((root.width - width) / 2)
+            y: root.y + Math.round((root.height - height) / 2)
+
+            onAccepted: {
+                if (index != -1) {
+                    closeTab(index)
+                } else {
+                    Qt.quit()
+                }
             }
         }
     }
 
-    SettingsDialog {
-        id: settingsDialog
-        parentWindow: root
+    Component {
+        id: _settingsDialogComponent
+
+        SettingsDialog {
+            parentWindow: root
+        }
     }
 
     // Line breaks in a paste run as if Enter were pressed, so a paste with any
     // waits here first.
-    FishUI.ConfirmDialog {
-        id: _pasteConfirm
+    Component {
+        id: _pasteConfirmComponent
 
-        property var pendingAction: null
-        property int lineCount: 0
+        FishUI.ConfirmDialog {
+            property var pendingAction: null
+            property int lineCount: 0
 
-        parentWindow: root
-        x: root.x + Math.round((root.width - width) / 2)
-        y: root.y + Math.round((root.height - height) / 2)
-        showOnCompleted: false
-        title: lineCount > 1 ? qsTr("Paste %1 lines?").arg(lineCount) : qsTr("Paste this line and press Enter?")
-        confirmText: qsTr("Paste")
+            parentWindow: root
+            x: root.x + Math.round((root.width - width) / 2)
+            y: root.y + Math.round((root.height - height) / 2)
+            showOnCompleted: false
+            title: lineCount > 1 ? qsTr("Paste %1 lines?").arg(lineCount) : qsTr("Paste this line and press Enter?")
+            confirmText: qsTr("Paste")
 
-        onAccepted: {
-            if (pendingAction)
-                pendingAction()
-            pendingAction = null
+            onAccepted: {
+                if (pendingAction)
+                    pendingAction()
+                pendingAction = null
+            }
+            onRejected: pendingAction = null
         }
-        onRejected: pendingAction = null
     }
 
     function confirmPaste(text, action) {
@@ -121,6 +147,9 @@ FishUI.Window {
         const shown = lines.slice(0, 4).map(line => line.length > 60 ? line.substring(0, 59) + "…" : line)
         if (lines.length > 4)
             shown.push("…")
+
+        if (!_pasteConfirm)
+            _pasteConfirm = _pasteConfirmComponent.createObject(root)
 
         _pasteConfirm.lineCount = lines.length
         _pasteConfirm.text = shown.join("\n")
@@ -138,8 +167,8 @@ FishUI.Window {
         for (var i = 0; i < _tabView.contentModel.count; ++i) {
             var obj = _tabView.contentModel.get(i)
             if (obj.session.hasActiveProcess) {
-                exitPrompt.index = -1
-                exitPrompt.open()
+                exitPrompt().index = -1
+                exitPrompt().open()
                 close.accepted = false
                 break
             }
@@ -282,8 +311,8 @@ FishUI.Window {
     function closeProtection(index) {
         var obj = _tabView.contentModel.get(index)
         if (obj.session.hasActiveProcess) {
-            exitPrompt.index = index
-            exitPrompt.open()
+            exitPrompt().index = index
+            exitPrompt().open()
             return
         }
 
