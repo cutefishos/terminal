@@ -106,7 +106,7 @@ Item {
         anchors.rightMargin: 6
         anchors.topMargin: 2
         anchors.bottomMargin: 6
-        colorScheme: FishUI.Theme.darkMode ? "Cutefish-Dark" : "Cutefish-Light"
+        colorScheme: root.colorScheme
         font.family: settings.fontName
         font.pointSize: settings.fontPointSize
         blinkingCursor: settings.blinkingCursor
@@ -294,6 +294,7 @@ Item {
         anchors.top: _terminal.top
         anchors.bottom: _terminal.bottom
         orientation: Qt.Vertical
+        darkMode: root.chromeDark
         active: hovered || pressed || _scrollActivity.running
         size: totalLines > 0 ? _terminal.lines / totalLines : 1
         position: totalLines > 0 ? (_terminal.scrollbarCurrentValue - _terminal.scrollbarMinimum) / totalLines : 0

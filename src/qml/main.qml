@@ -33,6 +33,7 @@ FishUI.Window {
     blurEnabled: settings.blur
     background.color: terminalBackground
     background.opacity: settings.opacity
+    headerDarkMode: chromeDark
     header.height: 44
     windowButtonsAlignment: Qt.AlignVCenter
     windowButtonsTopMargin: 0
@@ -42,9 +43,23 @@ FishUI.Window {
     property alias currentItem: _tabView.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
 
-    // The Background of the Cutefish color schemes, so cells in the default
-    // colour and the window around the text are one surface.
-    readonly property color terminalBackground: FishUI.Theme.darkMode ? "#1C1C1D" : "#FFFFFF"
+    // Settings saved before themes existed hold an empty name.
+    readonly property string colorScheme: settings.colorScheme !== "" ? settings.colorScheme : "TokyoNight"
+    readonly property var colorSchemeInfo: currentTerminal ? currentTerminal.colorSchemeInfo(colorScheme) : ({})
+
+    // The scheme's own background, so cells in the default colour and the
+    // window around the text are one surface.
+    readonly property color terminalBackground: colorSchemeInfo.background
+                                                ? colorSchemeInfo.background
+                                                : "#1A1B26"
+
+    // The title bar is painted with the terminal, so its text and buttons follow
+    // the scheme rather than the system theme.
+    readonly property color chromeForeground: colorSchemeInfo.foreground ? colorSchemeInfo.foreground
+                                                                         : FishUI.Theme.textColor
+    readonly property bool chromeDark: 0.2126 * terminalBackground.r + 0.7152 * terminalBackground.g
+                                       + 0.0722 * terminalBackground.b < 0.5
+    readonly property color chromeTint: chromeDark ? "#FFFFFF" : "#323238"
 
     GlobalSettings { id: settings }
 
@@ -103,13 +118,16 @@ FishUI.Window {
             font.family: settings.fontName
             font.pixelSize: 13
             font.weight: Font.Medium
-            color: root.active ? FishUI.Theme.textColor : FishUI.Theme.disabledTextColor
+            color: root.active ? root.chromeForeground
+                               : Qt.rgba(root.chromeForeground.r, root.chromeForeground.g, root.chromeForeground.b, 0.5)
         }
 
         TabBar {
             id: _tabBar
             visible: _tabView.count > 1
             view: _tabView
+            darkMode: root.chromeDark
+            textColor: root.chromeForeground
             anchors.left: parent.left
             anchors.right: _newTabButton.left
             anchors.leftMargin: FishUI.Units.largeSpacing
@@ -125,7 +143,9 @@ FishUI.Window {
             anchors.rightMargin: root.windowButtonsSpacing
             anchors.verticalCenter: parent.verticalCenter
             size: 32
-            source: "qrc:/fishui/kit/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "add.svg"
+            source: "qrc:/fishui/kit/images/" + (root.chromeDark ? "dark/" : "light/") + "add.svg"
+            hoveredColor: Qt.rgba(root.chromeTint.r, root.chromeTint.g, root.chromeTint.b, root.chromeDark ? 0.12 : 0.11)
+            pressedColor: Qt.rgba(root.chromeTint.r, root.chromeTint.g, root.chromeTint.b, root.chromeDark ? 0.06 : 0.21)
             // Same artwork grid and sampling as the window buttons beside it.
             iconSize: 24
             image.smooth: false

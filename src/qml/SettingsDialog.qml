@@ -29,6 +29,18 @@ FishUI.Window {
 
     background.color: FishUI.Theme.backgroundColor
 
+    // Bundled schemes, by file name. The labels are fixed: a model that changes
+    // after creation resets the combo box.
+    readonly property var themeNames: ["Catppuccin-Latte", "Catppuccin-Mocha", "Dracula",
+                                       "Gruvbox-Dark", "Gruvbox-Light", "Nord", "One-Dark", "One-Light",
+                                       "Solarized", "SolarizedLight", "TokyoNight", "TokyoNight-Day",
+                                       "Tomorrow-Night"]
+    readonly property var themeLabels: ["Catppuccin Latte", "Catppuccin Mocha", "Dracula",
+                                        "Gruvbox Dark", "Gruvbox Light", "Nord", "One Dark", "One Light",
+                                        "Solarized Dark", "Solarized Light", "Tokyo Night", "Tokyo Night Day",
+                                        "Tomorrow Night"]
+    readonly property var schemeInfo: root.colorSchemeInfo
+
     readonly property color separatorColor: Qt.rgba(FishUI.Theme.textColor.r, FishUI.Theme.textColor.g,
                                                      FishUI.Theme.textColor.b, 0.08)
 
@@ -130,18 +142,53 @@ FishUI.Window {
                 textFormat: Text.StyledText
                 font.family: settings.fontName
                 font.pointSize: settings.fontPointSize
-                color: FishUI.Theme.darkMode ? "#E5E5E7" : "#2B2B30"
+                color: control.schemeInfo.foreground ? control.schemeInfo.foreground : FishUI.Theme.textColor
                 text: {
-                    const green = FishUI.Theme.darkMode ? "#5FD38D" : "#1F8A4C"
-                    const blue = FishUI.Theme.darkMode ? "#5AA2F5" : "#1F6FD6"
+                    const colors = control.schemeInfo.colors || []
+                    const green = colors.length ? colors[2] : FishUI.Theme.textColor
+                    const blue = colors.length ? colors[4] : FishUI.Theme.textColor
                     return "<font color=\"" + green + "\">user@cutefish</font> "
                             + "<font color=\"" + blue + "\">~</font> $ ls<br>"
                             + "<font color=\"" + blue + "\">Documents&nbsp;&nbsp;Pictures</font>&nbsp;&nbsp;notes.txt"
                 }
             }
+
+            // The scheme's eight normal colours.
+            Row {
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 12
+                spacing: 4
+
+                Repeater {
+                    model: control.schemeInfo.colors ? control.schemeInfo.colors.slice(0, 8) : []
+
+                    Rectangle {
+                        width: 10
+                        height: 10
+                        radius: 3
+                        color: modelData
+                        border.width: 1
+                        border.color: Qt.rgba(0.5, 0.5, 0.5, 0.25)
+                    }
+                }
+            }
         }
 
         Card {
+            SettingRow {
+                text: qsTr("Theme")
+
+                FishUI.ComboBox {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 200
+                    model: control.themeLabels
+                    currentIndex: Math.max(0, control.themeNames.indexOf(root.colorScheme))
+
+                    onActivated: (index) => settings.colorScheme = control.themeNames[index]
+                }
+            }
+
             SettingRow {
                 text: qsTr("Font")
 

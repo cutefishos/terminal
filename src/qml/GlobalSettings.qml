@@ -26,6 +26,8 @@ Settings {
     property int fontPointSize: 10
     property string fontName: "Noto Mono"
     property bool blinkingCursor: true
+    // A bundled color scheme, by file name.
+    property string colorScheme: "TokyoNight"
 
     property double opacity: 1.0
     property bool blur: false
