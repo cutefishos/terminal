@@ -4061,12 +4061,10 @@ QStringList TerminalDisplay::availableColorSchemes()
 void TerminalDisplay::setColorScheme(const QString &name)
 {
     if ( name != _colorScheme ) {
-        const ColorScheme *cs;
-        // avoid legacy (int) solution
-        if (!availableColorSchemes().contains(name))
+        // Looked up by name: listing the available schemes first would parse every file.
+        const ColorScheme *cs = ColorSchemeManager::instance()->findColorScheme(name);
+        if (!cs)
             cs = ColorSchemeManager::instance()->defaultColorScheme();
-        else
-            cs = ColorSchemeManager::instance()->findColorScheme(name);
 
         if (! cs)
         {
