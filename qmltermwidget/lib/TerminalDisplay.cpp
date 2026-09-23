@@ -2946,6 +2946,23 @@ bool TerminalDisplay::selectWordAt(qreal x, qreal y)
     return true;
 }
 
+int TerminalDisplay::wheelLines(QWheelEvent *ev)
+{
+    // Touchpads report pixels: one line per line of text scrolled.
+    if (!ev->pixelDelta().isNull() && _fontHeight > 0) {
+        _wheelPixelRemainder += ev->pixelDelta().y();
+        const int lines = _wheelPixelRemainder / _fontHeight;
+        _wheelPixelRemainder -= lines * _fontHeight;
+        return lines;
+    }
+
+    // A wheel notch is 120; high-resolution wheels send fractions of one.
+    _wheelAngleRemainder += ev->angleDelta().y() * QApplication::wheelScrollLines();
+    const int lines = _wheelAngleRemainder / 120;
+    _wheelAngleRemainder -= lines * 120;
+    return lines;
+}
+
 void TerminalDisplay::wheelEvent( QWheelEvent* ev )
 {
   if (ev->angleDelta().y() == 0)
@@ -2957,26 +2974,22 @@ void TerminalDisplay::wheelEvent( QWheelEvent* ev )
   // for the benefit of programs such as 'less'
   if ( _mouseMarks )
   {
+    const int lines = wheelLines(ev);
+    if (lines == 0)
+        return;
+
     bool canScroll = _scrollBar->maximum() > 0;
-      if (canScroll)
-        _scrollBar->handleEvent(ev);
+    if (canScroll)
+    {
+        _scrollBar->setValue(_scrollBar->value() - lines);
+    }
     else
     {
-        // assume that each Up / Down key event will cause the terminal application
-        // to scroll by one line.
-        //
-        // to get a reasonable scrolling speed, scroll by one line for every 5 degrees
-        // of mouse wheel rotation.  Mouse wheels typically move in steps of 15 degrees,
-        // giving a scroll of 3 lines
-        int key = ev->angleDelta().y() > 0 ? Qt::Key_Up : Qt::Key_Down;
-
-        // QWheelEvent::angleDelta().y() gives rotation in eighths of a degree
-        int wheelDegrees = ev->angleDelta().y() / 8;
-        int linesToScroll = abs(wheelDegrees) / 5;
-
+        // A program without mouse reporting, such as less, scrolls on Up / Down.
+        int key = lines > 0 ? Qt::Key_Up : Qt::Key_Down;
         QKeyEvent keyScrollEvent(QEvent::KeyPress,key,Qt::NoModifier);
 
-        for (int i=0;i<linesToScroll;i++)
+        for (int i=0;i<abs(lines);i++)
             emit keyPressedSignal(&keyScrollEvent, false);
     }
   }

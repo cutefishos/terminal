@@ -1004,6 +1004,11 @@ private:
     bool _confirmMultilinePaste;
     bool _trimPastedTrailingNewlines;
 
+    // Wheel movement not yet worth a whole line: 1/120 steps, or pixels.
+    int _wheelAngleRemainder = 0;
+    int _wheelPixelRemainder = 0;
+    int wheelLines(QWheelEvent *ev);
+
     QString _pendingPaste;
     bool _pendingPasteAppendReturn = false;
     bool _pendingPasteIsDrop = false;
