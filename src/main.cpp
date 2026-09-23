@@ -25,16 +25,15 @@
 #include <QFile>
 #include <QIcon>
 
+#include "cutefishapplication.h"
 #include "processhelper.h"
 #include "utils.h"
 #include "fonts.h"
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
     QApplication app(argc, argv);
-    app.setOrganizationName("cutefishos");
+    Cutefish::Application::prepare();
     app.setWindowIcon(QIcon::fromTheme("terminal"));
 
     QQmlApplicationEngine engine;

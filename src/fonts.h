@@ -21,8 +21,6 @@
 #define FONTS_H
 
 #include <QObject>
-#include <QList>
-#include <QFontDatabase>
 #include <QStringList>
 
 class Fonts : public QObject
@@ -43,8 +41,6 @@ protected:
 
 private:
     QStringList m_families;
-    QFontDatabase m_fontDatabase;
-
 };
 
 #endif // FONTS_H

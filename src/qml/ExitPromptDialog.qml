@@ -17,62 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Window 2.12
+import QtQuick
 import FishUI 1.0 as FishUI
 
-FishUI.Window {
+FishUI.ConfirmDialog {
     id: control
 
-    property var contentWidth: _mainLayout.implicitWidth + FishUI.Units.largeSpacing * 2
-    property var contentHeight: _mainLayout.implicitHeight + header.height + FishUI.Units.largeSpacing * 2
+    // The tab to close on confirmation, or -1 to quit.
+    property int index: -1
 
-    flags: Qt.WindowStaysOnTopHint | Qt.Dialog | Qt.FramelessWindowHint
-    modality: Qt.WindowModal
-    visible: false
-
-    width: contentWidth
-    height: contentHeight
-    minimumWidth: contentWidth
-    minimumHeight: contentHeight
-    maximumWidth: contentWidth
-    maximumHeight: contentHeight
-    minimizeButtonVisible: false
-
-    background.color: FishUI.Theme.secondBackgroundColor
-
-    signal okBtnClicked
-
-    ColumnLayout {
-        id: _mainLayout
-        anchors.fill: parent
-        spacing: FishUI.Units.largeSpacing
-        anchors.margins: FishUI.Units.largeSpacing
-
-        Label {
-            text: qsTr("Process is running, are you sure you want to quit?")
-        }
-
-        RowLayout {
-            spacing: FishUI.Units.largeSpacing
-
-            Button {
-                text: qsTr("Cancel")
-                Layout.fillWidth: true
-                onClicked: control.visible = false
-            }
-
-            Button {
-                text: qsTr("OK")
-                Layout.fillWidth: true
-                flat: true
-                onClicked: {
-                    control.visible = false
-                    control.okBtnClicked()
-                }
-            }
-        }
-    }
+    showOnCompleted: false
+    title: qsTr("Process is running, are you sure you want to quit?")
+    cancelText: qsTr("Cancel")
+    confirmText: qsTr("OK")
+    destructive: true
 }

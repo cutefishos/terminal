@@ -17,13 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.12
-import QtQml.Models 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Layouts
 
-import Cutefish.TermWidget 1.0
+import Cutefish.TermWidget
 import FishUI 1.0 as FishUI
 
 FishUI.Window {
@@ -34,8 +31,9 @@ FishUI.Window {
     height: settings.height
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
+    blurEnabled: settings.blur
     background.color: FishUI.Theme.backgroundColor
-    background.opacity: root.compositing ? settings.opacity : 1
+    background.opacity: settings.opacity
     header.height: 40
 
     property int currentIndex: -1
@@ -46,30 +44,25 @@ FishUI.Window {
 
     ExitPromptDialog {
         id: exitPrompt
+        parentWindow: root
+        x: root.x + Math.round((root.width - width) / 2)
+        y: root.y + Math.round((root.height - height) / 2)
 
-        property var index: -1
-
-        onOkBtnClicked: {
+        onAccepted: {
             if (index != -1) {
                 closeTab(index)
             } else {
-                onOkBtnClicked: Qt.quit()
+                Qt.quit()
             }
         }
     }
 
     SettingsDialog {
         id: settingsDialog
+        parentWindow: root
     }
 
-    FishUI.WindowBlur {
-        view: root
-        geometry: Qt.rect(root.x, root.y, root.width, root.height)
-        windowRadius: root.background.radius
-        enabled: settings.blur
-    }
-
-    onClosing: {
+    onClosing: (close) => {
         if (!root.isMaximized && !root.isFullScreen) {
             settings.width = root.width
             settings.height = root.height
@@ -80,7 +73,7 @@ FishUI.Window {
             var obj = _tabView.contentModel.get(i)
             if (obj.session.hasActiveProcess) {
                 exitPrompt.index = -1
-                exitPrompt.visible = true
+                exitPrompt.open()
                 close.accepted = false
                 break
             }
@@ -88,7 +81,7 @@ FishUI.Window {
     }
 
     headerItem: Item {
-        FishUI.TabBar {
+        FishUI.DocumentTabBar {
             id: _tabbar
             anchors.fill: parent
             anchors.margins: FishUI.Units.smallSpacing / 2
@@ -99,24 +92,24 @@ FishUI.Window {
 
             onNewTabClicked: openNewTab()
 
-            delegate: FishUI.TabButton {
+            delegate: FishUI.DocumentTabButton {
                 id: _tabBtn
                 text: _tabView.contentModel.get(index).title
-                Layout.fillHeight: true
                 height: _tabbar.height - FishUI.Units.smallSpacing / 2
                 width: Math.min(_tabbar.width / _tabbar.count,
                                 _tabBtn.contentWidth)
-
-                ToolTip.delay: 500
-                ToolTip.timeout: 5000
 
                 checked: _tabView.currentIndex === index
 
                 font.pointSize: 9
                 font.family: "Noto Sans Mono"
 
-                ToolTip.visible: hovered
-                ToolTip.text: _tabView.contentModel.get(index).title
+                FishUI.ToolTip {
+                    delay: 500
+                    timeout: 5000
+                    visible: _tabBtn.hovered
+                    text: _tabBtn.text
+                }
 
                 onClicked: {
                     _tabView.currentIndex = index
@@ -127,42 +120,6 @@ FishUI.Window {
                     root.closeProtection(index)
                 }
             }
-
-//            Repeater {
-//                id: _repeater
-//                model: _tabView.count
-
-//                FishUI.TabButton {
-//                    id: _tabBtn
-//                    text: _tabView.contentModel.get(index).title
-//                    implicitHeight: parent.height
-////                    implicitWidth: _repeater.count === 1 ? 200
-////                                                         : parent.width / _repeater.count
-
-//                    implicitWidth: Math.min(_tabBtn.contentWidth,
-//                                            parent.width / _repeater.count)
-
-//                    ToolTip.delay: 1000
-//                    ToolTip.timeout: 5000
-
-//                    checked: _tabView.currentIndex === index
-
-//                    font.pointSize: 9
-//                    font.family: "Noto Sans Mono"
-
-//                    ToolTip.visible: hovered
-//                    ToolTip.text: _tabView.contentModel.get(index).title
-
-//                    onClicked: {
-//                        _tabView.currentIndex = index
-//                        _tabView.currentItem.forceActiveFocus()
-//                    }
-
-//                    onCloseClicked: {
-//                        root.closeProtection(index)
-//                    }
-//                }
-//            }
         }
     }
 
@@ -204,7 +161,7 @@ FishUI.Window {
         var obj = _tabView.contentModel.get(index)
         if (obj.session.hasActiveProcess) {
             exitPrompt.index = index
-            exitPrompt.visible = true
+            exitPrompt.open()
             return
         }
 

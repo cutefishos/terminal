@@ -18,24 +18,19 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import QtQuick 2.12
-import QtQuick.Controls 2.5
-import QtQuick.Layouts 1.3
-import QtQuick.Window 2.12
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Window
 
 import FishUI 1.0 as FishUI
-import Cutefish.TermWidget 1.0
+import Cutefish.TermWidget
 
-Page {
+Item {
     id: control
 
     height: _tabView.height
     width: _tabView.width
     focus: true
-
-    background: Rectangle {
-        color: "transparent"
-    }
 
     signal urlsDropped(var urls)
     signal keyPressed(var event)
@@ -44,15 +39,14 @@ Page {
     property string path: "$PWD"
     property alias terminal: _terminal
     readonly property QMLTermSession session: _session
+    readonly property string title: _session.title
 
-    title: _session.title
-
-    onUrlsDropped: {
+    onUrlsDropped: (urls) => {
         for (var i in urls)
-            _session.sendText(urls[i].replace("file://", "") + " ")
+            _session.sendText(urls[i].toString().replace("file://", "") + " ")
     }
 
-    onKeyPressed: {
+    onKeyPressed: (event) => {
         if ((event.key === Qt.Key_A)
                 && (event.modifiers & Qt.ControlModifier)
                 && (event.modifiers & Qt.ShiftModifier)) {
@@ -116,7 +110,7 @@ Page {
         backgroundOpacity: 0
 
         Keys.enabled: true
-        Keys.onPressed: control.keyPressed(event)
+        Keys.onPressed: (event) => control.keyPressed(event)
 
         session: QMLTermSession {
             id: _session
@@ -130,36 +124,36 @@ Page {
             cursorShape: _terminal.terminalUsesMouse ? Qt.ArrowCursor : Qt.IBeamCursor
             acceptedButtons:  Qt.RightButton | Qt.LeftButton
 
-            onDoubleClicked: {
+            onDoubleClicked: (mouse) => {
                  var coord = correctDistortion(mouse.x, mouse.y)
                  _terminal.simulateMouseDoubleClick(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
-            onPressed: {
+            onPressed: (mouse) => {
                 if ((!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
                         && mouse.button == Qt.RightButton) {
                     updateMenu()
-                    terminalMenu.open()
+                    terminalMenu.popup()
                 } else {
                     var coord = correctDistortion(mouse.x, mouse.y)
                     _terminal.simulateMousePress(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
                 }
             }
 
-            onReleased: {
+            onReleased: (mouse) => {
                 var coord = correctDistortion(mouse.x, mouse.y)
                 _terminal.simulateMouseRelease(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
-            onPositionChanged: {
+            onPositionChanged: (mouse) => {
                 var coord = correctDistortion(mouse.x, mouse.y)
                 _terminal.simulateMouseMove(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
-            onClicked: {
+            onClicked: (mouse) => {
                 if (mouse.button === Qt.RightButton) {
                     updateMenu()
-                    terminalMenu.open()
+                    terminalMenu.popup()
                 } else if(mouse.button === Qt.LeftButton) {
                     _terminal.forceActiveFocus()
                 }
@@ -189,36 +183,37 @@ Page {
     FishUI.DesktopMenu {
         id: terminalMenu
 
-        MenuItem {
+        FishUI.MenuItem {
             id: copyMenuItem
             action: _copyAction
+            visible: _terminal.hasSelection
         }
 
-        MenuItem {
+        FishUI.MenuItem {
             id: pasteMenuItem
             text: qsTr("Paste")
             action: _pasteAction
         }
 
-        MenuItem {
+        FishUI.MenuItem {
             id: selectAllItem
             text: qsTr("Select All")
             onTriggered: _terminal.selectAll()
         }
 
-        MenuItem {
+        FishUI.MenuItem {
             text: qsTr("Open File Manager")
             onTriggered: Process.openFileManager(_session.currentDir)
         }
 
-        MenuItem {
+        FishUI.MenuItem {
             text: root.isFullScreen ? qsTr("Exit full screen") : qsTr("Full screen")
             onTriggered: {
                 root.visibility = root.isFullScreen ? Window.Windowed : Window.FullScreen
             }
         }
 
-        MenuItem {
+        FishUI.MenuItem {
             text: qsTr("Settings")
             onTriggered: {
                 settingsDialog.show()
@@ -227,7 +222,7 @@ Page {
         }
     }
 
-    ScrollBar {
+    FishUI.ScrollBar {
         id: _scrollbar
         anchors.right: parent.right
         anchors.top: parent.top
@@ -243,7 +238,7 @@ Page {
     DropArea {
         id: _dropArea
         anchors.fill: parent
-        onDropped: {
+        onDropped: (drop) => {
             if (drop.hasUrls) {
                 control.urlsDropped(drop.urls)
             } else if (drop.hasText) {
@@ -268,7 +263,6 @@ Page {
     }
 
     function updateMenu() {
-        copyMenuItem.visible = _terminal.selectedText
-        pasteMenuItem.visible = Utils.text()
+        pasteMenuItem.visible = Utils.text() !== ""
     }
 }

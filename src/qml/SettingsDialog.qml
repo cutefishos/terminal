@@ -1,111 +1,100 @@
-import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.12
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Window
 import FishUI 1.0 as FishUI
 
-Window {
+FishUI.Window {
     id: control
 
     title: qsTr("Settings")
 
-    width: 400
-    height: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
+    readonly property int dialogWidth: 400
+    readonly property int dialogHeight: _mainLayout.implicitHeight + header.height + FishUI.Units.largeSpacing
 
-    maximumHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
-    maximumWidth: 400
-    minimumWidth: 400
-    minimumHeight: _mainLayout.implicitHeight + FishUI.Units.largeSpacing * 4
+    width: dialogWidth
+    height: dialogHeight
+    minimumWidth: dialogWidth
+    maximumWidth: dialogWidth
+    minimumHeight: dialogHeight
+    maximumHeight: dialogHeight
 
-    flags: Qt.Dialog
+    flags: Qt.Dialog | Qt.FramelessWindowHint
     modality: Qt.WindowModal
-
     visible: false
+    minimizeButtonVisible: false
 
-    Rectangle {
-        anchors.fill: parent
-        color: FishUI.Theme.secondBackgroundColor
+    background.color: FishUI.Theme.secondBackgroundColor
+
+    headerItem: Item {
+        FishUI.Label {
+            anchors.left: parent.left
+            anchors.leftMargin: FishUI.Units.largeSpacing
+            anchors.verticalCenter: parent.verticalCenter
+            text: control.title
+            font.weight: Font.DemiBold
+        }
     }
 
     GridLayout {
         id: _mainLayout
         anchors.fill: parent
         anchors.margins: FishUI.Units.largeSpacing
+        anchors.topMargin: 0
         columns: 2
         columnSpacing: FishUI.Units.largeSpacing * 2
         rowSpacing: FishUI.Units.largeSpacing * 2
 
-        Label {
+        FishUI.Label {
             text: qsTr("Font")
         }
 
-        ComboBox {
+        FishUI.ComboBox {
             id: fontsCombobox
             model: Fonts.families
-            // Layout.fillHeight: true
+            currentIndex: Math.max(0, Fonts.families.indexOf(settings.fontName))
             Layout.fillWidth: true
 
-            onCurrentTextChanged: {
-                settings.fontName = currentText
-            }
-
-            Component.onCompleted: {
-                for (var i = 0; i <= fontsCombobox.model.length; ++i) {
-                    if (fontsCombobox.model[i] === settings.fontName) {
-                        fontsCombobox.currentIndex = i
-                        break
-                    }
-                }
-            }
+            onActivated: settings.fontName = currentText
         }
 
-        Label {
+        FishUI.Label {
             text: qsTr("Font Size")
         }
 
-        Slider {
+        FishUI.Slider {
             id: fontSizeSlider
-            Layout.fillHeight: true
             Layout.fillWidth: true
             from: 5
             to: 30
             stepSize: 1
-
-            Component.onCompleted: {
-                fontSizeSlider.value = settings.fontPointSize
-            }
+            value: settings.fontPointSize
 
             onMoved: settings.fontPointSize = fontSizeSlider.value
         }
 
-        Label {
+        FishUI.Label {
             text: qsTr("Transparency")
         }
 
-        Slider {
+        FishUI.Slider {
             id: transparencySlider
-            Layout.fillHeight: true
             Layout.fillWidth: true
             from: 0.1
             to: 1.0
             stepSize: 0.05
-
-            Component.onCompleted: {
-                transparencySlider.value = settings.opacity
-            }
+            value: settings.opacity
 
             onMoved: settings.opacity = transparencySlider.value
         }
 
-        Label {
+        FishUI.Label {
             text: qsTr("Window Blur")
         }
 
-        Switch {
+        FishUI.Switch {
             Layout.alignment: Qt.AlignRight
-            Layout.fillHeight: true
             checked: settings.blur
-            onCheckedChanged: settings.blur = checked
+            onToggled: settings.blur = checked
         }
     }
 }

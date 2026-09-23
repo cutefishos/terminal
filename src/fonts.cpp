@@ -19,6 +19,8 @@
 
 #include "fonts.h"
 
+#include <QFontDatabase>
+
 Fonts::Fonts(QObject *parent) : QObject(parent)
 {
     init();
@@ -33,8 +35,9 @@ void Fonts::init()
 {
     m_families.clear();
 
-    for (const QString &family : m_fontDatabase.families()) {
-        if (m_fontDatabase.isFixedPitch(family)) {
+    const QStringList families = QFontDatabase::families();
+    for (const QString &family : families) {
+        if (QFontDatabase::isFixedPitch(family)) {
             m_families << family;
         }
     }
