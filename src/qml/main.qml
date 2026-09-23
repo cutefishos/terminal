@@ -18,7 +18,6 @@
  */
 
 import QtQuick
-import QtQuick.Layouts
 
 import Cutefish.TermWidget
 import FishUI 1.0 as FishUI
@@ -32,13 +31,20 @@ FishUI.Window {
     title: currentItem && currentItem.terminal ? currentItem.terminal.session.title : ""
 
     blurEnabled: settings.blur
-    background.color: FishUI.Theme.backgroundColor
+    background.color: terminalBackground
     background.opacity: settings.opacity
-    header.height: 40
+    header.height: 44
+    windowButtonsAlignment: Qt.AlignVCenter
+    windowButtonsTopMargin: 0
+    windowButtonsRightMargin: FishUI.Units.smallSpacing
 
     property int currentIndex: -1
     property alias currentItem: _tabView.currentItem
     readonly property QMLTermWidget currentTerminal: currentItem ? currentItem.terminal : null
+
+    // The Background of the Cutefish color schemes, so cells in the default
+    // colour and the window around the text are one surface.
+    readonly property color terminalBackground: FishUI.Theme.darkMode ? "#1C1C1D" : "#FFFFFF"
 
     GlobalSettings { id: settings }
 
@@ -81,56 +87,55 @@ FishUI.Window {
     }
 
     headerItem: Item {
-        FishUI.DocumentTabBar {
-            id: _tabbar
-            anchors.fill: parent
-            anchors.margins: FishUI.Units.smallSpacing / 2
-            anchors.rightMargin: FishUI.Units.largeSpacing * 4
+        id: _header
 
-            currentIndex: _tabView.currentIndex
-            model: _tabView.count
+        // Width taken by the window buttons, mirrored on the left so the
+        // title is centred on the window rather than on this item.
+        readonly property real reservedWidth: root.width - width + _newTabButton.width
 
-            onNewTabClicked: openNewTab()
+        FishUI.Label {
+            visible: _tabView.count < 2
+            width: Math.min(implicitWidth, root.width - _header.reservedWidth * 2)
+            x: (root.width - width) / 2
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.title
+            elide: Text.ElideMiddle
+            font.pixelSize: 13
+            font.weight: Font.Medium
+            color: root.active ? FishUI.Theme.textColor : FishUI.Theme.disabledTextColor
+        }
 
-            delegate: FishUI.DocumentTabButton {
-                id: _tabBtn
-                text: _tabView.contentModel.get(index).title
-                height: _tabbar.height - FishUI.Units.smallSpacing / 2
-                width: Math.min(_tabbar.width / _tabbar.count,
-                                _tabBtn.contentWidth)
+        TabBar {
+            id: _tabBar
+            visible: _tabView.count > 1
+            view: _tabView
+            anchors.left: parent.left
+            anchors.right: _newTabButton.left
+            anchors.leftMargin: FishUI.Units.largeSpacing
+            anchors.rightMargin: FishUI.Units.smallSpacing
+            anchors.verticalCenter: parent.verticalCenter
 
-                checked: _tabView.currentIndex === index
+            onCloseRequested: (index) => root.closeProtection(index)
+        }
 
-                font.pointSize: 9
-                font.family: "Noto Sans Mono"
-
-                FishUI.ToolTip {
-                    delay: 500
-                    timeout: 5000
-                    visible: _tabBtn.hovered
-                    text: _tabBtn.text
-                }
-
-                onClicked: {
-                    _tabView.currentIndex = index
-                    _tabView.currentItem.forceActiveFocus()
-                }
-
-                onCloseClicked: {
-                    root.closeProtection(index)
-                }
-            }
+        FishUI.RoundImageButton {
+            id: _newTabButton
+            anchors.right: parent.right
+            anchors.rightMargin: root.windowButtonsSpacing
+            anchors.verticalCenter: parent.verticalCenter
+            size: 32
+            source: "qrc:/fishui/kit/images/" + (FishUI.Theme.darkMode ? "dark/" : "light/") + "add.svg"
+            // Same artwork grid and sampling as the window buttons beside it.
+            iconSize: 24
+            image.smooth: false
+            image.antialiasing: true
+            onClicked: root.openNewTab()
         }
     }
 
-    ColumnLayout {
+    FishUI.TabView {
+        id: _tabView
         anchors.fill: parent
-
-        FishUI.TabView {
-            id: _tabView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-        }
     }
 
     Component.onCompleted: {
@@ -151,10 +156,19 @@ FishUI.Window {
 
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
-            const index = _tabView.contentModel.count
             const object = _tabView.addTab(component, {path: path})
-            object.terminalClosed.connect(() => closeTab(index))
+            // Looked up when the shell exits: closing other tabs shifts the index.
+            object.terminalClosed.connect(() => closeTab(indexOfTab(object)))
         }
+    }
+
+    function indexOfTab(object) {
+        for (var i = 0; i < _tabView.contentModel.count; ++i) {
+            if (_tabView.contentModel.get(i) === object)
+                return i
+        }
+
+        return -1
     }
 
     function closeProtection(index) {
@@ -169,6 +183,9 @@ FishUI.Window {
     }
 
     function closeTab(index) {
+        if (index < 0)
+            return
+
         _tabView.closeTab(index)
 
         if (_tabView.contentModel.count === 0)

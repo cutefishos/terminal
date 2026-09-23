@@ -419,7 +419,7 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
 ,m_font("Monospace", 12)
 ,m_color_role(QPalette::Window)
 ,m_full_cursor_height(false)
-,_leftBaseMargin(4)
+,_leftBaseMargin(1)
 ,_topBaseMargin(1)
 ,_drawLineChars(true)
 ,_mouseAutohideDelay(-1)
@@ -3953,6 +3953,11 @@ bool TerminalDisplay::getUsesMouse()
 int TerminalDisplay::getScrollbarValue()
 {
     return _scrollBar->value();
+}
+
+void TerminalDisplay::setScrollbarValue(int value)
+{
+    _scrollBar->setValue(value);
 }
 
 int TerminalDisplay::getScrollbarMaximum()

@@ -8,8 +8,8 @@ FishUI.Window {
 
     title: qsTr("Settings")
 
-    readonly property int dialogWidth: 400
-    readonly property int dialogHeight: _mainLayout.implicitHeight + header.height + FishUI.Units.largeSpacing
+    readonly property int dialogWidth: 440
+    readonly property int dialogHeight: _mainLayout.implicitHeight + header.height + FishUI.Units.largeSpacing * 1.5
 
     width: dialogWidth
     height: dialogHeight
@@ -22,79 +22,202 @@ FishUI.Window {
     modality: Qt.WindowModal
     visible: false
     minimizeButtonVisible: false
+    header.height: 44
+    windowButtonsAlignment: Qt.AlignVCenter
+    windowButtonsTopMargin: 0
+    windowButtonsRightMargin: FishUI.Units.smallSpacing
 
-    background.color: FishUI.Theme.secondBackgroundColor
+    background.color: FishUI.Theme.backgroundColor
 
-    headerItem: Item {
-        FishUI.Label {
+    readonly property color separatorColor: Qt.rgba(FishUI.Theme.textColor.r, FishUI.Theme.textColor.g,
+                                                     FishUI.Theme.textColor.b, 0.08)
+
+    component Card: FishUI.RoundedRectangle {
+        default property alias rows: _rows.data
+
+        Layout.fillWidth: true
+        implicitHeight: _rows.implicitHeight
+        radius: FishUI.Theme.bigRadius
+        color: FishUI.Theme.secondBackgroundColor
+
+        ColumnLayout {
+            id: _rows
             anchors.left: parent.left
-            anchors.leftMargin: FishUI.Units.largeSpacing
-            anchors.verticalCenter: parent.verticalCenter
-            text: control.title
-            font.weight: Font.DemiBold
+            anchors.right: parent.right
+            anchors.top: parent.top
+            spacing: 0
         }
     }
 
-    GridLayout {
+    // A label on the left, its control on the right, a hairline below unless last.
+    component SettingRow: Item {
+        property alias text: _label.text
+        property bool last: false
+        default property alias content: _content.data
+
+        Layout.fillWidth: true
+        implicitHeight: 44
+
+        FishUI.Label {
+            id: _label
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Row {
+            id: _content
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: FishUI.Units.largeSpacing
+        }
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            height: 1
+            color: control.separatorColor
+            visible: !parent.last
+        }
+    }
+
+    // A value shown beside its slider, in a fixed width so the slider does not shift.
+    component ValueLabel: FishUI.Label {
+        anchors.verticalCenter: parent.verticalCenter
+        width: 40
+        horizontalAlignment: Text.AlignRight
+        color: FishUI.Theme.disabledTextColor
+        font.features: { "tnum": 1 }
+    }
+
+    headerItem: Item {
+        FishUI.Label {
+            anchors.centerIn: parent
+            anchors.horizontalCenterOffset: (control.width - parent.width) / 2
+            text: control.title
+            font.pixelSize: 13
+            font.weight: Font.Medium
+        }
+    }
+
+    ColumnLayout {
         id: _mainLayout
-        anchors.fill: parent
-        anchors.margins: FishUI.Units.largeSpacing
-        anchors.topMargin: 0
-        columns: 2
-        columnSpacing: FishUI.Units.largeSpacing * 2
-        rowSpacing: FishUI.Units.largeSpacing * 2
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.leftMargin: FishUI.Units.largeSpacing * 1.5
+        anchors.rightMargin: FishUI.Units.largeSpacing * 1.5
+        spacing: FishUI.Units.largeSpacing
 
-        FishUI.Label {
-            text: qsTr("Font")
-        }
-
-        FishUI.ComboBox {
-            id: fontsCombobox
-            model: Fonts.families
-            currentIndex: Math.max(0, Fonts.families.indexOf(settings.fontName))
+        // The chosen font on the terminal's own colours.
+        Rectangle {
             Layout.fillWidth: true
+            implicitHeight: 76
+            radius: FishUI.Theme.bigRadius
+            color: root.terminalBackground
+            border.width: 1
+            border.color: control.separatorColor
+            clip: true
 
-            onActivated: settings.fontName = currentText
+            Text {
+                anchors.fill: parent
+                anchors.margins: 14
+                verticalAlignment: Text.AlignVCenter
+                textFormat: Text.StyledText
+                font.family: settings.fontName
+                font.pointSize: settings.fontPointSize
+                color: FishUI.Theme.darkMode ? "#E5E5E7" : "#2B2B30"
+                text: {
+                    const green = FishUI.Theme.darkMode ? "#5FD38D" : "#1F8A4C"
+                    const blue = FishUI.Theme.darkMode ? "#5AA2F5" : "#1F6FD6"
+                    return "<font color=\"" + green + "\">user@cutefish</font> "
+                            + "<font color=\"" + blue + "\">~</font> $ ls<br>"
+                            + "<font color=\"" + blue + "\">Documents&nbsp;&nbsp;Pictures</font>&nbsp;&nbsp;notes.txt"
+                }
+            }
         }
 
-        FishUI.Label {
-            text: qsTr("Font Size")
+        Card {
+            SettingRow {
+                text: qsTr("Font")
+
+                FishUI.ComboBox {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 200
+                    model: Fonts.families
+                    currentIndex: Math.max(0, Fonts.families.indexOf(settings.fontName))
+
+                    onActivated: settings.fontName = currentText
+                }
+            }
+
+            SettingRow {
+                text: qsTr("Font Size")
+
+                FishUI.Slider {
+                    id: fontSizeSlider
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 160
+                    from: 5
+                    to: 30
+                    stepSize: 1
+                    value: settings.fontPointSize
+
+                    onMoved: settings.fontPointSize = fontSizeSlider.value
+                }
+
+                ValueLabel {
+                    text: settings.fontPointSize + " pt"
+                }
+            }
+
+            SettingRow {
+                text: qsTr("Blinking Cursor")
+                last: true
+
+                FishUI.Switch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: settings.blinkingCursor
+                    onToggled: settings.blinkingCursor = checked
+                }
+            }
         }
 
-        FishUI.Slider {
-            id: fontSizeSlider
-            Layout.fillWidth: true
-            from: 5
-            to: 30
-            stepSize: 1
-            value: settings.fontPointSize
+        Card {
+            SettingRow {
+                text: qsTr("Opacity")
 
-            onMoved: settings.fontPointSize = fontSizeSlider.value
-        }
+                FishUI.Slider {
+                    id: transparencySlider
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 160
+                    from: 0.1
+                    to: 1.0
+                    stepSize: 0.05
+                    value: settings.opacity
 
-        FishUI.Label {
-            text: qsTr("Transparency")
-        }
+                    onMoved: settings.opacity = transparencySlider.value
+                }
 
-        FishUI.Slider {
-            id: transparencySlider
-            Layout.fillWidth: true
-            from: 0.1
-            to: 1.0
-            stepSize: 0.05
-            value: settings.opacity
+                ValueLabel {
+                    text: Math.round(settings.opacity * 100) + "%"
+                }
+            }
 
-            onMoved: settings.opacity = transparencySlider.value
-        }
+            SettingRow {
+                text: qsTr("Window Blur")
+                last: true
 
-        FishUI.Label {
-            text: qsTr("Window Blur")
-        }
-
-        FishUI.Switch {
-            Layout.alignment: Qt.AlignRight
-            checked: settings.blur
-            onToggled: settings.blur = checked
+                FishUI.Switch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: settings.blur
+                    onToggled: settings.blur = checked
+                }
+            }
         }
     }
 }

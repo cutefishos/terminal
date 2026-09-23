@@ -102,6 +102,10 @@ Item {
     QMLTermWidget {
         id: _terminal
         anchors.fill: parent
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        anchors.topMargin: 2
+        anchors.bottomMargin: 8
         colorScheme: FishUI.Theme.darkMode ? "Cutefish-Dark" : "Cutefish-Light"
         font.family: settings.fontName
         font.pointSize: settings.fontPointSize
@@ -125,8 +129,7 @@ Item {
             acceptedButtons:  Qt.RightButton | Qt.LeftButton
 
             onDoubleClicked: (mouse) => {
-                 var coord = correctDistortion(mouse.x, mouse.y)
-                 _terminal.simulateMouseDoubleClick(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
+                 _terminal.simulateMouseDoubleClick(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onPressed: (mouse) => {
@@ -135,19 +138,16 @@ Item {
                     updateMenu()
                     terminalMenu.popup()
                 } else {
-                    var coord = correctDistortion(mouse.x, mouse.y)
-                    _terminal.simulateMousePress(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
+                    _terminal.simulateMousePress(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
                 }
             }
 
             onReleased: (mouse) => {
-                var coord = correctDistortion(mouse.x, mouse.y)
-                _terminal.simulateMouseRelease(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
+                _terminal.simulateMouseRelease(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onPositionChanged: (mouse) => {
-                var coord = correctDistortion(mouse.x, mouse.y)
-                _terminal.simulateMouseMove(coord.x, coord.y, mouse.button, mouse.buttons, mouse.modifiers)
+                _terminal.simulateMouseMove(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onClicked: (mouse) => {
@@ -191,20 +191,27 @@ Item {
 
         FishUI.MenuItem {
             id: pasteMenuItem
-            text: qsTr("Paste")
             action: _pasteAction
         }
 
         FishUI.MenuItem {
-            id: selectAllItem
             text: qsTr("Select All")
             onTriggered: _terminal.selectAll()
+        }
+
+        FishUI.MenuSeparator {}
+
+        FishUI.MenuItem {
+            text: qsTr("New Tab")
+            onTriggered: root.openNewTab()
         }
 
         FishUI.MenuItem {
             text: qsTr("Open File Manager")
             onTriggered: Process.openFileManager(_session.currentDir)
         }
+
+        FishUI.MenuSeparator {}
 
         FishUI.MenuItem {
             text: root.isFullScreen ? qsTr("Exit full screen") : qsTr("Full screen")
@@ -222,17 +229,35 @@ Item {
         }
     }
 
+    // Overlays the right margin; shown while scrolling or under the pointer.
     FishUI.ScrollBar {
         id: _scrollbar
+
+        readonly property int totalLines: _terminal.lines + _terminal.scrollbarMaximum - _terminal.scrollbarMinimum
+
         anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: FishUI.Units.smallSpacing * 1.5
-        hoverEnabled: true
-        active: hovered || pressed
+        anchors.top: _terminal.top
+        anchors.bottom: _terminal.bottom
+        anchors.rightMargin: 2
         orientation: Qt.Vertical
-        size: (_terminal.lines / (_terminal.lines + _terminal.scrollbarMaximum - _terminal.scrollbarMinimum))
-        position: _terminal.scrollbarCurrentValue / (_terminal.lines + _terminal.scrollbarMaximum)
+        active: hovered || pressed || _scrollActivity.running
+        size: totalLines > 0 ? _terminal.lines / totalLines : 1
+        position: totalLines > 0 ? (_terminal.scrollbarCurrentValue - _terminal.scrollbarMinimum) / totalLines : 0
+
+        onPositionChanged: {
+            if (pressed)
+                _terminal.scrollbarCurrentValue = Math.round(position * totalLines) + _terminal.scrollbarMinimum
+        }
+
+        Timer {
+            id: _scrollActivity
+            interval: 800
+        }
+
+        Connections {
+            target: _terminal
+            function onScrollbarValueChanged() { _scrollActivity.restart() }
+        }
     }
 
     DropArea {
@@ -249,17 +274,6 @@ Item {
 
     function forceActiveFocus() {
         _terminal.forceActiveFocus()
-    }
-
-    function correctDistortion(x, y) {
-        x = x / width
-        y = y / height
-
-        var cc = Qt.size(0.5 - x, 0.5 - y)
-        var distortion = 0
-
-        return Qt.point((x - cc.width  * (1 + distortion) * distortion) * _terminal.width,
-                        (y - cc.height * (1 + distortion) * distortion) * _terminal.height)
     }
 
     function updateMenu() {
