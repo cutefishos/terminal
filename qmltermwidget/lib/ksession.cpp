@@ -266,6 +266,11 @@ void KSession::clearScreen()
     m_session->emulation()->clearEntireScreen();
 }
 
+void KSession::clearScrollback()
+{
+    m_session->clearHistory();
+}
+
 void KSession::search(const QString &regexp, int startLine, int startColumn, bool forwards)
 {
     HistorySearch *history = new HistorySearch(QPointer<Emulation>(m_session->emulation()),

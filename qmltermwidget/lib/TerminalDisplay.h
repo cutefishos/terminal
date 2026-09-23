@@ -384,6 +384,9 @@ public:
     bool hasSelection() const;
 
     Q_INVOKABLE void selectAll();
+    Q_INVOKABLE QString selectedText() const;
+    /** The link under @p x, @p y in item coordinates, or an empty string. */
+    Q_INVOKABLE QString linkAt(qreal x, qreal y);
 
     /**
      * Reimplemented.  Has no effect.  Use setVTFont() to change the font

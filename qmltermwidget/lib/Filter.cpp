@@ -466,22 +466,36 @@ void UrlFilter::HotSpot::activate(const QString& actionName)
 
     if ( actionName.isEmpty() || actionName == QLatin1String("open-action") || actionName == QLatin1String("click-action") )
     {
-        if ( kind == StandardUrl )
-        {
-            // if the URL path does not include the protocol ( eg. "www.kde.org" ) then
-            // prepend http:// ( eg. "www.kde.org" --> "http://www.kde.org" )
-            if (!url.contains(QLatin1String("://")))
-            {
-                url.prepend(QLatin1String("http://"));
-            }
-        }
-        else if ( kind == Email )
-        {
-            url.prepend(QLatin1String("mailto:"));
-        }
-
-        _urlObject->emitActivated(QUrl(url, QUrl::StrictMode), actionName != QLatin1String("click-action"));
+        if ( kind == StandardUrl || kind == Email )
+            _urlObject->emitActivated(this->url(), actionName != QLatin1String("click-action"));
     }
+}
+
+QUrl UrlFilter::HotSpot::url() const
+{
+    QString url = capturedTexts().constFirst();
+
+    const UrlType kind = urlType();
+
+    if ( kind == StandardUrl )
+    {
+        // if the URL path does not include the protocol ( eg. "www.kde.org" ) then
+        // prepend http:// ( eg. "www.kde.org" --> "http://www.kde.org" )
+        if (!url.contains(QLatin1String("://")))
+        {
+            url.prepend(QLatin1String("http://"));
+        }
+    }
+    else if ( kind == Email )
+    {
+        url.prepend(QLatin1String("mailto:"));
+    }
+    else
+    {
+        return QUrl();
+    }
+
+    return QUrl(url, QUrl::StrictMode);
 }
 
 // Note:  Altering these regular expressions can have a major effect on the performance of the filters

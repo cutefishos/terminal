@@ -146,6 +146,11 @@ void Emulation::setScreen(int n)
 void Emulation::clearHistory()
 {
     _screen[0]->setScroll( _screen[0]->getScroll() , false );
+
+    // Views would keep the old scroll range until the next output otherwise.
+    // Scheduled, not shown at once: ESC[3J arrives mid-chunk, and showBulk()
+    // would cancel the update for the rest of that chunk.
+    bufferedUpdate();
 }
 void Emulation::setHistory(const HistoryType& t)
 {

@@ -160,6 +160,8 @@ public slots:
 
     void clearScreen();
 
+    void clearScrollback();
+
     // Search history
     void search(const QString &regexp, int startLine = 0, int startColumn = 0, bool forwards = true );
 

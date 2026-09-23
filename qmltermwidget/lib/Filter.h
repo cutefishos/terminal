@@ -22,6 +22,7 @@
 
 // Qt
 #include <QAction>
+#include <QUrl>
 #include <QList>
 #include <QObject>
 #include <QStringList>
@@ -262,6 +263,9 @@ public:
          * the capturedTexts() method.
          */
         void activate(const QString& action = QString()) override;
+
+        /** The link as it would be opened: a scheme is added to bare www. and e-mail matches. */
+        QUrl url() const;
 
     private:
         enum UrlType

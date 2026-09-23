@@ -158,6 +158,8 @@ void TerminalDisplay::setScreenWindow(ScreenWindow* window)
         connect(_screenWindow, &ScreenWindow::outputChanged, this, &TerminalDisplay::updateLineProperties);
         connect(_screenWindow, &ScreenWindow::outputChanged, this, &TerminalDisplay::updateImage);
         connect(_screenWindow, &ScreenWindow::scrollToEnd, this, &TerminalDisplay::scrollToEnd);
+        // Drives copyAvailable, and with it hasSelection.
+        connect(_screenWindow, &ScreenWindow::selectionChanged, this, &TerminalDisplay::selectionChanged);
         window->setWindowLines(_lines);
     }
 }
@@ -3198,6 +3200,31 @@ void TerminalDisplay::selectAll()
 
     _screenWindow->selectAll();
     setSelection(_screenWindow->selectedText(_preserveLineBreaks));
+}
+
+QString TerminalDisplay::selectedText() const
+{
+    return _screenWindow ? _screenWindow->selectedText(_preserveLineBreaks) : QString();
+}
+
+QString TerminalDisplay::linkAt(qreal x, qreal y)
+{
+    if (!_image)
+        return QString();
+
+    int charLine = 0;
+    int charColumn = 0;
+    getCharacterPosition(QPointF(x, y), charLine, charColumn);
+
+    // Matched on demand against the text on display: the display's own filter
+    // chain is not refreshed on output in this port, so its hotspots go stale.
+    TerminalImageFilterChain chain;
+    chain.addFilter(new UrlFilter());
+    chain.setImage(_image, _lines, _columns, _lineProperties);
+    chain.process();
+
+    auto *spot = dynamic_cast<UrlFilter::HotSpot *>(chain.hotSpotAt(charLine, charColumn));
+    return spot ? spot->url().toString() : QString();
 }
 
 void TerminalDisplay::copyClipboard()
