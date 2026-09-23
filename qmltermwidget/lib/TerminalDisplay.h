@@ -115,6 +115,7 @@ class KONSOLEPRIVATE_EXPORT TerminalDisplay : public QQuickPaintedItem
    Q_PROPERTY(bool useFBORendering      READ useFBORendering WRITE setUseFBORendering)
    Q_PROPERTY(bool hasSelection         READ hasSelection                         NOTIFY copyAvailable           )
    Q_PROPERTY(qreal backgroundOpacity   READ backgroundOpacity WRITE setBackgroundOpacity NOTIFY backgroundOpacityChanged)
+   Q_PROPERTY(bool confirmMultilinePaste READ confirmMultilinePaste WRITE setConfirmMultilinePaste)
 
 public:
     /** Constructs a new terminal display widget with the specified parent. */
@@ -387,6 +388,14 @@ public:
     Q_INVOKABLE QString selectedText() const;
     /** The link under @p x, @p y in item coordinates, or an empty string. */
     Q_INVOKABLE QString linkAt(qreal x, qreal y);
+    /**
+     * Where to underline the link under @p x, @p y: a list of {x, y, width}
+     * segments in item coordinates, one per line the link covers.
+     */
+    Q_INVOKABLE QVariantList linkUnderlineAt(qreal x, qreal y);
+
+    /** Sends the text held back by multilinePasteRequested(). */
+    Q_INVOKABLE void confirmPaste();
     /** description, background, foreground and the 16 ANSI colours of a scheme. */
     Q_INVOKABLE QVariantMap colorSchemeInfo(const QString &name) const;
 
@@ -513,6 +522,7 @@ public:
     void setMotionAfterPasting(MotionAfterPasting action);
     int motionAfterPasting();
     void setConfirmMultilinePaste(bool confirmMultilinePaste);
+    bool confirmMultilinePaste() const { return _confirmMultilinePaste; }
     void setTrimPastedTrailingNewlines(bool trimPastedTrailingNewlines);
 
     // maps a point on the widget to the position ( ie. line and column )
@@ -641,6 +651,8 @@ public slots:
 signals:
     void backgroundOpacityChanged();
     void findResult(bool found);
+    /** A paste with line breaks waits for confirmPaste() instead of running them. */
+    void multilinePasteRequested(const QString &text);
 
     /**
      * Emitted when the user presses a key whilst the terminal widget has focus.
@@ -832,7 +844,8 @@ private:
     void scrollImage(int lines , const QRect& region);
 
     // shows the multiline prompt
-    bool multilineConfirmation(const QString& text);
+    void sendPaste(QString text, bool appendReturn);
+    UrlFilter::HotSpot *linkHotSpotAt(TerminalImageFilterChain &chain, qreal x, qreal y);
 
     void calcGeometry();
     void propagateSize();
@@ -981,6 +994,10 @@ private:
     MotionAfterPasting mMotionAfterPasting;
     bool _confirmMultilinePaste;
     bool _trimPastedTrailingNewlines;
+
+    QString _pendingPaste;
+    bool _pendingPasteAppendReturn = false;
+    bool _pendingPasteIsDrop = false;
 
     struct InputMethodData
     {

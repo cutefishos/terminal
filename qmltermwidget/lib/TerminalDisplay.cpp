@@ -40,7 +40,6 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLayout>
-#include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
 #include <QPixmap>
@@ -420,6 +419,7 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
 ,_cursorShape(Emulation::KeyboardCursorShape::BlockCursor)
 ,mMotionAfterPasting(NoMoveScreenWindow)
 ,_confirmMultilinePaste(false)
+,_trimPastedTrailingNewlines(false)
 ,m_font("Monospace", 12)
 ,m_color_role(QPalette::Window)
 ,m_full_cursor_height(false)
@@ -3111,42 +3111,52 @@ void TerminalDisplay::emitSelection(bool useXselection,bool appendReturn)
     }
 
     if (_confirmMultilinePaste && text.contains(QLatin1Char('\r'))) {
-        if (!multilineConfirmation(text)) {
-            return;
-        }
+        _pendingPaste = text;
+        _pendingPasteAppendReturn = appendReturn;
+        _pendingPasteIsDrop = false;
+        emit multilinePasteRequested(QString(text).replace(QLatin1Char('\r'), QLatin1Char('\n')));
+        return;
     }
 
-    bracketText(text);
+    sendPaste(text, appendReturn);
+  }
+}
 
-    // appendReturn is intentionally handled _after_ enclosing texts with brackets as
-    // that feature is used to allow execution of commands immediately after paste.
-    // Ref: https://bugs.kde.org/show_bug.cgi?id=16179
-    // Ref: https://github.com/KDE/konsole/commit/83d365f2ebfe2e659c1e857a2f5f247c556ab571
-    if(appendReturn) {
-        text.append(QLatin1Char('\r'));
-    }
+void TerminalDisplay::sendPaste(QString text, bool appendReturn)
+{
+  if ( !_screenWindow )
+      return;
 
-    QKeyEvent e(QEvent::KeyPress, 0, Qt::NoModifier, text);
-    emit keyPressedSignal(&e, true); // expose as a big fat keypress event
+  bracketText(text);
 
-    _screenWindow->clearSelection();
+  // appendReturn is intentionally handled _after_ enclosing texts with brackets as
+  // that feature is used to allow execution of commands immediately after paste.
+  // Ref: https://bugs.kde.org/show_bug.cgi?id=16179
+  // Ref: https://github.com/KDE/konsole/commit/83d365f2ebfe2e659c1e857a2f5f247c556ab571
+  if(appendReturn) {
+      text.append(QLatin1Char('\r'));
+  }
 
-    switch(mMotionAfterPasting)
-    {
-    case MoveStartScreenWindow:
-        // Temporarily stop tracking output, or pasting contents triggers
-        // ScreenWindow::notifyOutputChanged() and the latter scrolls the
-        // terminal to the last line. It will be re-enabled when needed
-        // (e.g., scrolling to the last line).
-        _screenWindow->setTrackOutput(false);
-        _screenWindow->scrollTo(0);
-        break;
-    case MoveEndScreenWindow:
-        scrollToEnd();
-        break;
-    case NoMoveScreenWindow:
-        break;
-    }
+  QKeyEvent e(QEvent::KeyPress, 0, Qt::NoModifier, text);
+  emit keyPressedSignal(&e, true); // expose as a big fat keypress event
+
+  _screenWindow->clearSelection();
+
+  switch(mMotionAfterPasting)
+  {
+  case MoveStartScreenWindow:
+      // Temporarily stop tracking output, or pasting contents triggers
+      // ScreenWindow::notifyOutputChanged() and the latter scrolls the
+      // terminal to the last line. It will be re-enabled when needed
+      // (e.g., scrolling to the last line).
+      _screenWindow->setTrackOutput(false);
+      _screenWindow->scrollTo(0);
+      break;
+  case MoveEndScreenWindow:
+      scrollToEnd();
+      break;
+  case NoMoveScreenWindow:
+      break;
   }
 }
 
@@ -3159,27 +3169,18 @@ void TerminalDisplay::bracketText(QString& text) const
     }
 }
 
-bool TerminalDisplay::multilineConfirmation(const QString& text)
+void TerminalDisplay::confirmPaste()
 {
-    QMessageBox confirmation;
-    confirmation.setWindowTitle(tr("Paste multiline text"));
-    confirmation.setText(tr("Are you sure you want to paste this text?"));
-    confirmation.setDetailedText(text);
-    confirmation.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    // Click "Show details..." to show those by default
-    const auto buttons = confirmation.buttons();
-    for( QAbstractButton * btn : buttons ) {
-        if (confirmation.buttonRole(btn) == QMessageBox::ActionRole && btn->text() == QMessageBox::tr("Show Details...")) {
-            Q_EMIT btn->clicked();
-            break;
-        }
-    }
-    confirmation.setDefaultButton(QMessageBox::Yes);
-    confirmation.exec();
-    if (confirmation.standardButton(confirmation.clickedButton()) != QMessageBox::Yes) {
-        return false;
-    }
-    return true;
+    if (_pendingPaste.isEmpty())
+        return;
+
+    const QString text = _pendingPaste;
+    _pendingPaste.clear();
+
+    if (_pendingPasteIsDrop)
+        emit sendStringToEmu(text.toLocal8Bit().constData());
+    else
+        sendPaste(text, _pendingPasteAppendReturn);
 }
 
 void TerminalDisplay::setSelection(const QString& t)
@@ -3209,10 +3210,10 @@ QString TerminalDisplay::selectedText() const
     return _screenWindow ? _screenWindow->selectedText(_preserveLineBreaks) : QString();
 }
 
-QString TerminalDisplay::linkAt(qreal x, qreal y)
+UrlFilter::HotSpot *TerminalDisplay::linkHotSpotAt(TerminalImageFilterChain &chain, qreal x, qreal y)
 {
     if (!_image)
-        return QString();
+        return nullptr;
 
     int charLine = 0;
     int charColumn = 0;
@@ -3220,13 +3221,50 @@ QString TerminalDisplay::linkAt(qreal x, qreal y)
 
     // Matched on demand against the text on display: the display's own filter
     // chain is not refreshed on output in this port, so its hotspots go stale.
-    TerminalImageFilterChain chain;
     chain.addFilter(new UrlFilter());
     chain.setImage(_image, _lines, _columns, _lineProperties);
     chain.process();
 
-    auto *spot = dynamic_cast<UrlFilter::HotSpot *>(chain.hotSpotAt(charLine, charColumn));
+    return dynamic_cast<UrlFilter::HotSpot *>(chain.hotSpotAt(charLine, charColumn));
+}
+
+QString TerminalDisplay::linkAt(qreal x, qreal y)
+{
+    TerminalImageFilterChain chain;
+    UrlFilter::HotSpot *spot = linkHotSpotAt(chain, x, y);
     return spot ? spot->url().toString() : QString();
+}
+
+QVariantList TerminalDisplay::linkUnderlineAt(qreal x, qreal y)
+{
+    TerminalImageFilterChain chain;
+    UrlFilter::HotSpot *spot = linkHotSpotAt(chain, x, y);
+    if (!spot)
+        return QVariantList();
+
+    // Placed like the underline paintFilters() would draw.
+    const QFontMetrics metrics(font());
+    QVariantList segments;
+    for (int line = spot->startLine(); line <= spot->endLine(); ++line) {
+        int startColumn = line == spot->startLine() ? spot->startColumn() : 0;
+        int endColumn = _columns;
+        if (line == spot->endLine()) {
+            endColumn = spot->endColumn();
+        } else {
+            while (endColumn > startColumn && QChar(_image[loc(endColumn - 1, line)].character).isSpace())
+                endColumn--;
+        }
+
+        const int bottom = (line + 1) * _fontHeight - 1 + _topBaseMargin;
+        const int underline = bottom - metrics.descent() + metrics.underlinePos();
+        segments << QVariantMap {
+            { QStringLiteral("x"), startColumn * _fontWidth + _leftBaseMargin },
+            { QStringLiteral("y"), underline },
+            { QStringLiteral("width"), (endColumn - startColumn) * _fontWidth },
+        };
+    }
+
+    return segments;
 }
 
 void TerminalDisplay::copyClipboard()
@@ -3665,10 +3703,10 @@ void TerminalDisplay::dropEvent(QDropEvent* event)
     }
     if (_confirmMultilinePaste && dropText.contains(QLatin1Char('\r')))
     {
-      if (!multilineConfirmation(dropText))
-      {
-        return;
-      }
+      _pendingPaste = dropText;
+      _pendingPasteIsDrop = true;
+      emit multilinePasteRequested(QString(dropText).replace(QLatin1Char('\r'), QLatin1Char('\n')));
+      return;
     }
   }
 
