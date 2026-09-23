@@ -271,11 +271,10 @@ qreal ColorScheme::opacity() const { return _opacity; }
 void ColorScheme::read(const QString & fileName)
 {
     QSettings s(fileName, QSettings::IniFormat);
-    s.beginGroup(QLatin1String("General"));
 
+    // QSettings reads an INI [General] section as the top level, not as a group.
     _description = s.value(QLatin1String("Description"), QObject::tr("Un-named Color Scheme")).toString();
     _opacity = s.value(QLatin1String("Opacity"),qreal(1.0)).toDouble();
-    s.endGroup();
 
     for (int i=0 ; i < TABLE_COLORS ; i++)
     {
