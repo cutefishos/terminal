@@ -125,7 +125,6 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: 6
         anchors.rightMargin: 6
-        anchors.topMargin: 2
         anchors.bottomMargin: 6
         colorScheme: root.colorScheme
         font.family: settings.fontName

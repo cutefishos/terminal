@@ -29,6 +29,6 @@ Settings {
     // A bundled color scheme, by file name.
     property string colorScheme: "TokyoNight"
 
-    property double opacity: 1.0
-    property bool blur: false
+    property double opacity: 0.85
+    property bool blur: true
 }
