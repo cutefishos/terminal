@@ -2831,72 +2831,119 @@ void TerminalDisplay::mouseDoubleClickEvent(QMouseEvent* ev)
   }
 
   _screenWindow->clearSelection();
-  QPoint bgnSel = pos;
-  QPoint endSel = pos;
-  int i = loc(bgnSel.x(),bgnSel.y());
-  _iPntSel = bgnSel;
+  _iPntSel = pos;
   _iPntSel.ry() += _scrollBar->value();
 
   _wordSelectionMode = true;
 
-  // find word boundaries...
-  QChar selClass = charClass(_image[i]);
-  {
-     // find the start of the word
-     int x = bgnSel.x();
-     while ( ((x>0) || (bgnSel.y()>0 && (_lineProperties[bgnSel.y()-1] & LINE_WRAPPED) ))
-                     && charClass(_image[i-1]) == selClass )
-     {
-       i--;
-       if (x>0)
-           x--;
-       else
-       {
-           x=_usedColumns-1;
-           bgnSel.ry()--;
-       }
-     }
+  QPoint bgnSel;
+  QPoint endSel;
+  findWordBounds(pos, bgnSel, endSel);
 
-     bgnSel.setX(x);
-     _screenWindow->setSelectionStart( bgnSel.x() , bgnSel.y() , false );
+  _screenWindow->setSelectionStart( bgnSel.x() , bgnSel.y() , false );
 
-     // find the end of the word
-     i = loc( endSel.x(), endSel.y() );
-     x = endSel.x();
-     while( ((x<_usedColumns-1) || (endSel.y()<_usedLines-1 && (_lineProperties[endSel.y()] & LINE_WRAPPED) ))
-                     && charClass(_image[i+1]) == selClass )
-     {
-         i++;
-         if (x<_usedColumns-1)
-             x++;
-         else
-         {
-             x=0;
-             endSel.ry()++;
-         }
-     }
+  _actSel = 2; // within selection
 
-     endSel.setX(x);
+  _screenWindow->setSelectionEnd( endSel.x() , endSel.y() );
 
-     // In word selection mode don't select @ (64) if at end of word.
-     if (QChar(_image[i].character) == QLatin1Char('@') &&
-         endSel.x() - bgnSel.x() > 0 &&
-         (_image[i].rendition & RE_EXTENDED_CHAR) == 0)
-     {
-       endSel.setX( x - 1 );
-     }
-
-     _actSel = 2; // within selection
-
-     _screenWindow->setSelectionEnd( endSel.x() , endSel.y() );
-
-     setSelection( _screenWindow->selectedText(_preserveLineBreaks) );
-   }
+  setSelection( _screenWindow->selectedText(_preserveLineBreaks) );
 
   _possibleTripleClick=true;
 
   QTimer::singleShot(QApplication::doubleClickInterval(),this,
                      SLOT(tripleClickTimeout()));
+}
+
+void TerminalDisplay::findWordBounds(const QPoint &pos, QPoint &bgnSel, QPoint &endSel) const
+{
+  bgnSel = pos;
+  endSel = pos;
+  int i = loc(bgnSel.x(),bgnSel.y());
+
+  QChar selClass = charClass(_image[i]);
+
+  // find the start of the word
+  int x = bgnSel.x();
+  while ( ((x>0) || (bgnSel.y()>0 && (_lineProperties[bgnSel.y()-1] & LINE_WRAPPED) ))
+                  && charClass(_image[i-1]) == selClass )
+  {
+    i--;
+    if (x>0)
+        x--;
+    else
+    {
+        x=_usedColumns-1;
+        bgnSel.ry()--;
+    }
+  }
+
+  bgnSel.setX(x);
+
+  // find the end of the word
+  i = loc( endSel.x(), endSel.y() );
+  x = endSel.x();
+  while( ((x<_usedColumns-1) || (endSel.y()<_usedLines-1 && (_lineProperties[endSel.y()] & LINE_WRAPPED) ))
+                  && charClass(_image[i+1]) == selClass )
+  {
+      i++;
+      if (x<_usedColumns-1)
+          x++;
+      else
+      {
+          x=0;
+          endSel.ry()++;
+      }
+  }
+
+  endSel.setX(x);
+
+  // In word selection mode don't select @ (64) if at end of word.
+  if (QChar(_image[i].character) == QLatin1Char('@') &&
+      endSel.x() - bgnSel.x() > 0 &&
+      (_image[i].rendition & RE_EXTENDED_CHAR) == 0)
+  {
+    endSel.setX( x - 1 );
+  }
+}
+
+void TerminalDisplay::getCharacterCellAt(const QPointF &point, int &line, int &column) const
+{
+    getCharacterPosition(QPointF(point.x() - _fontWidth / 2.0, point.y()), line, column);
+    column = qBound(0, column, qMax(0, _usedColumns - 1));
+}
+
+bool TerminalDisplay::isSelectedAt(qreal x, qreal y)
+{
+    if (!_screenWindow)
+        return false;
+
+    int charLine = 0;
+    int charColumn = 0;
+    getCharacterCellAt(QPointF(x, y), charLine, charColumn);
+    return _screenWindow->isSelected(charColumn, charLine);
+}
+
+bool TerminalDisplay::selectWordAt(qreal x, qreal y)
+{
+    if (!_screenWindow || !_image)
+        return false;
+
+    int charLine = 0;
+    int charColumn = 0;
+    getCharacterCellAt(QPointF(x, y), charLine, charColumn);
+
+    if (QChar(_image[loc(charColumn, charLine)].character).isSpace())
+        return false;
+
+    QPoint bgnSel;
+    QPoint endSel;
+    findWordBounds(QPoint(charColumn, charLine), bgnSel, endSel);
+
+    _screenWindow->clearSelection();
+    _screenWindow->setSelectionStart(bgnSel.x(), bgnSel.y(), false);
+    _screenWindow->setSelectionEnd(endSel.x(), endSel.y());
+    setSelection(_screenWindow->selectedText(_preserveLineBreaks));
+    return true;
 }
 
 void TerminalDisplay::wheelEvent( QWheelEvent* ev )
@@ -3217,7 +3264,7 @@ UrlFilter::HotSpot *TerminalDisplay::linkHotSpotAt(TerminalImageFilterChain &cha
 
     int charLine = 0;
     int charColumn = 0;
-    getCharacterPosition(QPointF(x, y), charLine, charColumn);
+    getCharacterCellAt(QPointF(x, y), charLine, charColumn);
 
     // Matched on demand against the text on display: the display's own filter
     // chain is not refreshed on output in this port, so its hotspots go stale.

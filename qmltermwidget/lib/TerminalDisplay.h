@@ -396,6 +396,11 @@ public:
 
     /** Sends the text held back by multilinePasteRequested(). */
     Q_INVOKABLE void confirmPaste();
+
+    /** Whether @p x, @p y (item coordinates) is inside the current selection. */
+    Q_INVOKABLE bool isSelectedAt(qreal x, qreal y);
+    /** Selects the word under @p x, @p y as a double click would; false on blank space. */
+    Q_INVOKABLE bool selectWordAt(qreal x, qreal y);
     /** description, background, foreground and the 16 ANSI colours of a scheme. */
     Q_INVOKABLE QVariantMap colorSchemeInfo(const QString &name) const;
 
@@ -845,6 +850,10 @@ private:
 
     // shows the multiline prompt
     void sendPaste(QString text, bool appendReturn);
+    void findWordBounds(const QPoint &pos, QPoint &bgnSel, QPoint &endSel) const;
+    // The cell under a point; getCharacterPosition() finds the nearest gap
+    // between cells instead, which is what a selection anchor needs.
+    void getCharacterCellAt(const QPointF &point, int &line, int &column) const;
     UrlFilter::HotSpot *linkHotSpotAt(TerminalImageFilterChain &chain, qreal x, qreal y);
 
     void calcGeometry();
