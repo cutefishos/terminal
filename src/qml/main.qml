@@ -100,6 +100,7 @@ FishUI.Window {
             anchors.verticalCenter: parent.verticalCenter
             text: root.title
             elide: Text.ElideMiddle
+            font.family: settings.fontName
             font.pixelSize: 13
             font.weight: Font.Medium
             color: root.active ? FishUI.Theme.textColor : FishUI.Theme.disabledTextColor
