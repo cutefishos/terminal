@@ -93,6 +93,41 @@ FishUI.Window {
         parentWindow: root
     }
 
+    // Line breaks in a paste run as if Enter were pressed, so a paste with any
+    // waits here first.
+    FishUI.ConfirmDialog {
+        id: _pasteConfirm
+
+        property var pendingAction: null
+        property int lineCount: 0
+
+        parentWindow: root
+        x: root.x + Math.round((root.width - width) / 2)
+        y: root.y + Math.round((root.height - height) / 2)
+        showOnCompleted: false
+        title: lineCount > 1 ? qsTr("Paste %1 lines?").arg(lineCount) : qsTr("Paste this line and press Enter?")
+        confirmText: qsTr("Paste")
+
+        onAccepted: {
+            if (pendingAction)
+                pendingAction()
+            pendingAction = null
+        }
+        onRejected: pendingAction = null
+    }
+
+    function confirmPaste(text, action) {
+        const lines = text.replace(/\n+$/, "").split("\n")
+        const shown = lines.slice(0, 4).map(line => line.length > 60 ? line.substring(0, 59) + "…" : line)
+        if (lines.length > 4)
+            shown.push("…")
+
+        _pasteConfirm.lineCount = lines.length
+        _pasteConfirm.text = shown.join("\n")
+        _pasteConfirm.pendingAction = action
+        _pasteConfirm.open()
+    }
+
     onClosing: (close) => {
         if (!root.isMaximized && !root.isFullScreen) {
             settings.width = root.width

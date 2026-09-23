@@ -131,11 +131,72 @@ Item {
         font.family: settings.fontName
         font.pointSize: root.fontPointSize
         blinkingCursor: settings.blinkingCursor
+        confirmMultilinePaste: true
         fullCursorHeight: true
         backgroundOpacity: 0
 
         Keys.enabled: true
-        Keys.onPressed: (event) => control.keyPressed(event)
+        Keys.onPressed: (event) => {
+            if (event.key === Qt.Key_Control)
+                _linkHover.ctrlHeld = true
+            control.keyPressed(event)
+        }
+        Keys.onReleased: (event) => {
+            if (event.key === Qt.Key_Control)
+                _linkHover.ctrlHeld = false
+        }
+
+        onScrollbarParamsChanged: _linkHover.refresh()
+        onMultilinePasteRequested: (text) => root.confirmPaste(text, () => _terminal.confirmPaste())
+
+        // The link under the pointer: underlined on hover, opened with Ctrl+click.
+        QtObject {
+            id: _linkHover
+
+            property var segments: []
+            property bool ctrlHeld: false
+            property real posX: -1
+            property real posY: -1
+            property string cell: ""
+
+            function update(x, y, modifiers) {
+                ctrlHeld = (modifiers & Qt.ControlModifier) !== 0
+                posX = x
+                posY = y
+
+                // Only a move to another cell can change the link under the pointer.
+                const key = Math.floor(x / Math.max(1, _terminal.fontMetrics.width)) + ":"
+                          + Math.floor(y / Math.max(1, _terminal.fontMetrics.height))
+                if (key === cell)
+                    return
+
+                cell = key
+                segments = _terminal.linkUnderlineAt(x, y)
+            }
+
+            function refresh() {
+                if (posX >= 0)
+                    segments = _terminal.linkUnderlineAt(posX, posY)
+            }
+
+            function clear() {
+                posX = -1
+                cell = ""
+                segments = []
+            }
+        }
+
+        Repeater {
+            model: _linkHover.segments
+
+            Rectangle {
+                x: modelData.x
+                y: modelData.y
+                width: modelData.width
+                height: 1
+                color: root.chromeForeground
+            }
+        }
 
         session: QMLTermSession {
             id: _session
@@ -146,12 +207,16 @@ Item {
         MouseArea {
             anchors.fill: parent
             propagateComposedEvents: true
-            cursorShape: _terminal.terminalUsesMouse ? Qt.ArrowCursor : Qt.IBeamCursor
+            hoverEnabled: true
+            cursorShape: _linkHover.segments.length && _linkHover.ctrlHeld ? Qt.PointingHandCursor
+                         : _terminal.terminalUsesMouse ? Qt.ArrowCursor : Qt.IBeamCursor
             acceptedButtons:  Qt.RightButton | Qt.LeftButton
 
             // The menu opens on release: shown while the button is still down, it
             // takes the release, leaving this area pressed and its cursor stale.
             property bool menuPress: false
+            // A Ctrl+click on a link opens it and must not start a selection.
+            property bool linkPress: false
 
             onDoubleClicked: (mouse) => {
                  _terminal.simulateMouseDoubleClick(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
@@ -161,11 +226,24 @@ Item {
                 menuPress = mouse.button === Qt.RightButton
                         && (!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
 
+                linkPress = false
+                if (mouse.button === Qt.LeftButton && (mouse.modifiers & Qt.ControlModifier)) {
+                    const link = _terminal.linkAt(mouse.x, mouse.y)
+                    if (link !== "") {
+                        linkPress = true
+                        Qt.openUrlExternally(link)
+                        return
+                    }
+                }
+
                 if (!menuPress)
                     _terminal.simulateMousePress(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onReleased: (mouse) => {
+                if (linkPress)
+                    return
+
                 if (menuPress) {
                     menuPress = false
                     control.openMenu(mouse.x, mouse.y)
@@ -176,13 +254,20 @@ Item {
             }
 
             onPositionChanged: (mouse) => {
-                if (!menuPress)
+                if (!pressed) {
+                    _linkHover.update(mouse.x, mouse.y, mouse.modifiers)
+                    return
+                }
+
+                if (!menuPress && !linkPress)
                     _terminal.simulateMouseMove(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
+            onExited: _linkHover.clear()
+
             // A right click the program took stays its own.
             onClicked: (mouse) => {
-                if (mouse.button === Qt.LeftButton)
+                if (mouse.button === Qt.LeftButton && !linkPress)
                     _terminal.forceActiveFocus()
             }
         }
@@ -364,7 +449,11 @@ Item {
             if (drop.hasUrls) {
                 control.urlsDropped(drop.urls)
             } else if (drop.hasText) {
-                _session.sendText(drop.text)
+                const text = drop.text
+                if (text.indexOf("\n") !== -1)
+                    root.confirmPaste(text, () => _session.sendText(text))
+                else
+                    _session.sendText(text)
             }
         }
     }
