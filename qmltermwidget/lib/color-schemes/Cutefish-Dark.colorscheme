@@ -1,86 +1,86 @@
 [Background]
 Bold=false
-Color=28, 28, 29
+Color=28,28,29
 Transparency=false
 
 [BackgroundIntense]
 Bold=false
-Color=0,0,0
+Color=28,28,29
 Transparency=false
 
 [Color0]
 Bold=false
-Color=0,0,0
+Color=58,58,62
 Transparency=false
 
 [Color0Intense]
 Bold=false
-Color=104,104,104
+Color=124,124,133
 Transparency=false
 
 [Color1]
 Bold=false
-Color=250,75,75
+Color=242,103,106
 Transparency=false
 
 [Color1Intense]
 Bold=false
-Color=255,84,84
+Color=255,138,140
 Transparency=false
 
 [Color2]
 Bold=false
-Color=24,178,24
+Color=95,211,141
 Transparency=false
 
 [Color2Intense]
 Bold=false
-Color=84,255,84
+Color=126,226,164
 Transparency=false
 
 [Color3]
 Bold=false
-Color=178,104,24
+Color=232,195,95
 Transparency=false
 
 [Color3Intense]
 Bold=false
-Color=255,255,84
+Color=245,213,126
 Transparency=false
 
 [Color4]
 Bold=false
-Color=92,167,251
+Color=90,162,245
 Transparency=false
 
 [Color4Intense]
 Bold=false
-Color=84,84,255
+Color=125,184,250
 Transparency=false
 
 [Color5]
 Bold=false
-Color=225,30,225
+Color=197,138,240
 Transparency=false
 
 [Color5Intense]
 Bold=false
-Color=255,84,255
+Color=214,166,247
 Transparency=false
 
 [Color6]
 Bold=false
-Color=24,178,178
+Color=82,199,214
 Transparency=false
 
 [Color6Intense]
 Bold=false
-Color=84,255,255
+Color=116,216,228
 Transparency=false
 
 [Color7]
 Bold=false
-Color=178,178,178
+Color=208,208,213
 Transparency=false
 
 [Color7Intense]
@@ -90,14 +90,14 @@ Transparency=false
 
 [Foreground]
 Bold=false
-Color=24,240,24
+Color=229,229,231
 Transparency=false
 
 [ForegroundIntense]
-Bold=true
-Color=24,240,24
+Bold=false
+Color=255,255,255
 Transparency=false
 
 [General]
-Description=Green on Black
+Description=Cutefish Dark
 Opacity=1
