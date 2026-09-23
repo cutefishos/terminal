@@ -3880,6 +3880,29 @@ KSession* TerminalDisplay::getSession()
     return m_session;
 }
 
+QVariantMap TerminalDisplay::colorSchemeInfo(const QString &name) const
+{
+    const ColorScheme *cs = ColorSchemeManager::instance()->findColorScheme(name);
+    if (!cs)
+        return QVariantMap();
+
+    ColorEntry table[TABLE_COLORS];
+    cs->getColorTable(table);
+
+    QVariantList colors;
+    for (int i = 0; i < 8; ++i)
+        colors << table[i + 2].color;
+    for (int i = 0; i < 8; ++i)
+        colors << table[i + 2 + BASE_COLORS].color;
+
+    return {
+        { QStringLiteral("description"), cs->description() },
+        { QStringLiteral("background"), table[DEFAULT_BACK_COLOR].color },
+        { QStringLiteral("foreground"), table[DEFAULT_FORE_COLOR].color },
+        { QStringLiteral("colors"), colors },
+    };
+}
+
 QStringList TerminalDisplay::availableColorSchemes()
 {
     QStringList ret;
