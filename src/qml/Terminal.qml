@@ -102,10 +102,10 @@ Item {
     QMLTermWidget {
         id: _terminal
         anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
+        anchors.leftMargin: 6
+        anchors.rightMargin: 6
         anchors.topMargin: 2
-        anchors.bottomMargin: 8
+        anchors.bottomMargin: 6
         colorScheme: FishUI.Theme.darkMode ? "Cutefish-Dark" : "Cutefish-Light"
         font.family: settings.fontName
         font.pointSize: settings.fontPointSize
@@ -238,7 +238,6 @@ Item {
         anchors.right: parent.right
         anchors.top: _terminal.top
         anchors.bottom: _terminal.bottom
-        anchors.rightMargin: 2
         orientation: Qt.Vertical
         active: hovered || pressed || _scrollActivity.running
         size: totalLines > 0 ? _terminal.lines / totalLines : 1
