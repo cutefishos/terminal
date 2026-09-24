@@ -193,7 +193,7 @@ Item {
         }
 
         onScrollbarParamsChanged: _linkHover.refresh()
-        onNotifyBell: _bellFlash.flash()
+        onNotifyBell: root.flashBell()
         onMultilinePasteRequested: (text) => root.confirmPaste(text, () => _terminal.confirmPaste())
 
         // The link under the pointer: underlined on hover, opened with Ctrl+click.
@@ -488,25 +488,6 @@ Item {
         Connections {
             target: _terminal
             function onScrollbarValueChanged() { _scrollActivity.restart() }
-        }
-    }
-
-    // The visual bell: the terminal briefly lightens, or darkens on a light scheme.
-    Rectangle {
-        id: _bellFlash
-        anchors.fill: parent
-        color: root.chromeForeground
-        opacity: 0
-        visible: opacity > 0
-
-        function flash() {
-            _bellFade.restart()
-        }
-
-        SequentialAnimation {
-            id: _bellFade
-            PropertyAction { target: _bellFlash; property: "opacity"; value: 0.12 }
-            NumberAnimation { target: _bellFlash; property: "opacity"; to: 0; duration: 180 }
         }
     }
 

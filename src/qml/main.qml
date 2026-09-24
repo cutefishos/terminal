@@ -282,6 +282,28 @@ FishUI.Window {
         }
     }
 
+    // The visual bell: the whole window, title bar included, briefly lightens,
+    // or darkens on a light scheme.
+    function flashBell() {
+        _bellFade.restart()
+    }
+
+    Rectangle {
+        id: _bellFlash
+        parent: root.contentItem
+        anchors.fill: parent
+        z: 1000
+        color: root.chromeForeground
+        opacity: 0
+        visible: opacity > 0
+
+        SequentialAnimation {
+            id: _bellFade
+            PropertyAction { target: _bellFlash; property: "opacity"; value: 0.12 }
+            NumberAnimation { target: _bellFlash; property: "opacity"; to: 0; duration: 180 }
+        }
+    }
+
     // Set once the close has been confirmed, so closing does not ask again.
     property bool _quitting: false
 

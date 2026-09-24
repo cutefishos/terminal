@@ -34,7 +34,7 @@ Settings {
     property int cursorShape: 0
     // Lines kept above the screen; -1 keeps everything.
     property int scrollbackLines: 10000
-    property bool visualBell: true
+    property bool visualBell: false
     property bool confirmMultilinePaste: true
     // A bundled color scheme, by file name.
     property string colorScheme: "TokyoNight"
