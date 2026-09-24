@@ -7,6 +7,12 @@ A terminal emulator for Cutefish.
 [qmltermwidget](https://github.com/Swordfish90/qmltermwidget).
 
 ## Dependencies
+Install dependencies
+```sh
+cd terminal
+sudo apt build-dep .
+```
+Or alternatively
 
 Terminal uses Qt 6, FishUI and the Cutefish framework (`libcutefish`).
 
