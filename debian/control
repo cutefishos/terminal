@@ -4,7 +4,6 @@ Priority: optional
 Maintainer: Reion Wong <reionwong@gmail.com>
 Build-Depends: cmake,
                debhelper (>= 9),
-               libcutefish,
                qt6-base-dev,
                qt6-declarative-dev,
                qt6-tools-dev,
@@ -21,7 +20,6 @@ Depends: qml6-module-qtquick-controls,
          qml6-module-qtcore,
          qml6-module-qtquick-window,
          fishui,
-         libcutefish,
          ${misc:Depends},
          ${shlibs:Depends}
 Description: CutefishOS Terminal
