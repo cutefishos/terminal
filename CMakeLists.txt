@@ -10,6 +10,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(CTest)
+
 set(QT Core Gui Network Qml Quick Widgets DBus LinguistTools)
 find_package(Qt6 REQUIRED ${QT})
 find_package(CutefishFramework REQUIRED COMPONENTS Application)
@@ -39,6 +41,11 @@ set(RESOURCES
 )
 
 add_subdirectory(qmltermwidget)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
 add_executable(${PROJECT_NAME} ${SRCS} ${RESOURCES})
 target_link_libraries(${PROJECT_NAME}
         Qt6::Core

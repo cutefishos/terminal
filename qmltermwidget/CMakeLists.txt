@@ -59,15 +59,17 @@ set(TERMWIDGET_SRCS
     lib/TerminalDisplay.cpp
     lib/tools.cpp
     lib/Vt102Emulation.cpp
-    src/qmltermwidget_plugin.h
-    src/qmltermwidget_plugin.cpp
 )
 
-add_library(cutefishqmltermwidget MODULE
+# The plugin's objects, which the tests link as well.
+add_library(qmltermwidget_core OBJECT
     ${TERMWIDGET_SRCS}
 )
 
-target_link_libraries(cutefishqmltermwidget
+set_target_properties(qmltermwidget_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(qmltermwidget_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+
+target_link_libraries(qmltermwidget_core PUBLIC
     Qt6::Core
     Qt6::Gui
     Qt6::Network
@@ -75,6 +77,15 @@ target_link_libraries(cutefishqmltermwidget
     Qt6::Quick
     Qt6::Widgets
     Cutefish::Application
+)
+
+add_library(cutefishqmltermwidget MODULE
+    src/qmltermwidget_plugin.h
+    src/qmltermwidget_plugin.cpp
+)
+
+target_link_libraries(cutefishqmltermwidget
+    qmltermwidget_core
 )
 
 install(TARGETS cutefishqmltermwidget DESTINATION ${INSTALL_QMLDIR}/Cutefish/TermWidget)
