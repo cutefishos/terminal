@@ -143,8 +143,11 @@ private:
 #define MAXARGS 15
   void addDigit(int dig);
   void addArgument();
+  void addSubArgument();
   int argv[MAXARGS];
   int argc;
+  // Bit n is set when argument n followed a colon: a sub-parameter of the one before.
+  int subArguments;
   void initTokenizer();
   int prevCC;
 

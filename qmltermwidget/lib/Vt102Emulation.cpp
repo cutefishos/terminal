@@ -170,6 +170,7 @@ void Vt102Emulation::resetTokenizer()
   argc = 0;
   argv[0] = 0;
   argv[1] = 0;
+  subArguments = 0;
   prevCC = 0;
 }
 
@@ -183,6 +184,12 @@ void Vt102Emulation::addArgument()
 {
   argc = qMin(argc+1,MAXARGS-1);
   argv[argc] = 0;
+}
+
+void Vt102Emulation::addSubArgument()
+{
+  addArgument();
+  subArguments |= 1 << argc;
 }
 
 void Vt102Emulation::addToCurrentToken(wchar_t cc)
@@ -328,21 +335,44 @@ void Vt102Emulation::receiveChar(wchar_t cc)
 
     if (epe(   )) { processToken( TY_CSI_PE(cc), 0, 0); resetTokenizer(); return; }
     if (ees(DIG)) { addDigit(cc-'0'); return; }
-    if (eec(';') || eec(':')) { addArgument(); return; }
+    if (eec(';')) { addArgument(); return; }
+    if (eec(':')) { addSubArgument(); return; }
     for (int i=0;i<=argc;i++)
     {
+        // The parameter and the sub-parameters that follow it after colons.
+        int last = i;
+        while (last < argc && (subArguments & (1 << (last+1))))
+            ++last;
+
         if (epp())
             processToken( TY_CSI_PR(cc,argv[i]), 0, 0);
         else if (egt())
             processToken( TY_CSI_PG(cc), 0, 0); // spec. case for ESC]>0c or ESC]>c
-        else if (cc == 'm' && argc - i >= 4 && (argv[i] == 38 || argv[i] == 48) && argv[i+1] == 2)
+        else if (cc == 'm' && last > i)
+        {
+            // ESC[ ... 4:<style>, 38:5:<index> or 38:2:[<space>]:<r>:<g>:<b> ... m;
+            // the sub-parameters of other attributes are not known, so all are skipped.
+            const int count = last - i;
+            const bool colour = argv[i] == 38 || argv[i] == 48 || argv[i] == 58;
+            if (argv[i] == 4)
+                processToken( TY_CSI_PS(cc, argv[i+1] ? 4 : 24), 0, 0);
+            else if (colour && argv[i+1] == 2 && count >= 4)
+            {
+                const int red = i + (count == 4 ? 2 : 3);
+                processToken( TY_CSI_PS(cc, argv[i]), COLOR_SPACE_RGB, (argv[red] << 16) | (argv[red+1] << 8) | argv[red+2]);
+            }
+            else if (colour && argv[i+1] == 5 && count >= 2)
+                processToken( TY_CSI_PS(cc, argv[i]), COLOR_SPACE_256, argv[i+2]);
+            i = last;
+        }
+        else if (cc == 'm' && argc - i >= 4 && (argv[i] == 38 || argv[i] == 48 || argv[i] == 58) && argv[i+1] == 2)
         {
             // ESC[ ... 48;2;<red>;<green>;<blue> ... m -or- ESC[ ... 38;2;<red>;<green>;<blue> ... m
             i += 2;
             processToken( TY_CSI_PS(cc, argv[i-2]), COLOR_SPACE_RGB, (argv[i] << 16) | (argv[i+1] << 8) | argv[i+2]);
             i += 2;
         }
-        else if (cc == 'm' && argc - i >= 2 && (argv[i] == 38 || argv[i] == 48) && argv[i+1] == 5)
+        else if (cc == 'm' && argc - i >= 2 && (argv[i] == 38 || argv[i] == 48 || argv[i] == 58) && argv[i+1] == 5)
         {
             // ESC[ ... 48;5;<index> ... m -or- ESC[ ... 38;5;<index> ... m
             i += 2;
@@ -570,6 +600,8 @@ void Vt102Emulation::processToken(int token, wchar_t p, int q)
     case TY_CSI_PS('m',   8) : _currentScreen->  setRendition     (RE_CONCEAL  ); break;
     case TY_CSI_PS('m',   9) : _currentScreen->  setRendition     (RE_STRIKEOUT); break;
     case TY_CSI_PS('m',  53) : _currentScreen->  setRendition     (RE_OVERLINE ); break;
+    case TY_CSI_PS('m',  58) : /* IGNORED: underline colour         */ break;
+    case TY_CSI_PS('m',  59) : /* IGNORED: default underline colour */ break;
     case TY_CSI_PS('m',  10) : /* IGNORED: mapping related          */ break; //LINUX
     case TY_CSI_PS('m',  11) : /* IGNORED: mapping related          */ break; //LINUX
     case TY_CSI_PS('m',  12) : /* IGNORED: mapping related          */ break; //LINUX
