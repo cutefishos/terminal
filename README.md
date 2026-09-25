@@ -8,7 +8,7 @@ A terminal emulator for Cutefish.
 
 ## Dependencies
 
-Terminal uses Qt 6, FishUI and the Cutefish framework (`libcutefish`).
+Terminal uses Qt 6, FishUI and the Cutefish framework (`cutefish-framework`).
 
 ```sh
 sudo apt install cmake qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools
