@@ -70,7 +70,6 @@ FishUI.Window {
                                                                          : FishUI.Theme.textColor
     readonly property bool chromeDark: 0.2126 * terminalBackground.r + 0.7152 * terminalBackground.g
                                        + 0.0722 * terminalBackground.b < 0.5
-    readonly property color chromeTint: chromeDark ? "#FFFFFF" : "#323238"
 
     GlobalSettings { id: settings }
 
@@ -218,19 +217,13 @@ FishUI.Window {
             }
         }
 
-        FishUI.RoundImageButton {
+        FishUI.HeaderButton {
             id: _newTabButton
             anchors.right: parent.right
             anchors.rightMargin: root.windowButtonsSpacing
             anchors.verticalCenter: parent.verticalCenter
             size: 32
-            source: "qrc:/fishui/kit/images/" + (root.chromeDark ? "dark/" : "light/") + "add.svg"
-            hoveredColor: Qt.rgba(root.chromeTint.r, root.chromeTint.g, root.chromeTint.b, root.chromeDark ? 0.12 : 0.11)
-            pressedColor: Qt.rgba(root.chromeTint.r, root.chromeTint.g, root.chromeTint.b, root.chromeDark ? 0.06 : 0.21)
-            // Same artwork grid and sampling as the window buttons beside it.
-            iconSize: 24
-            image.smooth: false
-            image.antialiasing: true
+            artwork: "add"
             onClicked: root.openNewTab()
         }
     }
