@@ -31,6 +31,7 @@
 #include <QHash>
 #include <QTimer>
 #include <QStringEncoder>
+#include <QVector>
 
 // Konsole
 #include "Emulation.h"
@@ -169,6 +170,14 @@ private:
   void reportCursorPosition();
   void reportTerminalParms(int p);
 
+  int kittyKeyboardFlags() const;
+  QVector<int> &kittyKeyboardStack();
+  void reportKittyKeyboardFlags();
+  void pushKittyKeyboardFlags(int flags);
+  void popKittyKeyboardFlags(int count);
+  void setKittyKeyboardFlags(int flags, int mode);
+  bool sendKittyKeyEvent(QKeyEvent *event, KeyboardTranslator::States states);
+
   void onScrollLock();
   void scrollLock(const bool lock);
 
@@ -200,6 +209,10 @@ private:
   QTimer* _titleUpdateTimer;
 
   bool _reportFocusEvents;
+
+  // The kitty keyboard protocol flags an application pushed, for the main and
+  // the alternate screen; the last entry is in effect.
+  QVector<int> _kittyKeyboardFlags[2];
 
   QStringEncoder _toUtf8;
 };

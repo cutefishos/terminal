@@ -26,7 +26,9 @@
 #include "tools.h"
 
 // Standard
+#include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <unistd.h>
 
 // Qt
@@ -69,6 +71,8 @@ void Vt102Emulation::reset()
 {
   resetTokenizer();
   resetModes();
+  _kittyKeyboardFlags[0].clear();
+  _kittyKeyboardFlags[1].clear();
   resetCharset(0);
   _screen[0]->reset();
   resetCharset(1);
@@ -122,6 +126,9 @@ void Vt102Emulation::reset()
    - CSI_PS_SP  - Escape codes of the form <ESC>'['     {Pn} ';' ... {Space} C
    - CSI_PR     - Escape codes of the form <ESC>'[' '?' {Pn} ';' ...  C
    - CSI_PE     - Escape codes of the form <ESC>'[' '!' {Pn} ';' ...  C
+   - CSI_PG     - Escape codes of the form <ESC>'[' '>' {Pn} ';' {Pn} C
+   - CSI_PL     - Escape codes of the form <ESC>'[' '<' {Pn} ';' {Pn} C
+   - CSI_PQ     - Escape codes of the form <ESC>'[' '=' {Pn} ';' {Pn} C
    - VT52       - VT52 escape codes
                   - <ESC><Chr>
                   - <ESC>'Y'{Pc}{Pc}
@@ -152,6 +159,8 @@ void Vt102Emulation::reset()
 #define TY_VT52(A)    TY_CONSTRUCT(8,A,0)
 #define TY_CSI_PG(A)  TY_CONSTRUCT(9,A,0)
 #define TY_CSI_PE(A)  TY_CONSTRUCT(10,A,0)
+#define TY_CSI_PL(A)  TY_CONSTRUCT(12,A,0)
+#define TY_CSI_PQ(A)  TY_CONSTRUCT(13,A,0)
 
 #define MAX_ARGUMENT 4096
 
@@ -257,10 +266,12 @@ void Vt102Emulation::initTokenizer()
 #define les(P,L,C) (p == (P) && s[L] < 256 && (charClass[s[(L)]] & (C)) == (C))
 #define eec(C)     (p >=  3  && cc == (C))
 #define ees(C)     (p >=  3  && cc < 256 && (charClass[cc] & (C)) == (C))
-#define eps(C)     (p >=  3  && s[2] != '?' && s[2] != '!' && s[2] != '>' && cc < 256 && (charClass[cc] & (C)) == (C))
+#define eps(C)     (p >=  3  && s[2] != '?' && s[2] != '!' && s[2] != '>' && s[2] != '<' && s[2] != '=' && cc < 256 && (charClass[cc] & (C)) == (C))
 #define epp( )     (p >=  3  && s[2] == '?')
 #define epe( )     (p >=  3  && s[2] == '!')
 #define egt( )     (p >=  3  && s[2] == '>')
+#define elt( )     (p >=  3  && s[2] == '<')
+#define eeq( )     (p >=  3  && s[2] == '=')
 #define esp( )     (p ==  4  && s[3] == ' ')
 #define Xpe        (tokenBufferPos >= 2 && tokenBuffer[1] == ']')
 #define Xte        (Xpe      && (cc ==  7 || (prevCC == 27 && cc == 92) )) // 27, 92 => "\e\\" (ST, String Terminator)
@@ -313,6 +324,8 @@ void Vt102Emulation::receiveChar(wchar_t cc)
     if (lec(3,2,'?')) { return; }
     if (lec(3,2,'>')) { return; }
     if (lec(3,2,'!')) { return; }
+    // After CSI only: ESC ( < and ESC ( = pick character sets.
+    if ((lec(3,2,'<') || lec(3,2,'=')) && s[1] == '[') { return; }
     if (lun(       )) { processToken( TY_CHR(), applyCharset(cc), 0);   resetTokenizer(); return; }
     if (lec(2,0,ESC)) { processToken( TY_ESC(s[1]), 0, 0);              resetTokenizer(); return; }
     if (les(3,1,SCS)) { processToken( TY_ESC_CS(s[1],s[2]), 0, 0);      resetTokenizer(); return; }
@@ -337,6 +350,9 @@ void Vt102Emulation::receiveChar(wchar_t cc)
     if (ees(DIG)) { addDigit(cc-'0'); return; }
     if (eec(';')) { addArgument(); return; }
     if (eec(':')) { addSubArgument(); return; }
+    if (egt()) { processToken( TY_CSI_PG(cc), argv[0], argv[1]); resetTokenizer(); return; }
+    if (elt()) { processToken( TY_CSI_PL(cc), argv[0], argv[1]); resetTokenizer(); return; }
+    if (eeq()) { processToken( TY_CSI_PQ(cc), argv[0], argv[1]); resetTokenizer(); return; }
     for (int i=0;i<=argc;i++)
     {
         // The parameter and the sub-parameters that follow it after colons.
@@ -346,8 +362,6 @@ void Vt102Emulation::receiveChar(wchar_t cc)
 
         if (epp())
             processToken( TY_CSI_PR(cc,argv[i]), 0, 0);
-        else if (egt())
-            processToken( TY_CSI_PG(cc), 0, 0); // spec. case for ESC]>0c or ESC]>c
         else if (cc == 'm' && last > i)
         {
             // ESC[ ... 4:<style>, 38:5:<index> or 38:2:[<space>]:<r>:<g>:<b> ... m;
@@ -865,6 +879,12 @@ void Vt102Emulation::processToken(int token, wchar_t p, int q)
 
     case TY_CSI_PG('c'      ) :  reportSecondaryAttributes(          ); break; //VT100
 
+    // Kitty keyboard protocol: query, push, pop and set the flags.
+    case TY_CSI_PR('u',   0) : reportKittyKeyboardFlags (          ); break;
+    case TY_CSI_PG('u'      ) : pushKittyKeyboardFlags   (p         ); break;
+    case TY_CSI_PL('u'      ) : popKittyKeyboardFlags    (p         ); break;
+    case TY_CSI_PQ('u'      ) : setKittyKeyboardFlags    (p,       q); break;
+
     default:
         reportDecodingError();
         break;
@@ -944,6 +964,74 @@ void Vt102Emulation::reportAnswerBack()
   // This is really obsolete VT100 stuff.
   const char* ANSWER_BACK = "";
   sendString(ANSWER_BACK);
+}
+
+/*
+   Kitty keyboard protocol, https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+
+   Only "disambiguate escape codes" is supported. The flags an application sets
+   are masked to it, so a query answers with what is in effect.
+*/
+
+namespace {
+
+constexpr int KittyDisambiguate = 1;
+// A push beyond this drops the oldest entry.
+constexpr int KittyStackDepth = 8;
+
+}
+
+int Vt102Emulation::kittyKeyboardFlags() const
+{
+    const QVector<int> &stack = _kittyKeyboardFlags[_currentScreen == _screen[1]];
+    return stack.isEmpty() ? 0 : stack.last();
+}
+
+QVector<int> &Vt102Emulation::kittyKeyboardStack()
+{
+    return _kittyKeyboardFlags[_currentScreen == _screen[1]];
+}
+
+void Vt102Emulation::reportKittyKeyboardFlags()
+{
+    char reply[16];
+    snprintf(reply, sizeof(reply), "\033[?%du", kittyKeyboardFlags());
+    sendString(reply);
+}
+
+void Vt102Emulation::pushKittyKeyboardFlags(int flags)
+{
+    QVector<int> &stack = kittyKeyboardStack();
+    if (stack.size() == KittyStackDepth)
+        stack.removeFirst();
+    stack.append(flags & KittyDisambiguate);
+}
+
+void Vt102Emulation::popKittyKeyboardFlags(int count)
+{
+    QVector<int> &stack = kittyKeyboardStack();
+    stack.resize(qMax(0, stack.size() - qMax(1, count)));
+}
+
+void Vt102Emulation::setKittyKeyboardFlags(int flags, int mode)
+{
+    QVector<int> &stack = kittyKeyboardStack();
+    if (stack.isEmpty())
+        stack.append(0);
+
+    flags &= KittyDisambiguate;
+    switch (mode) {
+    case 0: // An omitted mode means 1.
+    case 1:
+        stack.last() = flags;
+        break;
+    case 2:
+        stack.last() |= flags;
+        break;
+    case 3:
+        stack.last() &= ~flags;
+        break;
+    }
 }
 
 /*!
@@ -1062,6 +1150,215 @@ QKeyEvent * Vt102Emulation::remapKeyModifiersForMac(QKeyEvent *event) {
                       event->text(), event->isAutoRepeat(), event->count());
 }
 
+namespace {
+
+struct KittyKey
+{
+    int key;
+    int number;
+    char final;
+};
+
+// Keys that type no text, as the protocol numbers them.
+constexpr KittyKey kittyFunctionKeys[] = {
+    {Qt::Key_Escape, 27, 'u'},
+    {Qt::Key_Return, 13, 'u'},
+    {Qt::Key_Enter, 13, 'u'},
+    {Qt::Key_Tab, 9, 'u'},
+    {Qt::Key_Backtab, 9, 'u'},
+    {Qt::Key_Backspace, 127, 'u'},
+    {Qt::Key_Insert, 2, '~'},
+    {Qt::Key_Delete, 3, '~'},
+    {Qt::Key_Left, 1, 'D'},
+    {Qt::Key_Right, 1, 'C'},
+    {Qt::Key_Up, 1, 'A'},
+    {Qt::Key_Down, 1, 'B'},
+    {Qt::Key_PageUp, 5, '~'},
+    {Qt::Key_PageDown, 6, '~'},
+    {Qt::Key_Home, 1, 'H'},
+    {Qt::Key_End, 1, 'F'},
+    {Qt::Key_ScrollLock, 57359, 'u'},
+    {Qt::Key_Print, 57361, 'u'},
+    {Qt::Key_Pause, 57362, 'u'},
+    {Qt::Key_Menu, 57363, 'u'},
+    {Qt::Key_F1, 1, 'P'},
+    {Qt::Key_F2, 1, 'Q'},
+    {Qt::Key_F3, 13, '~'},
+    {Qt::Key_F4, 1, 'S'},
+    {Qt::Key_F5, 15, '~'},
+    {Qt::Key_F6, 17, '~'},
+    {Qt::Key_F7, 18, '~'},
+    {Qt::Key_F8, 19, '~'},
+    {Qt::Key_F9, 20, '~'},
+    {Qt::Key_F10, 21, '~'},
+    {Qt::Key_F11, 23, '~'},
+    {Qt::Key_F12, 24, '~'},
+};
+
+// The keypad has numbers of its own; its digits are 57399 to 57408.
+constexpr KittyKey kittyKeypadKeys[] = {
+    {Qt::Key_Period, 57409, 'u'},
+    {Qt::Key_Slash, 57410, 'u'},
+    {Qt::Key_Asterisk, 57411, 'u'},
+    {Qt::Key_Minus, 57412, 'u'},
+    {Qt::Key_Plus, 57413, 'u'},
+    {Qt::Key_Enter, 57414, 'u'},
+    {Qt::Key_Equal, 57415, 'u'},
+    {Qt::Key_Comma, 57416, 'u'},
+    {Qt::Key_Left, 57417, 'u'},
+    {Qt::Key_Right, 57418, 'u'},
+    {Qt::Key_Up, 57419, 'u'},
+    {Qt::Key_Down, 57420, 'u'},
+    {Qt::Key_PageUp, 57421, 'u'},
+    {Qt::Key_PageDown, 57422, 'u'},
+    {Qt::Key_Home, 57423, 'u'},
+    {Qt::Key_End, 57424, 'u'},
+    {Qt::Key_Insert, 57425, 'u'},
+    {Qt::Key_Delete, 57426, 'u'},
+    {Qt::Key_Clear, 57427, 'u'},
+};
+
+template<size_t N>
+const KittyKey *findKittyKey(const KittyKey (&keys)[N], int key)
+{
+    for (const KittyKey &entry : keys) {
+        if (entry.key == key)
+            return &entry;
+    }
+    return nullptr;
+}
+
+bool isModifierKey(int key)
+{
+    switch (key) {
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Meta:
+    case Qt::Key_Alt:
+    case Qt::Key_AltGr:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case Qt::Key_Hyper_L:
+    case Qt::Key_Hyper_R:
+    case Qt::Key_CapsLock:
+    case Qt::Key_NumLock:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// The character of the key itself: the protocol wants the unshifted one.
+uint kittyKeyNumber(const QKeyEvent *event)
+{
+    const int key = event->key();
+    if (key >= Qt::Key_A && key <= Qt::Key_Z)
+        return key - Qt::Key_A + 'a';
+
+    uint number = 0;
+    // Below its special keys, Qt's key is the Unicode character.
+    if (key > 0 && key < Qt::Key_Escape) {
+        number = QChar::toLower(char32_t(key));
+    } else {
+        const QList<uint> text = event->text().toUcs4();
+        if (!text.isEmpty())
+            number = QChar::toLower(char32_t(text.first()));
+    }
+
+    // Qt names the symbol Shift typed; this takes it back for the US layout.
+    static const char shifted[] = "~!@#$%^&*()_+{}|:\"<>?";
+    static const char unshifted[] = "`1234567890-=[]\\;',./";
+    if ((event->modifiers() & Qt::ShiftModifier) && number > 0 && number < 128) {
+        if (const char *symbol = strchr(shifted, int(number)))
+            number = uchar(unshifted[symbol - shifted]);
+    }
+
+    return number < 0x20 || number == 0x7f ? 0 : number;
+}
+
+QByteArray kittySequence(int number, char final, int modifiers)
+{
+    QByteArray sequence("\033[");
+    if (final == 'u' || final == '~')
+        sequence += QByteArray::number(number);
+    else if (modifiers)
+        sequence += '1';
+    if (modifiers)
+        sequence += ';' + QByteArray::number(modifiers + 1);
+    return sequence + final;
+}
+
+}
+
+bool Vt102Emulation::sendKittyKeyEvent(QKeyEvent *event, KeyboardTranslator::States states)
+{
+    const int key = event->key();
+    // Pasted and composed text comes without a key and goes out as it is.
+    if (key == 0)
+        return false;
+    if (isModifierKey(key))
+        return true;
+
+    const Qt::KeyboardModifiers qtModifiers = event->modifiers();
+
+    // Keys that act on the terminal itself, such as scrolling, keep doing so.
+    if (_keyTranslator) {
+        const KeyboardTranslator::Command command = _keyTranslator->findEntry(key, qtModifiers, states).command();
+        if (command != KeyboardTranslator::NoCommand && !(command & KeyboardTranslator::EraseCommand)) {
+            Q_EMIT handleCommandFromKeyboard(command);
+            return true;
+        }
+    }
+
+    int modifiers = 0;
+    if ((qtModifiers & Qt::ShiftModifier) || key == Qt::Key_Backtab)
+        modifiers |= 1;
+    if (qtModifiers & Qt::AltModifier)
+        modifiers |= 2;
+    if (qtModifiers & Qt::ControlModifier)
+        modifiers |= 4;
+    if (qtModifiers & Qt::MetaModifier)
+        modifiers |= 8;
+    const bool keypad = qtModifiers & Qt::KeypadModifier;
+
+    const QString text = event->text();
+    const bool printable = !text.isEmpty() && std::none_of(text.cbegin(), text.cend(), [](QChar c) {
+        return c.unicode() < 0x20 || c.unicode() == 0x7f;
+    });
+
+    const KittyKey *entry = keypad ? findKittyKey(kittyKeypadKeys, key) : nullptr;
+    if (!entry)
+        entry = findKittyKey(kittyFunctionKeys, key);
+
+    QByteArray sequence;
+    // Enter, Tab and Backspace stay as they were, so a shell that a program
+    // left in this mode still takes a typed reset.
+    if (!modifiers && !keypad && (key == Qt::Key_Return || key == Qt::Key_Enter)) {
+        sequence = "\r";
+    } else if (!modifiers && key == Qt::Key_Tab) {
+        sequence = "\t";
+    } else if (!modifiers && key == Qt::Key_Backspace) {
+        sequence = "\x7f";
+    } else if (printable && !(modifiers & ~1)) {
+        // Shift went into the text.
+        sequence = _toUtf8(text);
+    } else if (keypad && key >= Qt::Key_0 && key <= Qt::Key_9) {
+        sequence = kittySequence(57399 + key - Qt::Key_0, 'u', modifiers);
+    } else if (entry) {
+        sequence = kittySequence(entry->number, entry->final, modifiers);
+    } else if (key >= Qt::Key_F13 && key <= Qt::Key_F35) {
+        sequence = kittySequence(57376 + key - Qt::Key_F13, 'u', modifiers);
+    } else if (const uint number = kittyKeyNumber(event)) {
+        sequence = kittySequence(number, 'u', modifiers);
+    } else {
+        return false;
+    }
+
+    Q_EMIT outputFromKeypressEvent();
+    Q_EMIT sendData(sequence.constData(), sequence.length());
+    return true;
+}
+
 void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
 {
 #if defined(Q_OS_MAC)
@@ -1079,6 +1376,9 @@ void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
     if (getMode(MODE_AppScreen)) states |= KeyboardTranslator::AlternateScreenState;
     if (getMode(MODE_AppKeyPad) && (modifiers & Qt::KeypadModifier))
         states |= KeyboardTranslator::ApplicationKeypadState;
+
+    if (!fromPaste && kittyKeyboardFlags() && sendKittyKeyEvent(event, states))
+        return;
 
     // check flow control state
     if (modifiers & KeyboardTranslator::CTRL_MOD)
