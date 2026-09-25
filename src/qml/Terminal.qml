@@ -263,8 +263,9 @@ Item {
             // The menu opens on release: shown while the button is still down, it
             // takes the release, leaving this area pressed and its cursor stale.
             property bool menuPress: false
-            // A Ctrl+click on a link opens it and must not start a selection.
-            property bool linkPress: false
+            // The link a Ctrl+click went down on. It opens on release, for the same
+            // reason as the menu, and must not start a selection.
+            property string pressedLink: ""
 
             onDoubleClicked: (mouse) => {
                  _terminal.simulateMouseDoubleClick(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
@@ -274,23 +275,20 @@ Item {
                 menuPress = mouse.button === Qt.RightButton
                         && (!_terminal.terminalUsesMouse || mouse.modifiers & Qt.ShiftModifier)
 
-                linkPress = false
-                if (mouse.button === Qt.LeftButton && (mouse.modifiers & Qt.ControlModifier)) {
-                    const link = _terminal.linkAt(mouse.x, mouse.y)
-                    if (link !== "") {
-                        linkPress = true
-                        Qt.openUrlExternally(link)
-                        return
-                    }
-                }
+                pressedLink = mouse.button === Qt.LeftButton && (mouse.modifiers & Qt.ControlModifier)
+                        ? _terminal.linkAt(mouse.x, mouse.y) : ""
+                if (pressedLink !== "")
+                    return
 
                 if (!menuPress)
                     _terminal.simulateMousePress(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
             onReleased: (mouse) => {
-                if (linkPress)
+                if (pressedLink !== "") {
+                    root.openLink(pressedLink)
                     return
+                }
 
                 if (menuPress) {
                     menuPress = false
@@ -307,7 +305,7 @@ Item {
                     return
                 }
 
-                if (!menuPress && !linkPress)
+                if (!menuPress && pressedLink === "")
                     _terminal.simulateMouseMove(mouse.x, mouse.y, mouse.button, mouse.buttons, mouse.modifiers)
             }
 
@@ -315,7 +313,7 @@ Item {
 
             // A right click the program took stays its own.
             onClicked: (mouse) => {
-                if (mouse.button === Qt.LeftButton && !linkPress)
+                if (mouse.button === Qt.LeftButton && pressedLink === "")
                     _terminal.forceActiveFocus()
             }
         }
@@ -367,7 +365,7 @@ Item {
             FishUI.MenuItem {
                 text: qsTr("Open Link")
                 visible: _menuContext.link !== ""
-                onTriggered: Qt.openUrlExternally(_menuContext.link)
+                onTriggered: root.openLink(_menuContext.link)
             }
 
             FishUI.MenuItem {

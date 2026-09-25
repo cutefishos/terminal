@@ -77,6 +77,7 @@ FishUI.Window {
     property QtObject _exitPrompt: null
     property QtObject _settingsDialog: null
     property QtObject _pasteConfirm: null
+    property QtObject _linkConfirm: null
 
     // Asks before running action when a process is still running in one of pages.
     function confirmClose(pages, action) {
@@ -139,6 +140,38 @@ FishUI.Window {
             }
             onRejected: pendingAction = null
         }
+    }
+
+    // A link in the output can name any scheme, and opening one starts whatever
+    // program claims it; only web and mail links open without asking.
+    Component {
+        id: _linkConfirmComponent
+
+        FishUI.ConfirmDialog {
+            property string url
+
+            parentWindow: root
+            x: root.x + Math.round((root.width - width) / 2)
+            y: root.y + Math.round((root.height - height) / 2)
+            showOnCompleted: false
+            title: qsTr("Open this link?")
+            text: url.length > 300 ? url.substring(0, 299) + "…" : url
+            confirmText: qsTr("Open")
+
+            onAccepted: Qt.openUrlExternally(url)
+        }
+    }
+
+    function openLink(url) {
+        if (/^(https?|mailto):/i.test(url)) {
+            Qt.openUrlExternally(url)
+            return
+        }
+
+        if (!_linkConfirm)
+            _linkConfirm = _linkConfirmComponent.createObject(root)
+        _linkConfirm.url = url
+        _linkConfirm.open()
     }
 
     function confirmPaste(text, action) {
