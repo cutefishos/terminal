@@ -258,7 +258,7 @@ Item {
             hoverEnabled: true
             cursorShape: _linkHover.segments.length && _linkHover.ctrlHeld ? Qt.PointingHandCursor
                          : _terminal.terminalUsesMouse ? Qt.ArrowCursor : Qt.IBeamCursor
-            acceptedButtons:  Qt.RightButton | Qt.LeftButton
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
 
             // The menu opens on release: shown while the button is still down, it
             // takes the release, leaving this area pressed and its cursor stale.
