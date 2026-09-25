@@ -30,17 +30,49 @@
 #include <QGuiApplication>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QTimer>
 
 // Konsole
 #include "KeyboardTranslator.h"
 #include "HistorySearch.h"
 
 KSession::KSession(QObject *parent) :
-    QObject(parent), m_session(createSession(""))
+    QObject(parent), m_session(createSession("")), m_foregroundCheck(new QTimer(this))
 {
     connect(m_session, SIGNAL(started()), this, SIGNAL(started()));
     connect(m_session, SIGNAL(finished()), this, SLOT(sessionFinished()));
-    connect(m_session, SIGNAL(titleChanged()), this, SIGNAL(titleChanged()));
+
+    // Each update notes the process group in front, the one getTitle() went by.
+    const auto updateTitle = [this] {
+        m_foregroundGroup = m_session->foregroundProcessId();
+        emit titleChanged();
+    };
+    connect(m_session, &Konsole::Session::titleChanged, this, updateTitle);
+
+    connect(m_session->emulation(), &Konsole::Emulation::titleChanged, this,
+            [this, updateTitle](int what, const QString &title) {
+        if (what != 0 && what != 2)
+            return;
+        m_programTitle = title;
+        m_programTitleGroup = m_session->foregroundProcessId();
+        updateTitle();
+    });
+
+    // Nothing announces a program starting or ending, so the foreground is
+    // looked at after output or a key, at most every 250 ms.
+    m_foregroundCheck->setSingleShot(true);
+    m_foregroundCheck->setInterval(250);
+    connect(m_foregroundCheck, &QTimer::timeout, this, [this, updateTitle] {
+        if (m_session->foregroundProcessId() != m_foregroundGroup)
+            updateTitle();
+    });
+
+    const auto checkForeground = [this] {
+        if (!m_foregroundCheck->isActive())
+            m_foregroundCheck->start();
+    };
+    connect(m_session, &Konsole::Session::receivedData, this, checkForeground);
+    connect(m_session->emulation(), &Konsole::Emulation::outputFromKeypressEvent, this, checkForeground);
 }
 
 KSession::~KSession()
@@ -327,9 +359,20 @@ QString KSession::keyBindings()
 
 QString KSession::getTitle()
 {
+    // A program in front of the shell gives the title it set, or else its name.
+    const int foreground = m_session->foregroundProcessId();
+    if (foreground > 0 && foreground != m_session->processId()) {
+        if (foreground == m_programTitleGroup && !m_programTitle.isEmpty())
+            return m_programTitle;
+
+        const QString name = m_session->foregroundProcessName();
+        if (!name.isEmpty())
+            return name;
+    }
+
     const QString dir = m_session->currentDir();
 
-    // Tabs are titled by the working directory; home and root keep their full path.
+    // At the prompt tabs are titled by the working directory; home and root keep their full path.
     if (dir == QDir::homePath() || dir == QLatin1String("/"))
         return dir;
 

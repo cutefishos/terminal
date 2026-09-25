@@ -24,6 +24,7 @@
 #define KSESSION_H
 
 #include <QObject>
+#include <QTimer>
 
 // Konsole
 #include "Session.h"
@@ -187,6 +188,12 @@ private:
     QStringList m_shellArgs;
     Konsole::Session *m_session;
 
+    // The last OSC 0 or 2 title and the process group in front when it came;
+    // it titles the tab while that group stays in front.
+    QString m_programTitle;
+    int m_programTitleGroup = 0;
+    int m_foregroundGroup = 0;
+    QTimer *m_foregroundCheck;
 };
 
 #endif // KSESSION_H
