@@ -127,8 +127,6 @@ Rectangle {
             pressedColor: Qt.rgba(control.tint.r, control.tint.g, control.tint.b, control.darkMode ? 0.06 : 0.21)
             // The window buttons' artwork, at its own 24px grid.
             iconSize: 24
-            image.smooth: false
-            image.antialiasing: true
             onClicked: control.close()
         }
     }
