@@ -43,6 +43,7 @@
 
 #include "kpty.h"
 #include "kptydevice.h"
+#include "proxysettings.h"
 
 using namespace Konsole;
 
@@ -179,6 +180,15 @@ int Pty::start(const QString& program,
   setProgram(program, programArguments.mid(1));
 
   addEnvironmentVariables(environment);
+
+  // A new shell follows the session proxy as it is now, not as it was when the terminal started.
+  const QMap<QString, QString> proxy = ProxyEnvironment::variables(ProxySettings::load());
+  for (const QString &name : ProxyEnvironment::names()) {
+      if (proxy.contains(name))
+          setEnv(name, proxy.value(name));
+      else
+          unsetEnv(name);
+  }
 
   setEnv(QLatin1String("WINDOWID"), QString::number(winid));
   setEnv(QLatin1String("COLORTERM"), QLatin1String("truecolor"));
