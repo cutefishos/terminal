@@ -74,6 +74,7 @@
 #include "Screen.h"
 #include "LineChars.h"
 #include "TerminalGpuNode.h"
+#include "TerminalScroller.h"
 
 using namespace Konsole;
 using namespace Qt::Literals::StringLiterals;
@@ -481,6 +482,10 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
   connect(_scrollBar, &ScrollBar::rangeChanged, this, [this] { emit scrollbarParamsChanged(_scrollBar->value()); });
 
   setUseFBORendering(true);
+
+  // Scrolled part way into a line, the lines at the edges are cut.
+  setClip(true);
+  _scroller = new TerminalScroller(this);
 
 //  setFocusPolicy( Qt::WheelFocus );
 
@@ -1338,6 +1343,17 @@ void TerminalDisplay::updateImage()
 
   dirtyRegion |= _inputMethodData.previousPreeditRect;
 
+  const int lineBelow = _screenWindow->currentLine() + lines;
+  _hasLineBelow = lineBelow < _screenWindow->lineCount();
+  if (_hasLineBelow)
+  {
+    std::vector<Character> below(columns);
+    _screenWindow->screen()->getImage(below.data(), columns, lineBelow, lineBelow);
+    memcpy((void*)&_image[linesToUpdate*this->_columns], below.data(), columnsToUpdate*sizeof(Character));
+  }
+  if (_scrollOffset != 0)
+    dirtyRegion = contentsRect();
+
   // update the parts of the display which have changed
   update(dirtyRegion);
 
@@ -1856,9 +1872,9 @@ void TerminalDisplay::drawContents(QPainter &paint, const QRect &rect)
   int    tLy = tL.y();
 
   int lux = qMin(_usedColumns-1, qMax(0,(rect.left()   - tLx - _leftMargin ) / _fontWidth));
-  int luy = qMin(_usedLines-1,   qMax(0,(rect.top()    - tLy - _topMargin  ) / _fontHeight));
+  int luy = qMin(drawnLines()-1, qMax(0,(rect.top()    - tLy - _topMargin  ) / _fontHeight));
   int rlx = qMin(_usedColumns-1, qMax(0,(rect.right()  - tLx - _leftMargin ) / _fontWidth));
-  int rly = qMin(_usedLines-1,   qMax(0,(rect.bottom() - tLy - _topMargin  ) / _fontHeight));
+  int rly = qMin(drawnLines()-1, qMax(0,(rect.bottom() - tLy - _topMargin  ) / _fontHeight));
 
   if(!_image)
       return;
@@ -2093,6 +2109,11 @@ void TerminalDisplay::propagateSize()
 
 void TerminalDisplay::updateImageSize()
 {
+  if (_scroller) {
+    _scroller->cancel(false);
+    _scrollOffset = 0;
+  }
+
   Character* oldimg = _image;
   int oldlin = _lines;
   int oldcol = _columns;
@@ -2152,6 +2173,11 @@ void TerminalDisplay::scrollBarPositionChanged(int)
   if ( !_screenWindow )
       return;
 
+  if (!_applyingScroll) {
+      _scroller->cancel(false);
+      setScrollOffset(0);
+  }
+
   _screenWindow->scrollTo( _scrollBar->value() );
 
   // if the thumb has been moved to the bottom of the _scrollBar then set
@@ -2185,16 +2211,26 @@ void TerminalDisplay::setScroll(int cursor, int slines)
         return;
   }
 
+  const int previousValue = _scrollBar->value();
   disconnect(_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarPositionChanged(int)));
   _scrollBar->setRange(0,maxScrollValue);
   _scrollBar->setSingleStep(1);
   _scrollBar->setPageStep(_lines);
   _scrollBar->setValue(boundedCursor);
   connect(_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarPositionChanged(int)));
+
+  // The view moved under a resting partial scroll, or the scrollback went away.
+  if (maxScrollValue == 0 || (_scrollBar->value() != previousValue && !_scroller->isActive())) {
+      _scroller->cancel(false);
+      setScrollOffset(0);
+  }
 }
 
 void TerminalDisplay::scrollToEnd()
 {
+  _scroller->cancel(false);
+  setScrollOffset(0);
+
   disconnect(_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarPositionChanged(int)));
   _scrollBar->setValue( _scrollBar->maximum() );
   connect(_scrollBar, SIGNAL(valueChanged(int)), this, SLOT(scrollBarPositionChanged(int)));
@@ -2930,6 +2966,14 @@ int TerminalDisplay::wheelLines(QWheelEvent *ev)
 
 void TerminalDisplay::wheelEvent( QWheelEvent* ev )
 {
+  // A touchpad drags the scrollback by the pixel, coasts and stretches at the ends.
+  const bool precise = ev->phase() != Qt::NoScrollPhase || !ev->pixelDelta().isNull();
+  if (_mouseMarks && precise && _scrollBar->maximum() > 0)
+  {
+    _scroller->handleWheel(ev);
+    return;
+  }
+
   if (ev->angleDelta().y() == 0)
     return;
 
@@ -3280,7 +3324,7 @@ QVariantList TerminalDisplay::linkUnderlineAt(qreal x, qreal y)
                 endColumn--;
         }
 
-        const int bottom = (line + 1) * _fontHeight - 1 + _topBaseMargin;
+        const int bottom = (line + 1) * _fontHeight - 1 + _topMargin;
         const int underline = bottom - metrics.descent() + metrics.underlinePos();
         segments << QVariantMap {
             { QStringLiteral("x"), startColumn * _fontWidth + _leftBaseMargin },
@@ -3591,7 +3635,7 @@ void TerminalDisplay::calcGeometry()
      break;
   }
 
-  _topMargin = _topBaseMargin;
+  _topMargin = _topBaseMargin + qRound(_scrollOffset);
   _contentHeight = contentsRect().height() - 2 * _topBaseMargin + /* mysterious */ 1;
 
   if (!_isFixedSize)
@@ -3615,7 +3659,8 @@ void TerminalDisplay::makeImage()
   Q_ASSERT( _lines > 0 && _columns > 0 );
   Q_ASSERT( _usedLines <= _lines && _usedColumns <= _columns );
 
-  _imageSize=_lines*_columns;
+  // One line more for the line below the window, see _hasLineBelow.
+  _imageSize=(_lines+1)*_columns;
 
   // We over-commit one character so that we can be more relaxed in dealing with
   // certain boundary conditions: _image[_imageSize] is a valid but unused position
@@ -3886,6 +3931,45 @@ void TerminalDisplay::geometryChange(const QRectF &newGeometry, const QRectF &ol
     QQuickPaintedItem::geometryChange(newGeometry,oldGeometry);
 }
 
+qreal TerminalDisplay::scrollPixelPosition() const
+{
+    return _scrollBar->value() * qreal(_fontHeight) - _scrollOffset;
+}
+
+qreal TerminalDisplay::scrollPixelMaximum() const
+{
+    return _scrollBar->maximum() * qreal(_fontHeight);
+}
+
+// Past either end the whole text moves with the stretch.
+void TerminalDisplay::setScrollPixelPosition(qreal position)
+{
+    const int maximum = _scrollBar->maximum();
+    const qreal bounded = qBound(qreal(0), position, maximum * qreal(_fontHeight));
+    const int line = qMin(maximum, int(bounded / _fontHeight));
+
+    _applyingScroll = true;
+    _scrollBar->setValue(line);
+    _applyingScroll = false;
+    setScrollOffset(line * qreal(_fontHeight) - position);
+}
+
+void TerminalDisplay::setScrollOffset(qreal offset)
+{
+    _scrollOffset = offset;
+    const int topMargin = _topBaseMargin + qRound(offset);
+    if (topMargin == _topMargin)
+        return;
+
+    _topMargin = topMargin;
+    update();
+}
+
+int TerminalDisplay::drawnLines() const
+{
+    return _usedLines + (_topMargin < _topBaseMargin && _hasLineBelow ? 1 : 0);
+}
+
 void TerminalDisplay::setGpuRendering(bool gpuRendering)
 {
     if (_gpuRendering == gpuRendering)
@@ -3928,7 +4012,7 @@ QSGNode *TerminalDisplay::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData 
     TerminalFrame frame;
     frame.image = _image;
     frame.columns = _columns;
-    frame.usedLines = _usedLines;
+    frame.usedLines = drawnLines();
     frame.usedColumns = _usedColumns;
     frame.lineProperties = &_lineProperties;
     frame.colorTable = _colorTable;

@@ -80,6 +80,7 @@ extern unsigned short vt100_graphics[32];
 
 class ScreenWindow;
 class ScrollBar;
+class TerminalScroller;
 
 /**
  * A widget which displays output from a terminal emulation and sends input keypresses and mouse activity
@@ -897,6 +898,16 @@ private:
     bool isLineChar(Character c) const;
     bool isLineCharString(const std::wstring& string) const;
 
+    // The scrollback position in pixels, for TerminalScroller: whole lines go
+    // to the scroll bar, the rest shifts the text by _scrollOffset.
+    friend class TerminalScroller;
+    qreal scrollPixelPosition() const;
+    qreal scrollPixelMaximum() const;
+    void setScrollPixelPosition(qreal position);
+    void setScrollOffset(qreal offset);
+    // With the line below the window while the text is shifted up.
+    int drawnLines() const;
+
     void hideStaleMouse() const; // conditionally hides the mouse cursor
 
     // the window onto the terminal screen which this display
@@ -920,6 +931,13 @@ private:
     bool _gpuRendering = true;
     // Set on the render thread; the painted item's own node is gone while it is.
     bool _gpuNodeActive = false;
+
+    TerminalScroller *_scroller = nullptr;
+    // Negative moves the text up. _topMargin follows it, rounded.
+    qreal _scrollOffset = 0;
+    bool _applyingScroll = false;
+    // _image holds the line below the window after its last line.
+    bool _hasLineBelow = false;
 
     int _leftMargin;    // offset
     int _topMargin;    // offset
