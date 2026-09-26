@@ -162,6 +162,7 @@ void TerminalDisplay::setScreenWindow(ScreenWindow* window)
         connect(_screenWindow, &ScreenWindow::outputChanged, this, &TerminalDisplay::updateLineProperties);
         connect(_screenWindow, &ScreenWindow::outputChanged, this, &TerminalDisplay::updateImage);
         connect(_screenWindow, &ScreenWindow::scrollToEnd, this, &TerminalDisplay::scrollToEnd);
+        connect(_screenWindow, &ScreenWindow::cursorRevealRequested, this, &TerminalDisplay::revealCursor);
         // Drives copyAvailable, and with it hasSelection.
         connect(_screenWindow, &ScreenWindow::selectionChanged, this, &TerminalDisplay::selectionChanged);
         window->setWindowLines(_lines);
@@ -1175,6 +1176,19 @@ void TerminalDisplay::updateImage()
      updateImageSize();
   }
 
+  // Scroll just far enough for output that pushed the cursor out of view.
+  if (_followCursor && !_screenWindow->trackOutput())
+  {
+    const int below = cursorLineInWindow() - _screenWindow->windowLines() + 1;
+    if (below > 0)
+      _screenWindow->scrollTo(_screenWindow->currentLine() + below);
+    if (_screenWindow->atEndOfOutput())
+    {
+      _screenWindow->setTrackOutput(true);
+      _followCursor = false;
+    }
+  }
+
   Character* const newimg = _screenWindow->getImage();
   int lines = _screenWindow->windowLines();
   int columns = _screenWindow->windowColumns();
@@ -2177,6 +2191,7 @@ void TerminalDisplay::scrollBarPositionChanged(int)
       _scroller->cancel(false);
       setScrollOffset(0);
   }
+  _followCursor = false;
 
   _screenWindow->scrollTo( _scrollBar->value() );
 
@@ -2226,8 +2241,31 @@ void TerminalDisplay::setScroll(int cursor, int slines)
   }
 }
 
+int TerminalDisplay::cursorLineInWindow() const
+{
+  Screen *screen = _screenWindow->screen();
+  return screen->getHistLines() + screen->getCursorY() - _screenWindow->currentLine();
+}
+
+// A short scrollback over a mostly empty screen: jumping to the end would
+// push the prompt up and show the empty lines instead.
+void TerminalDisplay::revealCursor()
+{
+  if (!_screenWindow)
+    return;
+
+  const int line = cursorLineInWindow();
+  if (line < 0 || line >= _screenWindow->windowLines()) {
+    scrollToEnd();
+    return;
+  }
+
+  _followCursor = !_screenWindow->atEndOfOutput();
+}
+
 void TerminalDisplay::scrollToEnd()
 {
+  _followCursor = false;
   _scroller->cancel(false);
   setScrollOffset(0);
 

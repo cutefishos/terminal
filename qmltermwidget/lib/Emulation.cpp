@@ -112,7 +112,7 @@ ScreenWindow* Emulation::createWindow()
     connect(this, &Emulation::handleCommandFromKeyboard,
             window, &ScreenWindow::handleCommandFromKeyboard);
     connect(this, &Emulation::outputFromKeypressEvent,
-            window, &ScreenWindow::scrollToEnd);
+            window, &ScreenWindow::cursorRevealRequested);
 
     return window;
 }

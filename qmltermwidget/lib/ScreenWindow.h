@@ -246,6 +246,9 @@ signals:
 
     void scrollToEnd();
 
+    /** Emitted when a key press sends input: the cursor should come into view. */
+    void cursorRevealRequested();
+
 private:
     int endWindowLine() const;
     void fillUnusedArea();

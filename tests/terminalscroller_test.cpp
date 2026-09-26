@@ -19,19 +19,23 @@ private slots:
 
     void init()
     {
+        const bool shortScrollback = QByteArray(QTest::currentTestFunction()) == "typingKeepsAVisibleCursorInPlace";
         m_window = new QQuickWindow;
         m_window->resize(400, 300);
         m_display = new TerminalDisplay(m_window->contentItem());
         m_session = new KSession;
         m_session->setShellProgram(QStringLiteral("/bin/sh"));
-        m_session->setArgs({ QStringLiteral("-c"), QStringLiteral("seq 1 500; sleep 30") });
+        // A cleared screen goes to the scrollback: a few lines above an empty screen.
+        m_session->setArgs({ QStringLiteral("-c"), shortScrollback
+                             ? QStringLiteral("seq 1 5; printf '\\033[H\\033[2J'; sleep 30")
+                             : QStringLiteral("seq 1 500; sleep 30") });
         // In QML's order: the session hears the size the display takes.
         m_display->setProperty("session", QVariant::fromValue(m_session));
         m_display->setWidth(400);
         m_display->setHeight(300);
         m_window->show();
         m_session->startShellProgram();
-        QTRY_VERIFY(maximum() > 400);
+        QTRY_VERIFY(maximum() > (shortScrollback ? 3 : 400));
         QTRY_COMPARE(value(), maximum());
         m_time = 1000;
     }
@@ -116,6 +120,29 @@ private slots:
         const int stopped = value();
         QTest::qWait(200);
         QCOMPARE(value(), stopped);
+    }
+
+    void typingKeepsAVisibleCursorInPlace()
+    {
+        const int lineHeight = m_display->property("fontMetrics").toSize().height();
+        scroll(Qt::ScrollBegin, 0);
+        scroll(Qt::ScrollUpdate, (maximum() + 1) * lineHeight);
+        m_time += 200;
+        scroll(Qt::ScrollEnd, 0);
+        QTRY_COMPARE(value(), 0);
+        QTest::qWait(1000);
+
+        // The prompt is on screen: typing leaves the view alone.
+        m_display->forceActiveFocus();
+        QTest::keyClick(m_window, Qt::Key_A);
+        QTest::qWait(200);
+        QCOMPARE(value(), 0);
+
+        // Echoed lines that push the cursor out of view bring the view along to the end.
+        for (int i = 0; i < 30; ++i)
+            QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_COMPARE(value(), maximum());
+        QVERIFY(value() > 0);
     }
 
 private:

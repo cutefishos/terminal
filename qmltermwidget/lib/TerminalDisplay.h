@@ -188,6 +188,8 @@ public:
      * Scroll to the bottom of the terminal (reset scrolling).
      */
     void scrollToEnd();
+    // Typing: scrolls only when the cursor is out of view.
+    void revealCursor();
 
     /**
      * Returns the display's filter chain.  When the image for the display is updated,
@@ -938,6 +940,9 @@ private:
     bool _applyingScroll = false;
     // _image holds the line below the window after its last line.
     bool _hasLineBelow = false;
+    // Typing left the view short of the end; output keeps the cursor in it.
+    bool _followCursor = false;
+    int cursorLineInWindow() const;
 
     int _leftMargin;    // offset
     int _topMargin;    // offset
