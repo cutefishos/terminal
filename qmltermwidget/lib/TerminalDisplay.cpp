@@ -2217,7 +2217,8 @@ void TerminalDisplay::scrollBarPositionChanged(int)
 
 void TerminalDisplay::setScroll(int cursor, int slines)
 {
-  const int maxScrollValue = std::max(0, slines - _lines);
+  // Before the first layout the display is a one-line fallback, so the whole screen would read as scrollback.
+  const int maxScrollValue = height() > 0 ? std::max(0, slines - _lines) : 0;
   const int boundedCursor = qBound(0, cursor, maxScrollValue);
 
   // update _scrollBar if the range or value has changed,
