@@ -24,6 +24,7 @@ set(TERMWIDGET_SRCS
     lib/kpty_p.h
     lib/kptyprocess.h
     lib/ksession.h
+    lib/LineChars.h
     lib/LineFont.h
     lib/Pty.h
     lib/ProcessInfo.h
@@ -33,6 +34,7 @@ set(TERMWIDGET_SRCS
     lib/ShellCommand.h
     lib/TerminalCharacterDecoder.h
     lib/TerminalDisplay.h
+    lib/TerminalGpuNode.h
     lib/tools.h
     lib/Vt102Emulation.h
     lib/mac-vkcode.h
@@ -57,6 +59,7 @@ set(TERMWIDGET_SRCS
     lib/ShellCommand.cpp
     lib/TerminalCharacterDecoder.cpp
     lib/TerminalDisplay.cpp
+    lib/TerminalGpuNode.cpp
     lib/tools.cpp
     lib/Vt102Emulation.cpp
 )
@@ -86,6 +89,16 @@ add_library(cutefishqmltermwidget MODULE
 
 target_link_libraries(cutefishqmltermwidget
     qmltermwidget_core
+)
+
+# BATCHABLE gives the vertex stage the variant the scene graph batches with.
+qt_add_shaders(cutefishqmltermwidget "qmltermwidget_shaders"
+    BATCHABLE
+    PREFIX "/qmltermwidget/shaders"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    FILES
+    shaders/terminalglyph.vert
+    shaders/terminalglyph.frag
 )
 
 install(TARGETS cutefishqmltermwidget DESTINATION ${INSTALL_QMLDIR}/Cutefish/TermWidget)

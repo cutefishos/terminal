@@ -178,6 +178,7 @@ Item {
         // NotifyBell hands the bell to onNotifyBell below; NoBell ignores it.
         bellMode: settings.visualBell ? 1 : 3
         confirmMultilinePaste: settings.confirmMultilinePaste
+        gpuRendering: settings.gpuRendering
         fullCursorHeight: true
         backgroundOpacity: 0
 

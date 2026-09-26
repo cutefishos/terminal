@@ -36,6 +36,8 @@ Settings {
     property int scrollbackLines: 10000
     property bool visualBell: false
     property bool confirmMultilinePaste: true
+    // Off paints the text on the CPU, as before.
+    property bool gpuRendering: true
     // A bundled color scheme, by file name.
     property string colorScheme: "TokyoNight"
 

@@ -318,5 +318,18 @@ FishUI.Window {
                 }
             }
         }
+
+        Card {
+            SettingRow {
+                text: qsTr("GPU Rendering")
+                last: true
+
+                FishUI.Switch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: settings.gpuRendering
+                    onToggled: settings.gpuRendering = checked
+                }
+            }
+        }
     }
 }

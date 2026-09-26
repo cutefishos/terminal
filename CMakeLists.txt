@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CTest)
 
-set(QT Core Gui Network Qml Quick Widgets DBus LinguistTools)
+set(QT Core Gui Network Qml Quick Widgets DBus LinguistTools ShaderTools)
 find_package(Qt6 REQUIRED ${QT})
 find_package(CutefishFramework REQUIRED COMPONENTS Application)
 

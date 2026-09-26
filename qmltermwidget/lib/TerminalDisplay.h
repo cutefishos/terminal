@@ -113,6 +113,8 @@ class KONSOLEPRIVATE_EXPORT TerminalDisplay : public QQuickPaintedItem
    Q_PROPERTY(bool antialiasText        READ antialias       WRITE setAntialias)
    Q_PROPERTY(QStringList availableColorSchemes READ availableColorSchemes NOTIFY availableColorSchemesChanged)
    Q_PROPERTY(bool useFBORendering      READ useFBORendering WRITE setUseFBORendering)
+   // Draws with the scene graph instead of painting a texture on the CPU.
+   Q_PROPERTY(bool gpuRendering         READ gpuRendering    WRITE setGpuRendering NOTIFY gpuRenderingChanged)
    Q_PROPERTY(bool hasSelection         READ hasSelection                         NOTIFY copyAvailable           )
    Q_PROPERTY(qreal backgroundOpacity   READ backgroundOpacity WRITE setBackgroundOpacity NOTIFY backgroundOpacityChanged)
    Q_PROPERTY(bool confirmMultilinePaste READ confirmMultilinePaste WRITE setConfirmMultilinePaste)
@@ -462,6 +464,12 @@ public:
      */
     bool useFBORendering() const { return _useFBORendering; }
 
+    bool gpuRendering() const { return _gpuRendering; }
+    void setGpuRendering(bool gpuRendering);
+
+    bool isTextureProvider() const override;
+    QSGTextureProvider *textureProvider() const override;
+
     /**
      * Specify whether line chars should be drawn by ourselves or left to
      * underlying font rendering libraries.
@@ -727,6 +735,7 @@ signals:
     void blinkingCursorStateChanged();
     void boldIntenseChanged();
     void italicEnabledChanged();
+    void gpuRenderingChanged();
 
 protected:
     bool event( QEvent * ) override;
@@ -780,6 +789,7 @@ protected:
 
     // QMLTermWidget
     void paint(QPainter * painter);
+    QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
     virtual void geometryChange(const QRectF & newGeometry, const QRectF & oldGeometry) override;
     void inputMethodQuery(QInputMethodQueryEvent *event);
     void itemChange(ItemChange change, const ItemChangeData & value);
@@ -907,6 +917,9 @@ private:
     bool _boldIntense;   // Whether intense colors should be rendered with bold font
     bool _italicEnabled; // Whether italic rendition is allowed
     bool _useFBORendering; // Whether to use FramebufferObject (true) or Image (false)
+    bool _gpuRendering = true;
+    // Set on the render thread; the painted item's own node is gone while it is.
+    bool _gpuNodeActive = false;
 
     int _leftMargin;    // offset
     int _topMargin;    // offset

@@ -72,6 +72,8 @@
 #include "TerminalCharacterDecoder.h"
 #include "HistorySearch.h"
 #include "Screen.h"
+#include "LineChars.h"
+#include "TerminalGpuNode.h"
 
 using namespace Konsole;
 using namespace Qt::Literals::StringLiterals;
@@ -516,56 +518,6 @@ TerminalDisplay::~TerminalDisplay()
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
-/**
- A table for emulating the simple (single width) unicode drawing chars.
- It represents the 250x - 257x glyphs. If it's zero, we can't use it.
- if it's not, it's encoded as follows: imagine a 5x5 grid where the points are numbered
- 0 to 24 left to top, top to bottom. Each point is represented by the corresponding bit.
-
- Then, the pixels basically have the following interpretation:
- _|||_
- -...-
- -...-
- -...-
- _|||_
-
-where _ = none
-      | = vertical line.
-      - = horizontal line.
- */
-
-
-enum LineEncode
-{
-    TopL  = (1<<1),
-    TopC  = (1<<2),
-    TopR  = (1<<3),
-
-    LeftT = (1<<5),
-    Int11 = (1<<6),
-    Int12 = (1<<7),
-    Int13 = (1<<8),
-    RightT = (1<<9),
-
-    LeftC = (1<<10),
-    Int21 = (1<<11),
-    Int22 = (1<<12),
-    Int23 = (1<<13),
-    RightC = (1<<14),
-
-    LeftB = (1<<15),
-    Int31 = (1<<16),
-    Int32 = (1<<17),
-    Int33 = (1<<18),
-    RightB = (1<<19),
-
-    BotL  = (1<<21),
-    BotC  = (1<<22),
-    BotR  = (1<<23)
-};
-
-#include "LineFont.h"
-
 static void drawLineChar(QPainter& paint, int x, int y, int w, int h, uint8_t code)
 {
     //Calculate cell midpoints, end points.
@@ -632,7 +584,7 @@ static void drawLineChar(QPainter& paint, int x, int y, int w, int h, uint8_t co
 
 }
 
-static void drawOtherChar(QPainter& paint, int x, int y, int w, int h, uchar code)
+void Konsole::drawOtherLineChar(QPainter& paint, int x, int y, int w, int h, uchar code)
 {
     //Calculate cell midpoints, end points.
     const int cx = x + w / 2;
@@ -731,7 +683,7 @@ void TerminalDisplay::drawLineCharString(    QPainter& painter, int x, int y, co
             if (LineChars[code])
                 drawLineChar(painter, x + (_fontWidth*i), y, _fontWidth, _fontHeight, code);
             else
-                drawOtherChar(painter, x + (_fontWidth * i), y, _fontWidth, _fontHeight, code);
+                drawOtherLineChar(painter, x + (_fontWidth * i), y, _fontWidth, _fontHeight, code);
         }
 
         painter.setPen( currentPen );
@@ -3932,6 +3884,95 @@ void TerminalDisplay::geometryChange(const QRectF &newGeometry, const QRectF &ol
     }
 
     QQuickPaintedItem::geometryChange(newGeometry,oldGeometry);
+}
+
+void TerminalDisplay::setGpuRendering(bool gpuRendering)
+{
+    if (_gpuRendering == gpuRendering)
+        return;
+
+    _gpuRendering = gpuRendering;
+    update();
+    emit gpuRenderingChanged();
+}
+
+QSGNode *TerminalDisplay::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data)
+{
+    auto *gpuNode = dynamic_cast<TerminalGpuNode *>(oldNode);
+    // The software scene graph has no custom materials.
+    const bool useGpu = _gpuRendering
+            && window()->rendererInterface()->graphicsApi() != QSGRendererInterface::Software;
+
+    if (!useGpu) {
+        if (gpuNode) {
+            delete gpuNode;
+            oldNode = nullptr;
+        }
+        _gpuNodeActive = false;
+        return QQuickPaintedItem::updatePaintNode(oldNode, data);
+    }
+
+    if (oldNode && !gpuNode)
+        delete oldNode;
+
+    if (width() <= 0 || height() <= 0 || !_image) {
+        delete gpuNode;
+        _gpuNodeActive = false;
+        return nullptr;
+    }
+
+    if (!gpuNode)
+        gpuNode = new TerminalGpuNode(window());
+    _gpuNodeActive = true;
+
+    TerminalFrame frame;
+    frame.image = _image;
+    frame.columns = _columns;
+    frame.usedLines = _usedLines;
+    frame.usedColumns = _usedColumns;
+    frame.lineProperties = &_lineProperties;
+    frame.colorTable = _colorTable;
+    frame.font = font();
+    frame.fontWidth = _fontWidth;
+    frame.fontHeight = _fontHeight;
+    frame.fontAscent = _fontAscent;
+    frame.lineSpacing = int(_lineSpacing);
+    frame.leftMargin = _leftMargin;
+    frame.topMargin = _topMargin;
+    frame.boldIntense = _boldIntense;
+    frame.italicEnabled = _italicEnabled;
+    frame.drawLineChars = _drawLineChars;
+    frame.blinking = _blinking;
+    frame.cursorBlinking = _cursorBlinking;
+    frame.fullCursorHeight = m_full_cursor_height;
+    frame.cursorShape = int(_cursorShape);
+    frame.cursorColor = _cursorColor;
+    frame.background = palette().window().color();
+    frame.backgroundOpacity = _opacity;
+    frame.preedit = _inputMethodData.preeditString;
+    frame.cursorPosition = cursorPosition();
+    frame.size = QSizeF(width(), height());
+    frame.devicePixelRatio = window()->effectiveDevicePixelRatio();
+    frame.deviceOrigin = mapToScene(QPointF(0, 0)) * frame.devicePixelRatio;
+    gpuNode->update(frame);
+
+    _inputMethodData.previousPreeditRect = preeditRect();
+    return gpuNode;
+}
+
+// QQuickPaintedItem hands out its painter node, which the GPU node replaces.
+bool TerminalDisplay::isTextureProvider() const
+{
+    if (_gpuNodeActive)
+        return QQuickItem::isTextureProvider();
+    return QQuickPaintedItem::isTextureProvider();
+}
+
+QSGTextureProvider *TerminalDisplay::textureProvider() const
+{
+    if (_gpuNodeActive)
+        return QQuickItem::textureProvider();
+    return QQuickPaintedItem::textureProvider();
 }
 
 void TerminalDisplay::update(const QRegion &region)
