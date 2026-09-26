@@ -475,6 +475,8 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
     //Setup scrollbar. Be sure it is not darw on screen.
   _scrollBar->setVisible(false);
   connect(_scrollBar, SIGNAL(valueChanged(int)), this, SIGNAL(scrollbarParamsChanged(int)));
+  // A range change can clamp the value without valueChanged, e.g. when the first resize empties the scrollback.
+  connect(_scrollBar, &ScrollBar::rangeChanged, this, [this] { emit scrollbarParamsChanged(_scrollBar->value()); });
 
   setUseFBORendering(true);
 
@@ -4229,10 +4231,15 @@ ScrollBar::ScrollBar(QObject* parent) : QObject(parent) {}
 
 void ScrollBar::setRange(int min, int max)
 {
+    if (min == m_minimum && max == m_maximum)
+        return;
+
     m_minimum = min;
     m_maximum = max;
     if (m_value < m_minimum) m_value = m_minimum;
     if (m_value > m_maximum) m_value = m_maximum;
+
+    emit rangeChanged();
 }
 
 void ScrollBar::setSingleStep(int step)

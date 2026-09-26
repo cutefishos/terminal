@@ -1133,6 +1133,7 @@ public:
 
 Q_SIGNALS:
     void valueChanged(int value);
+    void rangeChanged();
 
 private:
     int m_minimum{0};
