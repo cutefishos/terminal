@@ -34,10 +34,10 @@ FishUI.Window {
     background.color: terminalBackground
     background.opacity: settings.opacity
     headerDarkMode: chromeDark
-    header.height: 44
+    header.height: 40
     windowButtonsAlignment: Qt.AlignVCenter
     windowButtonsTopMargin: 0
-    windowButtonsRightMargin: FishUI.Units.smallSpacing
+    windowButtonsRightMargin: 4
 
     property int currentIndex: -1
     property alias currentItem: _tabView.currentItem
@@ -237,8 +237,8 @@ FishUI.Window {
             textColor: root.chromeForeground
             anchors.left: parent.left
             anchors.right: _newTabButton.left
-            anchors.leftMargin: FishUI.Units.largeSpacing
-            anchors.rightMargin: FishUI.Units.smallSpacing
+            anchors.leftMargin: FishUI.Units.smallSpacing
+            anchors.rightMargin: 4
             anchors.verticalCenter: parent.verticalCenter
 
             onCloseRequested: (index) => root.closeProtection(index)
