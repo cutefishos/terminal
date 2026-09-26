@@ -167,6 +167,9 @@ public slots:
 
     void clearScrollback();
 
+    // Clears the scrollback and the screen; false on the alternate screen, which keeps the key.
+    bool clearScreenAndScrollback();
+
     // Resets the terminal state and clears the screen and scrollback.
     void resetTerminal();
 

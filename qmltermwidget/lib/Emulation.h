@@ -176,6 +176,13 @@ public:
   const HistoryType& history() const;
   /** Clears the history scroll. */
   void clearHistory();
+  /**
+   * Clears the history and the screen for a user's clear command. At a prompt the
+   * shell gets a form feed to draw the prompt again; with a program running only
+   * the lines above the cursor go. Returns false on the alternate screen, which
+   * is left alone.
+   */
+  bool clearScreenAndHistory(bool atPrompt);
 
   /**
    * Copies the output history from @p startLine to @p endLine

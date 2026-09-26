@@ -1106,13 +1106,44 @@ void Screen::clearToBeginOfScreen()
 
 void Screen::clearEntireScreen()
 {
-    // Add entire screen to history
-    for (int i = 0; i < (lines-1); i++)
+    // Only rows up to the last written one go into the history; shells send this
+    // on every Ctrl+L, and pushing the blank rows below would grow the scrollback each time.
+    for (int i = lastNonBlankLine(); i >= 0; i--)
     {
         addHistLine(); scrollUp(0,1);
     }
 
     clearImage(loc(0,0),loc(columns-1,lines-1),' ');
+}
+
+void Screen::eraseScreen()
+{
+    clearImage(loc(0,0),loc(columns-1,lines-1),' ');
+}
+
+void Screen::eraseAboveCursor()
+{
+    if (cuY == 0)
+        return;
+
+    scrollUp(0,cuY);
+    cuY = 0;
+}
+
+int Screen::lastNonBlankLine() const
+{
+    const Character blank;
+
+    for (int y = lines-1; y >= 0; y--)
+    {
+        for (const Character &ch : screenLines[y])
+        {
+            if (ch.character != blank.character || ch.backgroundColor != blank.backgroundColor)
+                return y;
+        }
+    }
+
+    return -1;
 }
 
 /*! fill screen with 'E'

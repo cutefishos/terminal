@@ -152,6 +152,26 @@ void Emulation::clearHistory()
     // would cancel the update for the rest of that chunk.
     bufferedUpdate();
 }
+bool Emulation::clearScreenAndHistory(bool atPrompt)
+{
+    // Clearing under a full-screen program would break its idea of the screen.
+    if (_currentScreen != _screen[0])
+        return false;
+
+    _screen[0]->setScroll( _screen[0]->getScroll() , false );
+
+    if (atPrompt) {
+        _screen[0]->eraseScreen();
+        // The shell's clear-screen redraws the prompt and any typed input.
+        emit sendData("\x0C", 1);
+    } else {
+        _screen[0]->eraseAboveCursor();
+    }
+
+    bufferedUpdate();
+    return true;
+}
+
 void Emulation::setHistory(const HistoryType& t)
 {
   _screen[0]->setScroll(t);

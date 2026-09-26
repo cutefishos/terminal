@@ -254,6 +254,10 @@ public:
 
     /** Clear the whole screen, moving the current screen contents into the history first. */
     void clearEntireScreen();
+    /** Clear the whole screen without touching the history. */
+    void eraseScreen();
+    /** Drop the lines above the cursor, moving the cursor line to the top. */
+    void eraseAboveCursor();
     /**
      * Clear the area of the screen from the current cursor position to the end of
      * the screen.
@@ -583,6 +587,9 @@ public:
 private:
     Screen(const Screen &) = delete;
     Screen &operator=(const Screen &) = delete;
+
+    // -1 when every line is blank.
+    int lastNonBlankLine() const;
 
     //copies a line of text from the screen or history into a stream using a
     //specified character decoder.  Returns the number of lines actually copied,

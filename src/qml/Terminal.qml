@@ -144,6 +144,12 @@ Item {
             event.accepted = true
         }
 
+        if ((event.key === Qt.Key_K)
+                && (event.modifiers & Qt.ControlModifier)
+                && (event.modifiers & Qt.ShiftModifier)) {
+            event.accepted = _session.clearScreenAndScrollback()
+        }
+
         // Zoom: Ctrl+= (or Ctrl++), Ctrl+-, Ctrl+0.
         if ((event.modifiers & Qt.ControlModifier) && !(event.modifiers & Qt.AltModifier)) {
             if (event.key === Qt.Key_Equal || event.key === Qt.Key_Plus) {

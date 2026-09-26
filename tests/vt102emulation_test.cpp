@@ -3,6 +3,7 @@
 #include <QKeyEvent>
 #include <QTest>
 
+#include "History.h"
 #include "KeyboardTranslator.h"
 #include "ScreenWindow.h"
 #include "Vt102Emulation.h"
@@ -61,6 +62,12 @@ public:
     }
 
     QList<KeyboardTranslator::Command> takeCommands() { return std::exchange(m_commands, {}); }
+
+    void keepHistory() { m_emulation.setHistory(HistoryTypeBuffer(1000)); }
+    int historyLines() const { return m_window->screen()->getHistLines(); }
+    int cursorLine() const { return m_window->screen()->getCursorY(); }
+    bool clearAll(bool atPrompt) { return m_emulation.clearScreenAndHistory(atPrompt); }
+    QByteArray takeSent() { return std::exchange(m_sent, {}); }
 
 private:
     Vt102Emulation m_emulation;
@@ -202,6 +209,63 @@ private slots:
         Terminal terminal;
         terminal.print("a\033[=5;1ub\033[<uc\033[>4;2md");
         QCOMPARE(terminal.line(4), QStringLiteral("abcd"));
+    }
+
+    void clearingTheScreenKeepsOnlyWrittenLinesInHistory()
+    {
+        Terminal terminal;
+        terminal.keepHistory();
+        terminal.print("a\r\nb\r\n$ ");
+        terminal.print("\033[H\033[2J$ ");
+        QCOMPARE(terminal.historyLines(), 3);
+
+        // The prompt alone at the top goes up once, the blank lines below it never.
+        terminal.print("\033[H\033[2J$ ");
+        terminal.print("\033[H\033[2J$ ");
+        QCOMPARE(terminal.historyLines(), 5);
+
+        terminal.print("\033[H\033[2J\033[H\033[2J");
+        QCOMPARE(terminal.historyLines(), 6);
+    }
+
+    void clearAllAtAPromptAsksTheShellToRedraw()
+    {
+        Terminal terminal;
+        terminal.keepHistory();
+        terminal.print("a\r\nb\r\n$ \033[H\033[2J$ ls");
+        QCOMPARE(terminal.historyLines(), 3);
+
+        QVERIFY(terminal.clearAll(true));
+        QCOMPARE(terminal.takeSent(), QByteArray("\x0C"));
+        QCOMPARE(terminal.historyLines(), 0);
+        QCOMPARE(terminal.line(4), QStringLiteral("    "));
+
+        // The shell's redraw leaves nothing behind in the history.
+        terminal.print("\033[H\033[2J$ ls");
+        QCOMPARE(terminal.historyLines(), 0);
+        QCOMPARE(terminal.line(4), QStringLiteral("$ ls"));
+    }
+
+    void clearAllUnderAProgramKeepsTheCursorLine()
+    {
+        Terminal terminal;
+        terminal.keepHistory();
+        terminal.print("a\r\nb\r\nc");
+
+        QVERIFY(terminal.clearAll(false));
+        QCOMPARE(terminal.takeSent(), QByteArray());
+        QCOMPARE(terminal.historyLines(), 0);
+        QCOMPARE(terminal.cursorLine(), 0);
+        QCOMPARE(terminal.line(1), QStringLiteral("c"));
+    }
+
+    void clearAllLeavesTheAlternateScreenAlone()
+    {
+        Terminal terminal;
+        terminal.print("\033[?1049hx");
+        QVERIFY(!terminal.clearAll(true));
+        QCOMPARE(terminal.takeSent(), QByteArray());
+        QCOMPARE(terminal.line(1), QStringLiteral("x"));
     }
 
     void subParametersStayWithTheirAttribute()

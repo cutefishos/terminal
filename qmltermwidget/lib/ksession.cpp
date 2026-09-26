@@ -303,6 +303,11 @@ void KSession::clearScrollback()
     m_session->clearHistory();
 }
 
+bool KSession::clearScreenAndScrollback()
+{
+    return m_session->emulation()->clearScreenAndHistory(!hasActiveProcess());
+}
+
 void KSession::resetTerminal()
 {
     // Resetting clears the screen into the history, so the history goes after it.
