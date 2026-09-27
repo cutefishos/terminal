@@ -94,7 +94,8 @@ Item {
                 readonly property bool selected: control.view.currentIndex === index
                 readonly property bool hovered: _mouseArea.containsMouse || _closeArea.containsMouse
                 readonly property bool dragged: control.dragIndex === index
-                readonly property var page: control.view.contentModel.get(index)
+                // contentChildren notifies on insert and move; contentModel.get() would keep the old page.
+                readonly property var page: control.view.contentChildren[index]
 
                 x: dragged ? control.dragX : control.slotFor(index) * control.tabWidth
                 z: dragged ? 2 : selected ? 1 : 0
