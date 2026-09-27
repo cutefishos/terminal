@@ -17,7 +17,18 @@ Item {
     readonly property real maximumTabWidth: 220
     // Below this the bar scrolls instead of squeezing the titles away.
     readonly property real minimumTabWidth: 96
-    readonly property real tabWidth: count > 0 ? Math.max(minimumTabWidth, Math.min(maximumTabWidth, width / count)) : 0
+    // A tab dragged in from another window takes a slot of its own.
+    readonly property int slotCount: count + (incoming ? 1 : 0)
+    readonly property real tabWidth: slotCount > 0 ? Math.max(minimumTabWidth, Math.min(maximumTabWidth, width / slotCount)) : 0
+
+    // A tab dragged over the bar from another window: drawn under the pointer
+    // at `incomingX`, with the others making room where it would drop.
+    property bool incoming: false
+    property string incomingTitle: ""
+    property real incomingX: 0
+    readonly property int incomingIndex: incoming
+            ? Math.max(0, Math.min(count, Math.round((incomingX + _flick.contentX) / Math.max(1, tabWidth) - 0.5)))
+            : -1
 
     readonly property color trackColor: darkMode ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.045)
     // Light schemes are not always white; a translucent pill lifts off any of them.
@@ -47,6 +58,8 @@ Item {
     // Where a tab sits while another is dragged: the dragged one is taken out
     // of the order and put back at dropIndex, so the rest slide aside.
     function slotFor(index) {
+        if (incoming)
+            return index + (index >= incomingIndex ? 1 : 0)
         if (dragIndex < 0 || index === dragIndex)
             return index
         const without = index - (index > dragIndex ? 1 : 0)
@@ -63,9 +76,17 @@ Item {
                                                         ? left + tabWidth - _flick.width : _flick.contentX))
     }
 
-    // The slot a tab dropped at `x` goes into.
-    function indexAt(x) {
-        return Math.max(0, Math.min(count, Math.round((x + _flick.contentX) / Math.max(1, tabWidth))))
+    // Dropped, the tab takes the slot it was shown in at once; gone, the
+    // others slide back.
+    function endIncoming(dropped) {
+        incoming = false
+        if (!dropped)
+            _settle.restart()
+    }
+
+    Timer {
+        id: _settle
+        interval: 150
     }
 
     function rename(index) {
@@ -82,7 +103,7 @@ Item {
         id: _flick
         anchors.fill: parent
         clip: true
-        contentWidth: control.tabWidth * control.count
+        contentWidth: control.tabWidth * control.slotCount
         contentHeight: height
         flickableDirection: Flickable.HorizontalFlick
         boundsBehavior: Flickable.StopAtBounds
@@ -114,7 +135,7 @@ Item {
 
                 // Only the tabs sliding aside animate; a drop places them at once.
                 Behavior on x {
-                    enabled: control.dragIndex >= 0 && !tab.dragged
+                    enabled: !tab.dragged && (control.dragIndex >= 0 || control.incoming || _settle.running)
                     NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
                 }
 
@@ -319,6 +340,37 @@ Item {
                         onClicked: control.closeRequested(index)
                     }
                 }
+            }
+        }
+
+        Item {
+            visible: control.incoming
+            x: Math.max(0, Math.min(_flick.contentWidth - width,
+                                    control.incomingX + _flick.contentX - width / 2))
+            z: 2
+            width: control.tabWidth
+            height: control.height
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                radius: height / 2
+                color: control.selectedColor
+                border.width: control.darkMode ? 0 : 1
+                border.color: Qt.rgba(0, 0, 0, 0.06)
+            }
+
+            FishUI.Label {
+                anchors.fill: parent
+                anchors.leftMargin: 28
+                anchors.rightMargin: 28
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                text: control.incomingTitle
+                elide: Text.ElideMiddle
+                font.pixelSize: 12
+                font.weight: Font.Medium
+                color: control.textColor
             }
         }
     }

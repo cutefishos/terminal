@@ -79,6 +79,9 @@ FishUI.Window {
 
     // What a tab dragged between windows carries.
     readonly property string tabMimeType: "application/x-cutefish-terminal-tab"
+    // A tab is being pulled out: the tab bar stays up, even with one tab
+    // left, so the tab can be dragged back into it.
+    property bool detaching: false
 
     // Each dialog is a window of its own, so it is made the first time it is needed.
     property QtObject _exitPrompt: null
@@ -225,7 +228,7 @@ FishUI.Window {
         readonly property real reservedWidth: root.width - width + _newTabButton.width
 
         FishUI.Label {
-            visible: _tabView.count < 2
+            visible: !_tabBar.visible
             width: Math.min(implicitWidth, root.width - _header.reservedWidth * 2)
             x: (root.width - width) / 2
             anchors.verticalCenter: parent.verticalCenter
@@ -240,7 +243,7 @@ FishUI.Window {
 
         TabBar {
             id: _tabBar
-            visible: _tabView.count > 1
+            visible: _tabView.count > 1 || incoming || root.detaching
             view: _tabView
             darkMode: root.chromeDark
             textColor: root.chromeForeground
@@ -263,7 +266,9 @@ FishUI.Window {
         }
 
         // Takes a tab dragged out of another window of this process; one from
-        // another terminal process cannot bring its shell along.
+        // another terminal process cannot bring its shell along. While it is
+        // over the title bar the tab bar shows it where it would drop, and the
+        // compositor stops drawing the window it is carried in.
         DropArea {
             anchors.fill: parent
             keys: [root.tabMimeType]
@@ -271,10 +276,20 @@ FishUI.Window {
             onEntered: (drag) => {
                 drag.accepted = drag.source !== root && drag.source
                         && drag.source.tabMimeType === root.tabMimeType
+                if (!drag.accepted)
+                    return
+                _tabBar.incomingTitle = drag.source.title
+                _tabBar.incomingX = mapToItem(_tabBar, drag.x, drag.y).x
+                _tabBar.incoming = true
             }
+            onPositionChanged: (drag) => {
+                if (_tabBar.incoming)
+                    _tabBar.incomingX = mapToItem(_tabBar, drag.x, drag.y).x
+            }
+            onExited: _tabBar.endIncoming(false)
             onDropped: (drop) => {
-                const index = _tabBar.visible ? _tabBar.indexAt(mapToItem(_tabBar, drop.x, drop.y).x)
-                                              : _tabView.count
+                const index = _tabBar.incoming ? _tabBar.incomingIndex : _tabView.count
+                _tabBar.endIncoming(true)
                 root.insertTab(drop.source.takePage(), index)
                 root.requestActivate()
                 drop.accept(Qt.MoveAction)
@@ -415,6 +430,7 @@ FishUI.Window {
         if (index < 0 || index >= _tabView.count || _tabView.count < 2)
             return
 
+        detaching = true
         const page = _tabView.takeTab(index)
         const window = Windows.create({
             detachedPage: page,
@@ -424,6 +440,7 @@ FishUI.Window {
             restorationBehavior: FishUI.Window.Disabled
         })
         if (!window) {
+            detaching = false
             insertTab(page, index)
             return
         }
@@ -432,6 +449,7 @@ FishUI.Window {
         // as it is over this one.
         const offset = Qt.point(Math.min(position.x, window.width - 1), window.header.height / 2)
         const action = FishUI.TabTransfer.drag(window, offset, tabMimeType)
+        detaching = false
 
         if (action === Qt.IgnoreAction && window.tabCount === 1)
             insertTab(window.takePage(), index)
