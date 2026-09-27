@@ -26,8 +26,8 @@ FishUI.Window {
     id: root
     minimumWidth: 400
     minimumHeight: 300
-    width: settings.width
-    height: settings.height
+    width: 760
+    height: 450
     title: currentItem ? currentItem.title : ""
 
     blurEnabled: settings.blur
@@ -190,11 +190,6 @@ FishUI.Window {
     }
 
     onClosing: (close) => {
-        if (!root.isMaximized && !root.isFullScreen) {
-            settings.width = root.width
-            settings.height = root.height
-        }
-
         if (_quitting)
             return
 

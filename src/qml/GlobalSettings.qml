@@ -25,8 +25,6 @@ Settings {
     location: StandardPaths.writableLocation(StandardPaths.GenericConfigLocation)
               + "/cutefish/terminal.conf"
 
-    property int width: 760
-    property int height: 450
     property int fontPointSize: 10
     property string fontName: "Noto Mono"
     property bool blinkingCursor: true
