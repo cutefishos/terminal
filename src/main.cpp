@@ -31,6 +31,7 @@
 #include "processhelper.h"
 #include "utils.h"
 #include "fonts.h"
+#include "windows.h"
 
 int main(int argc, char *argv[])
 {
@@ -88,8 +89,12 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("StartupDirectory", workdir);
     engine.rootContext()->setContextProperty("StartupCommand", command);
 
+    auto *windows = new Windows(&engine);
+    engine.rootContext()->setContextProperty("Windows", windows);
+
     engine.addImportPath(QStringLiteral("qrc:/"));
-    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+    if (!windows->create())
+        return 1;
 
     return app.exec();
 }

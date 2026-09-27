@@ -71,7 +71,14 @@ FishUI.Window {
     readonly property bool chromeDark: 0.2126 * terminalBackground.r + 0.7152 * terminalBackground.g
                                        + 0.0722 * terminalBackground.b < 0.5
 
-    GlobalSettings { id: settings }
+    property QtObject settings: GlobalSettings { }
+
+    // A tab pulled out of another window, which this window opens with
+    // instead of a new shell.
+    property Item detachedPage: null
+
+    // What a tab dragged between windows carries.
+    readonly property string tabMimeType: "application/x-cutefish-terminal-tab"
 
     // Each dialog is a window of its own, so it is made the first time it is needed.
     property QtObject _exitPrompt: null
@@ -190,17 +197,24 @@ FishUI.Window {
     }
 
     onClosing: (close) => {
-        if (_quitting)
-            return
-
-        const pages = tabs()
-        if (pages.some(page => page.session.hasActiveProcess)) {
-            close.accepted = false
-            confirmClose(pages, () => {
-                _quitting = true
-                root.close()
-            })
+        if (!_quitting) {
+            const pages = tabs()
+            if (pages.some(page => page.session.hasActiveProcess)) {
+                close.accepted = false
+                confirmClose(pages, () => {
+                    _quitting = true
+                    root.close()
+                })
+                return
+            }
         }
+
+        // The shells end with the window, and the application with the last window.
+        for (const page of tabs())
+            _tabView.closeTab(indexOfTab(page))
+        if (_settingsDialog)
+            _settingsDialog.close()
+        Windows.release(root)
     }
 
     headerItem: Item {
@@ -239,9 +253,31 @@ FishUI.Window {
             onCloseRequested: (index) => root.closeProtection(index)
             onCloseOthersRequested: (index) => root.closeOtherTabs(index)
             onMoveRequested: (from, to) => root.moveTab(from, to)
+            // Later, not from inside the tab's own handler: taking the tab out
+            // destroys the delegate that is running it.
+            onDetachRequested: (index, position) => Qt.callLater(root.detachTab, index, position)
             onRenameRequested: (index, title) => {
                 _tabView.contentModel.get(index).customTitle = title.trim()
                 _tabView.currentItem.forceActiveFocus()
+            }
+        }
+
+        // Takes a tab dragged out of another window of this process; one from
+        // another terminal process cannot bring its shell along.
+        DropArea {
+            anchors.fill: parent
+            keys: [root.tabMimeType]
+
+            onEntered: (drag) => {
+                drag.accepted = drag.source !== root && drag.source
+                        && drag.source.tabMimeType === root.tabMimeType
+            }
+            onDropped: (drop) => {
+                const index = _tabBar.visible ? _tabBar.indexAt(mapToItem(_tabBar, drop.x, drop.y).x)
+                                              : _tabView.count
+                root.insertTab(drop.source.takePage(), index)
+                root.requestActivate()
+                drop.accept(Qt.MoveAction)
             }
         }
 
@@ -329,6 +365,12 @@ FishUI.Window {
     property bool _quitting: false
 
     Component.onCompleted: {
+        if (detachedPage) {
+            insertTab(detachedPage, 0)
+            detachedPage = null
+            return
+        }
+
         // Given on the command line: cutefish-terminal --workdir <dir> -e <command>.
         const directory = typeof StartupDirectory === "string" && StartupDirectory !== "" ? StartupDirectory : "$PWD"
         const command = typeof StartupCommand === "object" ? StartupCommand : []
@@ -346,10 +388,58 @@ FishUI.Window {
     function openTab(path, command, index) {
         const component = Qt.createComponent("Terminal.qml");
         if (component.status === Component.Ready) {
-            const object = _tabView.addTab(component, { path: path, command: command || [] }, index)
-            // Looked up when the shell exits: closing other tabs shifts the index.
-            object.terminalClosed.connect(() => closeTab(indexOfTab(object)))
+            const object = _tabView.addTab(component, { path: path, command: command || [], root: root }, index)
+            // Looked up when the shell exits: closing other tabs shifts the
+            // index, and a tab dragged into another window closes there.
+            object.terminalClosed.connect(() => object.root.closeTab(object.root.indexOfTab(object)))
         }
+    }
+
+    function insertTab(page, index) {
+        _tabView.insertTab(page, index)
+        page.forceActiveFocus()
+    }
+
+    // The only tab of a window pulled out of another, for a window it is
+    // dropped on. The empty window hides at once and goes when the drag ends.
+    function takePage() {
+        const page = _tabView.takeTab(0)
+        root.hide()
+        return page
+    }
+
+    // Pulls a tab out into a window of its own, which follows the pointer
+    // until it is dropped. Escape puts the tab back. `position` is where the
+    // pointer is in this window.
+    function detachTab(index, position) {
+        if (index < 0 || index >= _tabView.count || _tabView.count < 2)
+            return
+
+        const page = _tabView.takeTab(index)
+        const window = Windows.create({
+            detachedPage: page,
+            width: root.width,
+            height: root.height,
+            fontZoom: root.fontZoom,
+            restorationBehavior: FishUI.Window.Disabled
+        })
+        if (!window) {
+            insertTab(page, index)
+            return
+        }
+
+        // The pointer stays over the new window's title bar, as far across
+        // as it is over this one.
+        const offset = Qt.point(Math.min(position.x, window.width - 1), window.header.height / 2)
+        const action = FishUI.TabTransfer.drag(window, offset, tabMimeType)
+
+        if (action === Qt.IgnoreAction && window.tabCount === 1)
+            insertTab(window.takePage(), index)
+
+        if (window.tabCount === 0)
+            Windows.release(window)
+        else
+            window.requestActivate()
     }
 
     function indexOfTab(object) {
@@ -415,8 +505,10 @@ FishUI.Window {
 
         _tabView.closeTab(index)
 
-        if (_tabView.contentModel.count === 0)
-            Qt.quit()
+        if (_tabView.contentModel.count === 0) {
+            _quitting = true
+            root.close()
+        }
     }
 
     function closeCurrentTab() {

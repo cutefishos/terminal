@@ -34,6 +34,8 @@ set(SRCS
     src/processhelper.cpp
     src/utils.cpp
     src/fonts.cpp
+    src/windows.cpp
+    src/windows.h
 )
 
 set(RESOURCES

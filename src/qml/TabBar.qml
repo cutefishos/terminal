@@ -3,7 +3,8 @@ import FishUI 1.0 as FishUI
 
 // Tabs laid out on a pill-shaped track in the title bar; the current tab is
 // raised on the track and only it, or the hovered tab, shows a close button.
-// Tabs are dragged to reorder them and renamed from their context menu.
+// Tabs are dragged to reorder them, dragged off the bar into a window of their
+// own, and renamed from their context menu.
 Item {
     id: control
 
@@ -31,10 +32,14 @@ Item {
     property real dragX: 0
     // The tab whose title is being edited.
     property int editingIndex: -1
+    // How far above or below the bar a dragged tab comes off it.
+    readonly property real detachDistance: 16
 
     signal closeRequested(int index)
     signal closeOthersRequested(int index)
     signal moveRequested(int from, int to)
+    // `position` is the pointer, in the window.
+    signal detachRequested(int index, point position)
     signal renameRequested(int index, string title)
 
     implicitHeight: 30
@@ -56,6 +61,11 @@ Item {
         _flick.contentX = Math.max(0, Math.min(limit, left < _flick.contentX ? left
                                                       : left + tabWidth > _flick.contentX + _flick.width
                                                         ? left + tabWidth - _flick.width : _flick.contentX))
+    }
+
+    // The slot a tab dropped at `x` goes into.
+    function indexAt(x) {
+        return Math.max(0, Math.min(count, Math.round((x + _flick.contentX) / Math.max(1, tabWidth))))
     }
 
     function rename(index) {
@@ -136,7 +146,10 @@ Item {
                     id: _mouseArea
 
                     property real pressX: 0
+                    property real pressY: 0
                     property bool didDrag: false
+                    // Off the bar: the rest of the press belongs to the window drag.
+                    property bool detached: false
 
                     anchors.fill: parent
                     hoverEnabled: true
@@ -146,18 +159,31 @@ Item {
 
                     onPressed: (mouse) => {
                         didDrag = false
+                        detached = false
                         pressX = mapToItem(_flick.contentItem, mouse.x, mouse.y).x
+                        pressY = mapToItem(control, mouse.x, mouse.y).y
                     }
 
                     onPositionChanged: (mouse) => {
-                        if (!(pressedButtons & Qt.LeftButton) || control.editingIndex === index)
+                        if (!(pressedButtons & Qt.LeftButton) || control.editingIndex === index || detached)
                             return
 
                         const x = mapToItem(_flick.contentItem, mouse.x, mouse.y).x
-                        if (!didDrag && Math.abs(x - pressX) > 8) {
+                        const y = mapToItem(control, mouse.x, mouse.y).y
+                        if (!didDrag && (Math.abs(x - pressX) > 8 || Math.abs(y - pressY) > 8)) {
                             didDrag = true
                             control.dragIndex = index
                             control.dropIndex = index
+                        }
+
+                        if (didDrag && (y < -control.detachDistance
+                                        || y > control.height + control.detachDistance)) {
+                            didDrag = false
+                            detached = true
+                            control.dragIndex = -1
+                            control.dropIndex = -1
+                            control.detachRequested(index, mapToItem(null, mouse.x, mouse.y))
+                            return
                         }
 
                         if (didDrag) {
@@ -186,7 +212,7 @@ Item {
                     }
 
                     onClicked: (mouse) => {
-                        if (didDrag)
+                        if (didDrag || detached)
                             return
 
                         if (mouse.button === Qt.MiddleButton) {

@@ -28,8 +28,6 @@ import Cutefish.TermWidget
 Item {
     id: control
 
-    height: _tabView.height
-    width: _tabView.width
     focus: true
 
     signal urlsDropped(var urls)
@@ -41,6 +39,16 @@ Item {
     property var command: []
     // Set by renaming the tab; empty follows the session.
     property string customTitle: ""
+
+    // The window the tab is in, given at creation. A tab dragged into another
+    // window follows it there; between two windows it keeps the last one.
+    property var root
+    readonly property QtObject settings: root.settings
+
+    Window.onWindowChanged: {
+        if (Window.window)
+            root = Window.window
+    }
     property alias terminal: _terminal
     readonly property QMLTermSession session: _session
     readonly property string title: customTitle !== "" ? customTitle : _session.title
@@ -519,6 +527,8 @@ Item {
     DropArea {
         id: _dropArea
         anchors.fill: parent
+        // A tab dragged over the terminal is not something to paste.
+        onEntered: (drag) => drag.accepted = drag.hasUrls || drag.hasText
         onDropped: (drop) => {
             if (drop.hasUrls) {
                 control.urlsDropped(drop.urls)
