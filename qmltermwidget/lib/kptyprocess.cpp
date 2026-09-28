@@ -88,8 +88,10 @@ KPtyProcess::~KPtyProcess()
     if (state() != QProcess::NotRunning && d->addUtmp)
     {
         d->pty->logout();
-        disconnect(this, &QProcess::stateChanged, this, nullptr);
     }
+    // ~QProcess still kills a running child and reports the state change;
+    // the handler above must not run on a private part that is gone.
+    disconnect(this, &QProcess::stateChanged, this, nullptr);
 }
 
 void KPtyProcess::setPtyChannels(PtyChannels channels)

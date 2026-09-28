@@ -620,7 +620,7 @@ bool ColorSchemeManager::deleteColorScheme(const QString& name)
     QString path = findColorSchemePath(name);
     if ( QFile::remove(path) )
     {
-        _colorSchemes.remove(name);
+        delete _colorSchemes.take(name);
         return true;
     }
     else

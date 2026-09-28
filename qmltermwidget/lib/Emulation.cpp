@@ -429,12 +429,48 @@ bool ExtendedCharTable::extendedCharMatch(uint hash , uint* unicodePoints , usho
     }
     return true;
 }
+void ExtendedCharTable::pruneUnused()
+{
+    QSet<uint> usedExtendedChars;
+    for (const auto &w : std::as_const(windows))
+    {
+        if (w->screen())
+        {
+            usedExtendedChars += w->screen()->usedExtendedChars();
+        }
+    }
+
+    QHash<uint,uint*>::iterator it = extendedCharTable.begin();
+    QHash<uint,uint*>::iterator itEnd = extendedCharTable.end();
+    while (it != itEnd)
+    {
+        if (usedExtendedChars.contains(it.key()))
+        {
+            ++it;
+        }
+        else
+        {
+            delete[] it.value();
+            it = extendedCharTable.erase(it);
+        }
+    }
+}
+
 uint ExtendedCharTable::createExtendedChar(uint* unicodePoints , ushort length)
 {
     // look for this sequence of points in the table
     uint hash = extendedCharHash(unicodePoints,length);
+    // 0 has a special meaning for chars, so a sequence hashing to it moves on.
+    if (hash == 0)
+        hash = 1;
     const uint initialHash = hash;
     bool triedCleaningSolution = false;
+
+    // The table only ever grew; a long session with many combining
+    // sequences keeps every one until the screens are asked which are
+    // still in use.
+    if (extendedCharTable.size() >= kPruneThreshold)
+        pruneUnused();
 
     // check existing entry for match
     while (extendedCharTable.contains(hash) && hash != 0) // 0 has a special meaning for chars so we don't use it
@@ -458,28 +494,7 @@ uint ExtendedCharTable::createExtendedChar(uint* unicodePoints , ushort length)
                     triedCleaningSolution = true;
                     // All the hashes are full, go to all Screens and try to free any
                     // This is slow but should happen very rarely
-                    QSet<uint> usedExtendedChars;
-                    for (const auto &w : std::as_const(windows))
-                    {
-                        if (w->screen())
-                        {
-                            usedExtendedChars += w->screen()->usedExtendedChars();
-                        }
-                    }
-
-                    QHash<uint,uint*>::iterator it = extendedCharTable.begin();
-                    QHash<uint,uint*>::iterator itEnd = extendedCharTable.end();
-                    while (it != itEnd)
-                    {
-                        if (usedExtendedChars.contains(it.key()))
-                        {
-                            ++it;
-                        }
-                        else
-                        {
-                            it = extendedCharTable.erase(it);
-                        }
-                    }
+                    pruneUnused();
                 }
                 else
                 {

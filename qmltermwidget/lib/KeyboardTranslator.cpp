@@ -168,10 +168,16 @@ const KeyboardTranslator* KeyboardTranslatorManager::defaultTranslator()
     const KeyboardTranslator* translator = findTranslator(QLatin1String("default"));
     if (!translator)
     {
+        // Kept like a loaded one, so repeated calls share the fallback.
+        const QString fallbackName = QLatin1String("fallback");
+        if (_translators.value(fallbackName))
+            return _translators.value(fallbackName);
         QBuffer textBuffer;
         textBuffer.setData(defaultTranslatorText);
         textBuffer.open(QIODevice::ReadOnly);
-        translator = loadTranslator(&textBuffer,QLatin1String("fallback"));
+        KeyboardTranslator* fallback = loadTranslator(&textBuffer,fallbackName);
+        _translators.insert(fallbackName, fallback);
+        translator = fallback;
     }
     return translator;
 }

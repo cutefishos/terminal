@@ -449,6 +449,10 @@ void Vt102Emulation::processWindowAttributeChange()
   // ignored, only the second char in ST ("\e\\") is appended to tokenBuffer.
   QString newValue = QString::fromWCharArray(tokenBuffer + i + 1, tokenBufferPos-i-2);
 
+  // The code is whatever number the sequence carried; a stream of distinct
+  // ones within the timer's 20 ms must not grow the map without bound.
+  if (_pendingTitleUpdates.size() >= 64 && !_pendingTitleUpdates.contains(attributeToChange))
+    updateTitle();
   _pendingTitleUpdates[attributeToChange] = newValue;
   _titleUpdateTimer->start(20);
 }

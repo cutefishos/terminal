@@ -217,7 +217,8 @@ public:
             if (bytes < nbs) {
                 head += bytes;
                 if (head == tail && buffers.size() == 1) {
-                    buffers.front().resize(CHUNKSIZE);
+                    // Qt 6 resize never gives capacity back; a large paste must not keep it.
+                    buffers.front() = QByteArray(CHUNKSIZE, Qt::Uninitialized);
                     head = tail = 0;
                 }
                 break;
@@ -225,7 +226,8 @@ public:
 
             bytes -= nbs;
             if (buffers.size() == 1) {
-                buffers.front().resize(CHUNKSIZE);
+                // Qt 6 resize never gives capacity back; a large paste must not keep it.
+                    buffers.front() = QByteArray(CHUNKSIZE, Qt::Uninitialized);
                 head = tail = 0;
                 break;
             }

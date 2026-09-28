@@ -83,9 +83,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    engine.rootContext()->setContextProperty("Process", new ProcessHelper);
-    engine.rootContext()->setContextProperty("Utils", new Utils);
-    engine.rootContext()->setContextProperty("Fonts", new Fonts);
+    engine.rootContext()->setContextProperty("Process", new ProcessHelper(&engine));
+    engine.rootContext()->setContextProperty("Utils", new Utils(&engine));
+    engine.rootContext()->setContextProperty("Fonts", new Fonts(&engine));
     engine.rootContext()->setContextProperty("StartupDirectory", workdir);
     engine.rootContext()->setContextProperty("StartupCommand", command);
 

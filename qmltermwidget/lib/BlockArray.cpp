@@ -210,8 +210,9 @@ bool BlockArray::setHistorySize(size_t newsize)
             ion = dup(fileno(tmp));
             if (ion<0) {
                 perror("konsole: cannot dup temp file.\n");
-                fclose(tmp);
             }
+            // The duplicate keeps the unlinked file; the FILE is not needed.
+            fclose(tmp);
         }
         if (ion < 0) {
             return false;
