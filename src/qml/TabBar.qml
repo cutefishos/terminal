@@ -17,9 +17,17 @@ Item {
     readonly property real maximumTabWidth: 220
     // Below this the bar scrolls instead of squeezing the titles away.
     readonly property real minimumTabWidth: 96
-    // A tab dragged in from another window takes a slot of its own.
-    readonly property int slotCount: count + (incoming ? 1 : 0)
+    // A tab dragged in from another window takes a slot of its own; one
+    // pulled out gives its slot up before it leaves the view.
+    readonly property int slotCount: count + (incoming ? 1 : 0) - (leavingPage ? 1 : 0)
     readonly property real tabWidth: slotCount > 0 ? Math.max(minimumTabWidth, Math.min(maximumTabWidth, width / slotCount)) : 0
+    // What the tabs are drawn at: tabWidth, eased while they slide.
+    property real slotWidth: tabWidth
+
+    Behavior on slotWidth {
+        enabled: control.sliding
+        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+    }
 
     // A tab dragged over the bar from another window: drawn under the pointer
     // at `incomingX`, with the others making room where it would drop.
@@ -41,6 +49,14 @@ Item {
     property int dragIndex: -1
     property int dropIndex: -1
     property real dragX: 0
+    // The page of a tab pulled off the bar, hidden until the view lets it go.
+    property var leavingPage: null
+    // Where a tab dragged in was drawn when it was dropped, in slots; the tab
+    // made for it glides from there.
+    property real arrivalSlot: NaN
+    // Tabs glide to their slots while a tab is dragged, arrives or leaves;
+    // opening or closing a tab places the rest at once.
+    readonly property bool sliding: dragIndex >= 0 || incoming || _settle.running
     // The tab whose title is being edited.
     property int editingIndex: -1
     // How far above or below the bar a dragged tab comes off it.
@@ -60,6 +76,10 @@ Item {
     function slotFor(index) {
         if (incoming)
             return index + (index >= incomingIndex ? 1 : 0)
+        if (leavingPage) {
+            const leaving = _tabs.indexOf(leavingPage)
+            return index - (leaving >= 0 && index > leaving ? 1 : 0)
+        }
         if (dragIndex < 0 || index === dragIndex)
             return index
         const without = index - (index > dragIndex ? 1 : 0)
@@ -76,18 +96,61 @@ Item {
                                                         ? left + tabWidth - _flick.width : _flick.contentX))
     }
 
-    // Dropped, the tab takes the slot it was shown in at once; gone, the
-    // others slide back.
+    // Every edge of a drag restarts the settle timer first: bindings that
+    // follow the edge would otherwise still see `sliding` false and jump.
+    function beginIncoming(title, x) {
+        _settle.restart()
+        incomingTitle = title
+        incomingX = x
+        incoming = true
+    }
+
+    // Dropped, the tab glides from under the pointer into its slot; gone,
+    // the others slide back.
     function endIncoming(dropped) {
+        _settle.restart()
+        arrivalSlot = dropped ? _ghost.x / slotWidth : NaN
         incoming = false
-        if (!dropped)
-            _settle.restart()
     }
 
     Timer {
         id: _settle
         interval: 150
     }
+
+    // The view's pages, one element each. The Repeater keeps a tab's delegate
+    // while others come, go or move, so each tab can glide from where it is.
+    ListModel {
+        id: _tabs
+
+        function indexOf(page) {
+            for (let i = 0; i < count; ++i) {
+                if (get(i).page === page)
+                    return i
+            }
+
+            return -1
+        }
+    }
+
+    function syncTabs() {
+        const pages = view ? view.contentChildren : []
+        for (let i = 0; i < pages.length; ++i) {
+            const at = _tabs.indexOf(pages[i])
+            if (at < 0)
+                _tabs.insert(i, { page: pages[i] })
+            else if (at !== i)
+                _tabs.move(at, i, 1)
+        }
+
+        if (_tabs.count > pages.length)
+            _tabs.remove(pages.length, _tabs.count - pages.length)
+        if (leavingPage && _tabs.indexOf(leavingPage) < 0)
+            leavingPage = null
+    }
+
+    onViewChanged: syncTabs()
+    Component.onCompleted: syncTabs()
 
     function rename(index) {
         editingIndex = index
@@ -97,6 +160,7 @@ Item {
     Connections {
         target: control.view
         function onCurrentIndexChanged() { control.ensureVisible(control.view.currentIndex) }
+        function onContentChildrenChanged() { control.syncTabs() }
     }
 
     Flickable {
@@ -114,10 +178,15 @@ Item {
             height: _flick.height
             radius: height / 2
             color: control.trackColor
+
+            Behavior on width {
+                enabled: control.sliding
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
         }
 
         Repeater {
-            model: control.count
+            model: _tabs
 
             delegate: Item {
                 id: tab
@@ -125,28 +194,67 @@ Item {
                 readonly property bool selected: control.view.currentIndex === index
                 readonly property bool hovered: _mouseArea.containsMouse || _closeArea.containsMouse
                 readonly property bool dragged: control.dragIndex === index
-                // contentChildren notifies on insert and move; contentModel.get() would keep the old page.
-                readonly property var page: control.view.contentChildren[index]
+                readonly property var page: model.page
+                readonly property real slot: control.slotFor(index)
+                // Eases to zero: the tab is drawn at slot + slotShift, so it
+                // glides from where it was drawn when its slot changes.
+                property real slotShift: 0
+                property real lastSlot: 0
+                // Let go, or dropped in from another window, and not in its slot yet.
+                property bool landing: false
 
-                x: dragged ? control.dragX : control.slotFor(index) * control.tabWidth
-                z: dragged ? 2 : selected ? 1 : 0
-                width: control.tabWidth
+                x: dragged ? control.dragX : (slot + slotShift) * control.slotWidth
+                z: dragged || landing ? 2 : selected ? 1 : 0
+                width: control.slotWidth
                 height: control.height
+                // Not `visible`: hiding the item would cancel the press the window drag goes on with.
+                opacity: page !== control.leavingPage ? 1 : 0
 
-                // Only the tabs sliding aside animate; a drop places them at once.
-                Behavior on x {
-                    enabled: !tab.dragged && (control.dragIndex >= 0 || control.incoming || _settle.running)
-                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                function glideFrom(drawnSlot) {
+                    if (control.sliding) {
+                        slotShift = drawnSlot - slot
+                        _glide.restart()
+                    } else {
+                        _glide.stop()
+                        slotShift = 0
+                        landing = false
+                    }
+                    lastSlot = slot
+                }
+
+                onSlotChanged: glideFrom(lastSlot + slotShift)
+                onDraggedChanged: {
+                    if (!dragged) {
+                        landing = true
+                        glideFrom(control.dragX / control.slotWidth)
+                    }
+                }
+
+                Component.onCompleted: {
+                    const arrival = control.arrivalSlot
+                    control.arrivalSlot = NaN
+                    landing = !isNaN(arrival)
+                    glideFrom(landing ? arrival : slot)
+                }
+
+                NumberAnimation {
+                    id: _glide
+                    target: tab
+                    property: "slotShift"
+                    to: 0
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                    onFinished: tab.landing = false
                 }
 
                 Rectangle {
                     anchors.fill: parent
                     anchors.margins: 2
                     radius: height / 2
-                    color: tab.selected || tab.dragged ? control.selectedColor
-                                                       : tab.hovered ? control.hoverColor : "transparent"
+                    color: tab.selected || tab.dragged || tab.landing ? control.selectedColor
+                                                                      : tab.hovered ? control.hoverColor : "transparent"
                     // Light mode raises a white pill on a pale track; a hairline keeps its edge.
-                    border.width: (tab.selected || tab.dragged) && !control.darkMode ? 1 : 0
+                    border.width: (tab.selected || tab.dragged || tab.landing) && !control.darkMode ? 1 : 0
                     border.color: Qt.rgba(0, 0, 0, 0.06)
                 }
 
@@ -157,7 +265,7 @@ Item {
                     width: 1
                     height: 14
                     color: control.separatorColor
-                    visible: control.dragIndex < 0
+                    visible: !control.sliding
                              && index < control.count - 1
                              && !tab.selected && !tab.hovered
                              && control.view.currentIndex !== index + 1
@@ -193,6 +301,7 @@ Item {
                         const y = mapToItem(control, mouse.x, mouse.y).y
                         if (!didDrag && (Math.abs(x - pressX) > 8 || Math.abs(y - pressY) > 8)) {
                             didDrag = true
+                            _settle.restart()
                             control.dragIndex = index
                             control.dropIndex = index
                         }
@@ -201,6 +310,9 @@ Item {
                                         || y > control.height + control.detachDistance)) {
                             didDrag = false
                             detached = true
+                            // The rest close up behind it before the view lets it go.
+                            _settle.restart()
+                            control.leavingPage = tab.page
                             control.dragIndex = -1
                             control.dropIndex = -1
                             control.detachRequested(index, mapToItem(null, mouse.x, mouse.y))
@@ -216,18 +328,25 @@ Item {
                     }
 
                     onReleased: {
+                        // The view kept the tab after all.
+                        if (detached)
+                            control.leavingPage = null
                         if (!didDrag)
                             return
 
                         const from = control.dragIndex
                         const to = control.dropIndex
-                        // Cleared first: the tabs already sit in their final slots.
+                        // The tab glides from under the pointer into its slot.
+                        _settle.restart()
                         control.dragIndex = -1
                         control.dropIndex = -1
                         control.moveRequested(from, to)
                     }
 
                     onCanceled: {
+                        if (detached)
+                            control.leavingPage = null
+                        _settle.restart()
                         control.dragIndex = -1
                         control.dropIndex = -1
                     }
@@ -344,20 +463,22 @@ Item {
         }
 
         Item {
+            id: _ghost
             visible: control.incoming
             x: Math.max(0, Math.min(_flick.contentWidth - width,
                                     control.incomingX + _flick.contentX - width / 2))
             z: 2
-            width: control.tabWidth
+            width: control.slotWidth
             height: control.height
 
-            Rectangle {
+            FishUI.RoundedRectangle {
                 anchors.fill: parent
                 anchors.margins: 2
                 radius: height / 2
+                continuousCorners: false
                 color: control.selectedColor
-                border.width: control.darkMode ? 0 : 1
-                border.color: Qt.rgba(0, 0, 0, 0.06)
+                border.width: 1
+                border.color: control.separatorColor
             }
 
             FishUI.Label {

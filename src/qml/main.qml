@@ -278,9 +278,7 @@ FishUI.Window {
                         && drag.source.tabMimeType === root.tabMimeType
                 if (!drag.accepted)
                     return
-                _tabBar.incomingTitle = drag.source.title
-                _tabBar.incomingX = mapToItem(_tabBar, drag.x, drag.y).x
-                _tabBar.incoming = true
+                _tabBar.beginIncoming(drag.source.title, mapToItem(_tabBar, drag.x, drag.y).x)
             }
             onPositionChanged: (drag) => {
                 if (_tabBar.incoming)
