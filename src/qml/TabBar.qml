@@ -419,10 +419,10 @@ Item {
                 }
 
                 Item {
-                    width: 18
-                    height: 18
+                    width: 16
+                    height: 16
                     anchors.right: parent.right
-                    anchors.rightMargin: 6
+                    anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
                     opacity: (tab.selected || tab.hovered) && control.dragIndex < 0 && control.editingIndex !== index ? 1 : 0
 
@@ -435,20 +435,11 @@ Item {
                         visible: _closeArea.containsMouse
                     }
 
-                    // Drawn at the tab's scale: the window close artwork is sized for a 32px button.
-                    Repeater {
-                        model: [45, -45]
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 8
-                            height: 1.2
-                            radius: height / 2
-                            rotation: modelData
-                            antialiasing: true
-                            color: control.textColor
-                            opacity: _closeArea.containsMouse ? 1 : 0.6
-                        }
+                    FishUI.Icon {
+                        anchors.fill: parent
+                        name: "close"
+                        color: control.textColor
+                        opacity: _closeArea.containsMouse ? 1 : 0.6
                     }
 
                     MouseArea {
