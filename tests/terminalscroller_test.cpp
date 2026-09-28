@@ -1,3 +1,4 @@
+#include <QPointer>
 #include <QQuickWindow>
 #include <QTest>
 #include <QWheelEvent>
@@ -143,6 +144,17 @@ private slots:
             QTest::keyClick(m_window, Qt::Key_Return);
         QTRY_COMPARE(value(), maximum());
         QVERIFY(value() > 0);
+    }
+
+    // Every closed tab destroys a display; its scroll bar goes with it.
+    void closingTheDisplayFreesItsScrollBar()
+    {
+        const QPointer<ScrollBar> scrollBar = m_display->findChild<ScrollBar *>();
+        QVERIFY(scrollBar);
+
+        delete m_display;
+        m_display = nullptr;
+        QVERIFY(scrollBar.isNull());
     }
 
 private:

@@ -448,7 +448,7 @@ TerminalDisplay::TerminalDisplay(QQuickItem *parent)
 
   // create scroll bar for scrolling output up and down
   // set the scroll bar's slider to occupy the whole area of the scroll bar initially
-  _scrollBar = new ScrollBar();
+  _scrollBar = new ScrollBar(this);
   // since the contrast with the terminal background may not be enough,
   // the scrollbar should be auto-filled if not transient
   if (!_scrollBar->isTransient())

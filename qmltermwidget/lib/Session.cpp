@@ -630,6 +630,7 @@ Session::~Session()
     close();
     delete _emulation;
     delete _shellProcess;
+    delete _foregroundProcessInfo;
 //  delete _zmodemProc;
 }
 
