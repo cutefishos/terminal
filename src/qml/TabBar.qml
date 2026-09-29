@@ -426,9 +426,12 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     opacity: (tab.selected || tab.hovered) && control.dragIndex < 0 && control.editingIndex !== index ? 1 : 0
 
-                    Rectangle {
+                    // Snapped like the glyph above it; a plain Rectangle drifts up to
+                    // a device pixel from it at fractional scales.
+                    FishUI.RoundedRectangle {
                         anchors.fill: parent
                         radius: height / 2
+                        continuousCorners: false
                         color: _closeArea.pressed ? Qt.rgba(control.textColor.r, control.textColor.g,
                                                             control.textColor.b, 0.16)
                                                   : control.hoverColor
