@@ -287,6 +287,14 @@ void Vt102Emulation::receiveChar(wchar_t cc)
   if (cc == DEL)
     return; //VT100: ignore.
 
+  // Most output is printable text between sequences: what lun() below does, with
+  // the tokenizer already reset whenever its buffer is empty.
+  if (tokenBufferPos == 0 && cc >= 32 && cc != ESC+128 && getMode(MODE_Ansi))
+  {
+    _currentScreen->displayCharacter(applyCharset(cc));
+    return;
+  }
+
   if (ces(CTL))
   {
     // ignore control characters in the text part of Xpe (aka OSC) "ESC]"
@@ -1703,11 +1711,6 @@ void Vt102Emulation::restoreMode(int m)
       setMode(m);
   else
       resetMode(m);
-}
-
-bool Vt102Emulation::getMode(int m)
-{
-  return _currentModes.mode[m];
 }
 
 char Vt102Emulation::eraseChar() const

@@ -242,7 +242,10 @@ public:
     /** Restores the state of a screen @p mode saved by calling saveMode() */
     void restoreMode(int mode);
     /** Returns whether the specified screen @p mode is enabled or not .*/
-    bool getMode(int mode) const;
+    bool getMode(int mode) const
+    {
+        return currentModes[mode];
+    }
 
     /**
      * Saves the current position and appearance (text color and style) of the cursor.
@@ -500,7 +503,12 @@ public:
      * @param from The start of the area to check.
      * @param to The end of the area to check
      */
-    void checkSelection(int from, int to);
+    void checkSelection(int from, int to)
+    {
+        // Every printed character checks; there is rarely a selection.
+        if (selBegin != -1)
+            clearOverlappingSelection(from, to);
+    }
 
     /**
      * Sets or clears an attribute of the current line.
@@ -633,6 +641,7 @@ private:
     void reverseRendition(Character& p) const;
 
     bool isSelectionValid() const;
+    void clearOverlappingSelection(int from, int to);
     // copies text from 'startIndex' to 'endIndex' to a stream
     // startIndex and endIndex are positions generated using the loc(x,y) macro
     void writeToStream(TerminalCharacterDecoder* decoder, int startIndex,

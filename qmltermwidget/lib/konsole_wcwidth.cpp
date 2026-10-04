@@ -19,6 +19,10 @@
 
 int konsole_wcwidth(wchar_t ucs)
 {
+    // Printable ASCII is one column in every locale, and most output is ASCII.
+    if (ucs >= 0x20 && ucs < 0x7f)
+        return 1;
+
 #ifdef HAVE_UTF8PROC
     utf8proc_category_t cat = utf8proc_category( ucs );
     if (cat == UTF8PROC_CATEGORY_CO) {

@@ -315,11 +315,6 @@ void Screen::restoreMode(int m)
     currentModes[m] = savedModes[m];
 }
 
-bool Screen::getMode(int m) const
-{
-    return currentModes[m];
-}
-
 void Screen::saveCursor()
 {
     savedState.cursorColumn = cuX;
@@ -658,10 +653,8 @@ void Screen::newLine()
     index();
 }
 
-void Screen::checkSelection(int from, int to)
+void Screen::clearOverlappingSelection(int from, int to)
 {
-    if (selBegin == -1)
-        return;
     int scr_TL = loc(0, history->getLines());
     //Clear entire selection if it overlaps region [from, to]
     if ( (selBottomRight >= (from+scr_TL)) && (selTopLeft <= (to+scr_TL)) )
@@ -816,6 +809,10 @@ notcombine:
     int size = screenLines[cuY].size();
     if (size < cuX+w)
     {
+        // A line fills up one character at a time; allocate it once. The
+        // history keeps its own copy of what the line holds.
+        if (screenLines[cuY].capacity() < columns)
+            screenLines[cuY].reserve(columns);
         screenLines[cuY].resize(cuX+w);
     }
 
@@ -1031,20 +1028,32 @@ void Screen::moveImage(int dest, int sourceBegin, int sourceEnd)
     //so it matters that we do the copy in the right order -
     //forwards if dest < sourceBegin or backwards otherwise.
     //(search the web for 'memmove implementation' for details)
+    const int destLine = dest / columns;
+    const int sourceLine = sourceBegin / columns;
+    const int shift = qAbs(destLine - sourceLine);
+    LineProperty* properties = lineProperties.data();
+    //a source line a later step overwrites is moved, which spares sharing a buffer
+    //per line per scroll; a line nothing overwrites keeps its contents
     if (dest < sourceBegin)
     {
         for (int i=0;i<=lines;i++)
         {
-            screenLines[ (dest/columns)+i ] = screenLines[ (sourceBegin/columns)+i ];
-            lineProperties[(dest/columns)+i]=lineProperties[(sourceBegin/columns)+i];
+            if (i <= lines - shift)
+                screenLines[destLine + i] = std::move(screenLines[sourceLine + i]);
+            else
+                screenLines[destLine + i] = screenLines[sourceLine + i];
+            properties[destLine + i] = properties[sourceLine + i];
         }
     }
     else
     {
         for (int i=lines;i>=0;i--)
         {
-            screenLines[ (dest/columns)+i ] = screenLines[ (sourceBegin/columns)+i ];
-            lineProperties[(dest/columns)+i]=lineProperties[(sourceBegin/columns)+i];
+            if (shift > 0 && i >= shift)
+                screenLines[destLine + i] = std::move(screenLines[sourceLine + i]);
+            else
+                screenLines[destLine + i] = screenLines[sourceLine + i];
+            properties[destLine + i] = properties[sourceLine + i];
         }
     }
 

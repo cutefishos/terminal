@@ -253,13 +253,26 @@ void Emulation::receiveData(const char* text, int length)
      * U+10FFFF
      * https://unicodebook.readthedocs.io/unicode_encodings.html#surrogates
      */
-    QByteArray ba(text, length);
-    QString str = _toUtf16(ba);
-    std::wstring unicodeText = str.toStdWString();
+    const QString str = _toUtf16(QByteArrayView(text, length));
 
-    //send characters to terminal emulator
-    for (size_t i=0;i<unicodeText.length();i++)
-        receiveChar(unicodeText[i]);
+    //send characters to terminal emulator; an unpaired surrogate becomes U+FFFD
+    const QChar* unit = str.constData();
+    const QChar* end = unit + str.size();
+    while (unit < end)
+    {
+        const QChar current = *unit++;
+        if (Q_UNLIKELY(current.isSurrogate()))
+        {
+            if (current.isHighSurrogate() && unit < end && unit->isLowSurrogate())
+                receiveChar(wchar_t(QChar::surrogateToUcs4(current, *unit++)));
+            else
+                receiveChar(wchar_t(QChar::ReplacementCharacter));
+        }
+        else
+        {
+            receiveChar(wchar_t(current.unicode()));
+        }
+    }
 
     //look for z-modem indicator
     //-- someone who understands more about z-modems that I do may be able to move

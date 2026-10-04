@@ -309,7 +309,12 @@ void HistoryScrollBuffer::addCellsVector(const QVector<Character>& cells)
         _head = 0;
     }
 
-    _historyBuffer[bufferIndex(_usedLines-1)] = cells;
+    // Screen lines keep a whole row of capacity to write into; a history line
+    // keeps only the cells it holds.
+    if (cells.capacity() > cells.size())
+        _historyBuffer[bufferIndex(_usedLines-1)] = QVector<Character>(cells.cbegin(), cells.cend());
+    else
+        _historyBuffer[bufferIndex(_usedLines-1)] = cells;
     _wrappedLine[bufferIndex(_usedLines-1)] = false;
 }
 void HistoryScrollBuffer::addCells(const Character a[], int count)

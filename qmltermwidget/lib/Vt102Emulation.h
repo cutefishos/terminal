@@ -127,7 +127,7 @@ private:
   void setDefaultMargins();
 
   // returns true if 'mode' is set or false otherwise
-  bool getMode    (int mode);
+  bool getMode    (int mode) { return _currentModes.mode[mode]; }
   // saves the current boolean value of 'mode'
   void saveMode   (int mode);
   // restores the boolean value of 'mode'
