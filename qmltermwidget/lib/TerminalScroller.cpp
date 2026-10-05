@@ -10,23 +10,19 @@
 
 using namespace Konsole;
 
-namespace {
-
 // The values of FishUI's WheelScroller, so the terminal scrolls like every list.
-constexpr qreal friction = 4.5;
-constexpr qreal springFrequency = 18.0;
-constexpr qreal rubberBandResistance = 0.55;
-constexpr qreal minimumFlickSpeed = 40.0;
-constexpr qreal maximumFlickSpeed = 6000.0;
-constexpr qreal stopSpeed = 5.0;
-constexpr qint64 velocityTimeout = 80;
+static constexpr qreal friction = 4.5;
+static constexpr qreal springFrequency = 18.0;
+static constexpr qreal rubberBandResistance = 0.55;
+static constexpr qreal minimumFlickSpeed = 40.0;
+static constexpr qreal maximumFlickSpeed = 6000.0;
+static constexpr qreal stopSpeed = 5.0;
+static constexpr qint64 velocityTimeout = 80;
 
-qreal bounded(qreal position, qreal minimum, qreal maximum)
+static qreal bounded(qreal position, qreal minimum, qreal maximum)
 {
     return qBound(minimum, position, maximum);
 }
-
-} // namespace
 
 TerminalScroller::TerminalScroller(TerminalDisplay *display)
     : QAbstractAnimation(display)

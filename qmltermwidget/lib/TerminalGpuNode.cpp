@@ -95,13 +95,10 @@ void GlyphShader::updateSampledImage(RenderState &state, int binding, QSGTexture
 
 }
 
-namespace
-{
+static const int AtlasWidth = 1024;
+static const int AtlasMaxHeight = 2048;
 
-const int AtlasWidth = 1024;
-const int AtlasMaxHeight = 2048;
-
-const QSGGeometry::AttributeSet &glyphAttributes()
+static const QSGGeometry::AttributeSet &glyphAttributes()
 {
     static const QSGGeometry::Attribute attributes[] = {
         QSGGeometry::Attribute::createWithAttributeType(0, 2, QSGGeometry::FloatType, QSGGeometry::PositionAttribute),
@@ -112,7 +109,7 @@ const QSGGeometry::AttributeSet &glyphAttributes()
     return set;
 }
 
-QSGGeometryNode *createNode(const QSGGeometry::AttributeSet &attributes, QSGMaterial *material)
+static QSGGeometryNode *createNode(const QSGGeometry::AttributeSet &attributes, QSGMaterial *material)
 {
     auto *geometry = new QSGGeometry(attributes, 0, 0, QSGGeometry::UnsignedIntType);
     geometry->setDrawingMode(QSGGeometry::DrawTriangles);
@@ -128,7 +125,7 @@ QSGGeometryNode *createNode(const QSGGeometry::AttributeSet &attributes, QSGMate
 
 // Vertices come in quads: top left, top right, bottom left, bottom right.
 template<typename Vertex>
-void fillGeometry(QSGGeometryNode *node, const std::vector<Vertex> &vertices)
+static void fillGeometry(QSGGeometryNode *node, const std::vector<Vertex> &vertices)
 {
     QSGGeometry *geometry = node->geometry();
     const int quads = int(vertices.size() / 4);
@@ -148,8 +145,6 @@ void fillGeometry(QSGGeometryNode *node, const std::vector<Vertex> &vertices)
         indices += 6;
     }
     node->markDirty(QSGNode::DirtyGeometry);
-}
-
 }
 
 TerminalGpuNode::TerminalGpuNode(QQuickWindow *window)

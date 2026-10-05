@@ -985,13 +985,9 @@ void Vt102Emulation::reportAnswerBack()
    are masked to it, so a query answers with what is in effect.
 */
 
-namespace {
-
-constexpr int KittyDisambiguate = 1;
+static constexpr int KittyDisambiguate = 1;
 // A push beyond this drops the oldest entry.
-constexpr int KittyStackDepth = 8;
-
-}
+static constexpr int KittyStackDepth = 8;
 
 int Vt102Emulation::kittyKeyboardFlags() const
 {
@@ -1171,8 +1167,10 @@ struct KittyKey
     char final;
 };
 
+} // namespace
+
 // Keys that type no text, as the protocol numbers them.
-constexpr KittyKey kittyFunctionKeys[] = {
+static constexpr KittyKey kittyFunctionKeys[] = {
     {Qt::Key_Escape, 27, 'u'},
     {Qt::Key_Return, 13, 'u'},
     {Qt::Key_Enter, 13, 'u'},
@@ -1208,7 +1206,7 @@ constexpr KittyKey kittyFunctionKeys[] = {
 };
 
 // The keypad has numbers of its own; its digits are 57399 to 57408.
-constexpr KittyKey kittyKeypadKeys[] = {
+static constexpr KittyKey kittyKeypadKeys[] = {
     {Qt::Key_Period, 57409, 'u'},
     {Qt::Key_Slash, 57410, 'u'},
     {Qt::Key_Asterisk, 57411, 'u'},
@@ -1231,7 +1229,7 @@ constexpr KittyKey kittyKeypadKeys[] = {
 };
 
 template<size_t N>
-const KittyKey *findKittyKey(const KittyKey (&keys)[N], int key)
+static const KittyKey *findKittyKey(const KittyKey (&keys)[N], int key)
 {
     for (const KittyKey &entry : keys) {
         if (entry.key == key)
@@ -1240,7 +1238,7 @@ const KittyKey *findKittyKey(const KittyKey (&keys)[N], int key)
     return nullptr;
 }
 
-bool isModifierKey(int key)
+static bool isModifierKey(int key)
 {
     switch (key) {
     case Qt::Key_Shift:
@@ -1261,7 +1259,7 @@ bool isModifierKey(int key)
 }
 
 // The character of the key itself: the protocol wants the unshifted one.
-uint kittyKeyNumber(const QKeyEvent *event)
+static uint kittyKeyNumber(const QKeyEvent *event)
 {
     const int key = event->key();
     if (key >= Qt::Key_A && key <= Qt::Key_Z)
@@ -1288,7 +1286,7 @@ uint kittyKeyNumber(const QKeyEvent *event)
     return number < 0x20 || number == 0x7f ? 0 : number;
 }
 
-QByteArray kittySequence(int number, char final, int modifiers)
+static QByteArray kittySequence(int number, char final, int modifiers)
 {
     QByteArray sequence("\033[");
     if (final == 'u' || final == '~')
@@ -1298,8 +1296,6 @@ QByteArray kittySequence(int number, char final, int modifiers)
     if (modifiers)
         sequence += ';' + QByteArray::number(modifiers + 1);
     return sequence + final;
-}
-
 }
 
 bool Vt102Emulation::sendKittyKeyEvent(QKeyEvent *event, KeyboardTranslator::States states)
