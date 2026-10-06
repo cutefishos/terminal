@@ -406,6 +406,9 @@ public:
      */
     Q_INVOKABLE QVariantList linkUnderlineAt(qreal x, qreal y);
 
+    /** Pastes @p text as the clipboard is: bracketed, line breaks confirmed first. */
+    Q_INVOKABLE void pasteText(QString text, bool appendReturn = false);
+
     /** Sends the text held back by multilinePasteRequested(). */
     Q_INVOKABLE void confirmPaste();
 

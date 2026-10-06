@@ -53,12 +53,12 @@ Item {
     readonly property QMLTermSession session: _session
     readonly property string title: customTitle !== "" ? customTitle : _session.title
 
-    // Files arrive as paths the shell can take as one word each.
+    // Dropped files and links arrive as one shell word each.
     onUrlsDropped: (urls) => {
         const words = []
         for (const url of urls) {
             const text = url.toString()
-            words.push(text.startsWith("file://") ? shellQuote(decodeURIComponent(text.substring(7))) : text)
+            words.push(shellQuote(text.startsWith("file://") ? decodeURIComponent(text.substring(7)) : text))
         }
         _session.sendText(words.join(" ") + " ")
     }
@@ -533,11 +533,7 @@ Item {
             if (drop.hasUrls) {
                 control.urlsDropped(drop.urls)
             } else if (drop.hasText) {
-                const text = drop.text
-                if (text.indexOf("\n") !== -1)
-                    root.confirmPaste(text, () => _session.sendText(text))
-                else
-                    _session.sendText(text)
+                _terminal.pasteText(drop.text)
             }
         }
     }

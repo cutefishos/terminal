@@ -3205,8 +3205,16 @@ void TerminalDisplay::emitSelection(bool useXselection,bool appendReturn)
       return;
 
   // Paste Clipboard by simulating keypress events
-  QString text = QApplication::clipboard()->text(useXselection ? QClipboard::Selection :
-                                                                 QClipboard::Clipboard);
+  pasteText(QApplication::clipboard()->text(useXselection ? QClipboard::Selection :
+                                                            QClipboard::Clipboard),
+            appendReturn);
+}
+
+void TerminalDisplay::pasteText(QString text, bool appendReturn)
+{
+  if ( !_screenWindow )
+      return;
+
   if ( ! text.isEmpty() )
   {
     text.replace(QLatin1String("\r\n"), QLatin1String("\n"));
