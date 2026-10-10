@@ -4,7 +4,6 @@
 #include "processhelper.h"
 #include "applicationlauncher.h"
 #include <QDesktopServices>
-#include <QDBusInterface>
 #include <QApplication>
 #include <QUrl>
 #include <QDir>
@@ -45,35 +44,27 @@ bool ProcessHelper::openUrl(const QString &url)
     return QDesktopServices::openUrl(_url);
 }
 
+// Asynchronous, so a file manager that is slow to start never stalls the terminal.
+static void callFileManager(const QString &method, const QString &path)
+{
+    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.FileManager1"),
+                                                          QStringLiteral("/org/freedesktop/FileManager1"),
+                                                          QStringLiteral("org.freedesktop.FileManager1"),
+                                                          method);
+    message << QStringList { QUrl::fromLocalFile(path).toString() }
+            << QString::number(QApplication::applicationPid());
+    QDBusConnection::sessionBus().asyncCall(message);
+}
+
 bool ProcessHelper::openFileManager(const QString &url)
 {
-    QDBusInterface iface(QStringLiteral("org.freedesktop.FileManager1"),
-                         QStringLiteral("/org/freedesktop/FileManager1"),
-                         QStringLiteral("org.freedesktop.FileManager1"));
-
-    if (iface.lastError().isValid())
-        return false;
-
-    iface.call("ShowFolders",
-               QStringList() << QUrl::fromLocalFile(url).toString(),
-               QString::number(QApplication::applicationPid()));
-
+    callFileManager(QStringLiteral("ShowFolders"), url);
     return true;
 }
 
 bool ProcessHelper::showInFileManager(const QString &path)
 {
-    QDBusInterface iface(QStringLiteral("org.freedesktop.FileManager1"),
-                         QStringLiteral("/org/freedesktop/FileManager1"),
-                         QStringLiteral("org.freedesktop.FileManager1"));
-
-    if (iface.lastError().isValid())
-        return false;
-
-    iface.call("ShowItems",
-               QStringList() << QUrl::fromLocalFile(path).toString(),
-               QString::number(QApplication::applicationPid()));
-
+    callFileManager(QStringLiteral("ShowItems"), path);
     return true;
 }
 
@@ -95,11 +86,4 @@ QString ProcessHelper::existingPath(const QString &text, const QString &baseDir)
 
     const QFileInfo info(QDir(baseDir), path);
     return info.exists() ? info.absoluteFilePath() : QString();
-}
-
-bool ProcessHelper::newWindow(const QString &directory)
-{
-    return ApplicationLauncher::startDetached({ QCoreApplication::applicationFilePath(),
-                                                QStringLiteral("--workdir"), directory },
-                                              directory, QStringLiteral("cutefish-terminal"));
 }

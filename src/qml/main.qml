@@ -55,11 +55,14 @@ FishUI.Window {
     readonly property bool chromeDark: 0.2126 * terminalBackground.r + 0.7152 * terminalBackground.g
                                        + 0.0722 * terminalBackground.b < 0.5
 
-    property QtObject settings: GlobalSettings { }
+    property QtObject settings: TerminalSettings
 
     // A tab pulled out of another window, which this window opens with
     // instead of a new shell.
     property Item detachedPage: null
+    // A window opened from another one starts its shell here; only the first
+    // window takes the directory and command from the command line.
+    property string startDirectory: ""
 
     // What a tab dragged between windows carries.
     readonly property string tabMimeType: "application/x-cutefish-terminal-tab"
@@ -368,6 +371,11 @@ FishUI.Window {
             return
         }
 
+        if (startDirectory !== "") {
+            openTab(startDirectory)
+            return
+        }
+
         // Given on the command line: cutefish-terminal --workdir <dir> -e <command>.
         const directory = typeof StartupDirectory === "string" && StartupDirectory !== "" ? StartupDirectory : "$PWD"
         const command = typeof StartupCommand === "object" ? StartupCommand : []
@@ -495,8 +503,10 @@ FishUI.Window {
         page.forceActiveFocus()
     }
 
+    // In this process, so every window shares one settings object.
     function newWindow() {
-        Process.newWindow(currentItem ? currentItem.session.currentDir : "")
+        const directory = currentItem ? currentItem.session.currentDir : ""
+        Windows.create({ startDirectory: directory !== "" ? directory : "$HOME" })
     }
 
     function closeTab(index) {

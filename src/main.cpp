@@ -3,7 +3,9 @@
 
 #include <QApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlComponent>
 #include <QQmlContext>
+#include <QDebug>
 #include <QLocale>
 #include <QTranslator>
 #include <QFile>
@@ -27,8 +29,12 @@ int main(int argc, char *argv[])
     // off before the parser sees it.
     QStringList arguments = app.arguments();
     QStringList command;
-    const int executeIndex = qMax(arguments.indexOf(QStringLiteral("-e")),
-                                  arguments.indexOf(QStringLiteral("--execute")));
+    // The first of the two: a later one belongs to the command.
+    const int shortIndex = arguments.indexOf(QStringLiteral("-e"));
+    const int longIndex = arguments.indexOf(QStringLiteral("--execute"));
+    const int executeIndex = shortIndex < 0 ? longIndex
+            : longIndex < 0                 ? shortIndex
+                                            : qMin(shortIndex, longIndex);
     if (executeIndex > 0) {
         command = arguments.mid(executeIndex + 1);
         arguments = arguments.mid(0, executeIndex);
@@ -75,6 +81,16 @@ int main(int argc, char *argv[])
 
     auto *windows = new Windows(&engine);
     engine.rootContext()->setContextProperty("Windows", windows);
+
+    // One settings object for every window, so a change shows in all of them at once.
+    QQmlComponent settingsComponent(&engine, QUrl(QStringLiteral("qrc:/qml/GlobalSettings.qml")));
+    QObject *settings = settingsComponent.create();
+    if (!settings) {
+        qWarning() << settingsComponent.errorString();
+        return 1;
+    }
+    settings->setParent(&engine);
+    engine.rootContext()->setContextProperty("TerminalSettings", settings);
 
     engine.addImportPath(QStringLiteral("qrc:/"));
     if (!windows->create())
