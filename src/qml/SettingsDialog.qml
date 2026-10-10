@@ -103,8 +103,13 @@ FishUI.DialogWindow {
 
         // The chosen font on the terminal's own colours.
         Rectangle {
+            id: _preview
+
+            // Text that would run under the swatches gets a band of its own above them.
+            readonly property bool crowded: _sample.contentWidth > width - 2 * 14 - _swatches.width - 8
+
             Layout.fillWidth: true
-            implicitHeight: 76
+            implicitHeight: crowded ? _sample.implicitHeight + 2 * 14 + _swatches.height + 8 : 76
             radius: FishUI.Theme.bigRadius
             color: root.terminalBackground
             border.width: 1
@@ -112,8 +117,12 @@ FishUI.DialogWindow {
             clip: true
 
             Text {
+                id: _sample
                 anchors.fill: parent
                 anchors.margins: 14
+                anchors.bottomMargin: _preview.crowded ? 14 + _swatches.height + 8 : 14
+                // Large sizes stop at the inner margin rather than at the border.
+                clip: true
                 verticalAlignment: Text.AlignVCenter
                 textFormat: Text.StyledText
                 font.family: settings.fontName
@@ -131,6 +140,7 @@ FishUI.DialogWindow {
 
             // The scheme's eight normal colours.
             Row {
+                id: _swatches
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: 12
