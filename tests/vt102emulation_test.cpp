@@ -53,6 +53,15 @@ public:
         return line.at(column);
     }
 
+    // A cell of the oldest line in the history.
+    Character historyCell(int column)
+    {
+        const Screen *screen = m_window->screen();
+        QVector<Character> line(screen->getColumns());
+        screen->getImage(line.data(), line.size(), 0, 0);
+        return line.at(column);
+    }
+
     QString line(int length)
     {
         QString text;
@@ -280,6 +289,36 @@ private slots:
         // An underline colour sets no other attribute.
         QCOMPARE(terminal.cell(2).rendition, terminal.cell(1).rendition);
         QVERIFY(terminal.cell(3).foregroundColor == CharacterColor(COLOR_SPACE_RGB, 0xff0000));
+    }
+
+    void combiningSequencesInHistorySurviveAPrune()
+    {
+        Terminal terminal;
+        terminal.keepHistory();
+        terminal.print(QStringLiteral("é\r\n").toUtf8());
+        for (int i = 0; i < 60; ++i)
+            terminal.print("\r\n");
+        QVERIFY(terminal.historyLines() > 0);
+
+        // Thousands of distinct sequences written over one short line, each
+        // gone from the screen by the next, push the table past its pruning size.
+        for (int base = 0x100; base < 0x180; ++base) {
+            QString text = QStringLiteral("\r");
+            for (int mark = 0x300; mark < 0x340; ++mark) {
+                text += QChar(base);
+                text += QChar(mark);
+            }
+            terminal.print(text.toUtf8());
+        }
+
+        const Character kept = terminal.historyCell(0);
+        QVERIFY(kept.rendition & RE_EXTENDED_CHAR);
+        ushort length = 0;
+        const uint *chars = ExtendedCharTable::instance.lookupExtendedChar(kept.character, length);
+        QVERIFY(chars);
+        QCOMPARE(length, ushort(2));
+        QCOMPARE(chars[0], uint('e'));
+        QCOMPARE(chars[1], uint(0x301));
     }
 };
 

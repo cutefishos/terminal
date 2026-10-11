@@ -1139,6 +1139,35 @@ void Screen::eraseAboveCursor()
     cuY = 0;
 }
 
+void Screen::collectUsedExtendedChars(QSet<uint> &used) const
+{
+    // Lines grow only as far as the cursor has written, so most are shorter than columns.
+    for (int y = 0; y < lines; ++y)
+    {
+        for (const Character &ch : screenLines[y])
+        {
+            if (ch.rendition & RE_EXTENDED_CHAR)
+                used << ch.character;
+        }
+    }
+
+    // Scrollback still draws its sequences; freeing them would show another one in their place.
+    QVector<Character> cells;
+    for (int line = 0; line < history->getLines(); ++line)
+    {
+        const int length = history->getLineLen(line);
+        if (length <= 0)
+            continue;
+        cells.resize(length);
+        history->getCells(line, 0, length, cells.data());
+        for (const Character &ch : std::as_const(cells))
+        {
+            if (ch.rendition & RE_EXTENDED_CHAR)
+                used << ch.character;
+        }
+    }
+}
+
 int Screen::lastNonBlankLine() const
 {
     const Character blank;

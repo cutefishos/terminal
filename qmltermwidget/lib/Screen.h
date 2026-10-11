@@ -575,22 +575,8 @@ public:
       */
     static void fillWithDefaultChar(Character* dest, int count);
 
-    QSet<uint> usedExtendedChars() const
-    {
-        QSet<uint> result;
-        for (int i = 0; i < lines; ++i)
-        {
-            const ImageLine &il = screenLines[i];
-            for (int j = 0; j < columns; ++j)
-            {
-                if (il[j].rendition & RE_EXTENDED_CHAR)
-                {
-                    result << il[j].character;
-                }
-            }
-        }
-        return result;
-    }
+    /** Adds the extended characters on the screen and in its history to @p used. */
+    void collectUsedExtendedChars(QSet<uint> &used) const;
 
 private:
     Screen(const Screen &) = delete;

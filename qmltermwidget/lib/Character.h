@@ -226,6 +226,7 @@ private:
     // Drops every sequence no screen shows any more, freeing its buffer.
     void pruneUnused();
     static constexpr int kPruneThreshold = 4096;
+    int pruneAt = kPruneThreshold;
     // calculates the hash key of a sequence of unicode points of size 'length'
     uint extendedCharHash(uint* unicodePoints , ushort length) const;
     // tests whether the entry in the table specified by 'hash' matches the

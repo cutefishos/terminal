@@ -449,7 +449,7 @@ void ExtendedCharTable::pruneUnused()
     {
         if (w->screen())
         {
-            usedExtendedChars += w->screen()->usedExtendedChars();
+            w->screen()->collectUsedExtendedChars(usedExtendedChars);
         }
     }
 
@@ -467,6 +467,10 @@ void ExtendedCharTable::pruneUnused()
             it = extendedCharTable.erase(it);
         }
     }
+
+    // Still-used sequences stay; pruning again only once the table has doubled
+    // keeps a screen full of them from being rescanned on every new one.
+    pruneAt = qMax(kPruneThreshold, int(extendedCharTable.size()) * 2);
 }
 
 uint ExtendedCharTable::createExtendedChar(uint* unicodePoints , ushort length)
@@ -482,7 +486,7 @@ uint ExtendedCharTable::createExtendedChar(uint* unicodePoints , ushort length)
     // The table only ever grew; a long session with many combining
     // sequences keeps every one until the screens are asked which are
     // still in use.
-    if (extendedCharTable.size() >= kPruneThreshold)
+    if (extendedCharTable.size() >= pruneAt)
         pruneUnused();
 
     // check existing entry for match
