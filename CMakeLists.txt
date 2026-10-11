@@ -48,14 +48,12 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-add_executable(${PROJECT_NAME} ${SRCS} ${RESOURCES})
-target_link_libraries(${PROJECT_NAME}
+cutefish_add_application(${PROJECT_NAME} SOURCES ${SRCS} ${RESOURCES})
+target_link_libraries(${PROJECT_NAME}-module PRIVATE
         Qt6::Core
         Qt6::Qml
         Qt6::Quick
-        Qt6::Widgets
         Qt6::DBus
-        Cutefish::Application
 )
 
 file(GLOB TS_FILES translations/*.ts)
@@ -63,8 +61,6 @@ qt6_add_translation(QM_FILES ${TS_FILES})
 add_custom_target(translations DEPENDS ${QM_FILES} SOURCES ${TS_FILES})
 add_dependencies(${PROJECT_NAME} translations)
 install(FILES ${QM_FILES} DESTINATION /usr/share/cutefish-terminal/translations)
-
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION /usr/bin)
 
 install(FILES
     cutefish-terminal.desktop

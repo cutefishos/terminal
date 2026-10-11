@@ -4,7 +4,7 @@
 #include "processhelper.h"
 #include "applicationlauncher.h"
 #include <QDesktopServices>
-#include <QApplication>
+#include <QCoreApplication>
 #include <QUrl>
 #include <QDir>
 #include <QFileInfo>
@@ -52,7 +52,7 @@ static void callFileManager(const QString &method, const QString &path)
                                                           QStringLiteral("org.freedesktop.FileManager1"),
                                                           method);
     message << QStringList { QUrl::fromLocalFile(path).toString() }
-            << QString::number(QApplication::applicationPid());
+            << QString::number(QCoreApplication::applicationPid());
     QDBusConnection::sessionBus().asyncCall(message);
 }
 

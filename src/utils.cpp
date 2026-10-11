@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "utils.h"
-#include <QApplication>
 #include <QClipboard>
+#include <QGuiApplication>
 
 static Utils *SELF = nullptr;
 
@@ -23,10 +23,10 @@ Utils::Utils(QObject *parent)
 
 QString Utils::text() const
 {
-    return qApp->clipboard()->text();
+    return QGuiApplication::clipboard()->text();
 }
 
 void Utils::setText(const QString &text)
 {
-    qApp->clipboard()->setText(text);
+    QGuiApplication::clipboard()->setText(text);
 }

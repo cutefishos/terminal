@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <QApplication>
+#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -19,10 +19,12 @@
 #include "fonts.h"
 #include "windows.h"
 
-int main(int argc, char *argv[])
+int cutefish_application_main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
-    Cutefish::Application::prepare();
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    QGuiApplication &app = *qGuiApp;
     app.setWindowIcon(QIcon::fromTheme("terminal"));
 
     // Everything after -e is the command and its own options, so it is split
