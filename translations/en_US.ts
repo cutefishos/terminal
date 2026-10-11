@@ -4,86 +4,259 @@
 <context>
     <name>ExitPromptDialog</name>
     <message>
-        <location filename="../src/qml/ExitPromptDialog.qml" line="49"/>
+        <location filename="../src/qml/ExitPromptDialog.qml" line="+21"/>
         <source>Process is running, are you sure you want to quit?</source>
-        <translation>Process is running, are you sure you want to quit?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/ExitPromptDialog.qml" line="63"/>
-        <source>OK</source>
-        <translation>OK</translation>
-    </message>
-    <message>
-        <location filename="../src/qml/ExitPromptDialog.qml" line="57"/>
+        <location line="+1"/>
         <source>Cancel</source>
-        <translation>Cancel</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>OK</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FindBar</name>
+    <message>
+        <location filename="../src/qml/FindBar.qml" line="+84"/>
+        <source>Find</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="10"/>
+        <location filename="../src/qml/SettingsDialog.qml" line="+9"/>
         <source>Settings</source>
-        <translation>Settings</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="39"/>
+        <location line="+157"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>Font</source>
-        <translation>Font</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="63"/>
+        <location line="+13"/>
         <source>Font Size</source>
-        <translation>Font Size</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="82"/>
-        <source>Transparency</source>
-        <translation>Transparency</translation>
+        <location line="+20"/>
+        <source>Blinking Cursor</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/SettingsDialog.qml" line="101"/>
+        <location line="+13"/>
+        <source>Opacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>Window Blur</source>
-        <translation>Window Blur</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Cursor Shape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Block</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Underline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>I-Beam</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Scrollback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>1,000 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>10,000 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>100,000 lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Unlimited</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Flash on Bell</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Warn Before Pasting Multiple Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>GPU Rendering</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TabBar</name>
+    <message>
+        <location filename="../src/qml/TabBar.qml" line="+509"/>
+        <source>Rename Tab…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Close Tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Close Other Tabs</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Terminal</name>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="178"/>
+        <location filename="../src/qml/Terminal.qml" line="+349"/>
         <source>Copy</source>
-        <translation>Copy</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="184"/>
-        <location filename="../src/qml/Terminal.qml" line="198"/>
+        <location line="+6"/>
         <source>Paste</source>
-        <translation>Paste</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="204"/>
+        <location line="+26"/>
+        <source>Open Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Copy Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Open “%1”</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>Select All</source>
-        <translation>Select All</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="209"/>
+        <location line="+5"/>
+        <source>Find…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Clear Scrollback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Reset Terminal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>New Tab</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>New Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Open File Manager</source>
-        <translation>Open File Manager</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="214"/>
+        <location line="+7"/>
         <source>Exit full screen</source>
-        <translation>Exit full screen</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="214"/>
+        <location line="+0"/>
         <source>Full screen</source>
-        <translation>Full screen</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/qml/Terminal.qml" line="221"/>
+        <location line="+7"/>
         <source>Settings</source>
-        <translation>Settings</translation>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>main</name>
+    <message>
+        <location filename="../src/qml/main.qml" line="+130"/>
+        <source>Paste %1 lines?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Paste this line and press Enter?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Open this link?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+166"/>
+        <source>%1 pt</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
