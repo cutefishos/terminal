@@ -15,8 +15,9 @@ Item {
 
     readonly property int count: view ? view.count : 0
     readonly property real maximumTabWidth: 220
-    // Below this the bar scrolls instead of squeezing the titles away.
-    readonly property real minimumTabWidth: 96
+    // Below this the bar scrolls instead of squeezing the titles away; the
+    // label keeps about twelve characters between the close button margins.
+    readonly property real minimumTabWidth: 140
     // A tab dragged in from another window takes a slot of its own; one
     // pulled out gives its slot up before it leaves the view.
     readonly property int slotCount: count + (incoming ? 1 : 0) - (leavingPage ? 1 : 0)
@@ -61,6 +62,20 @@ Item {
     property int editingIndex: -1
     // How far above or below the bar a dragged tab comes off it.
     readonly property real detachDistance: 16
+    // Where the pointer is, in the bar, and where it holds the dragged tab.
+    property real pointerX: 0
+    property real grabOffset: 0
+    // How far the dragged tab is drawn behind the pointer as it catches up.
+    property real dragLag: 0
+
+    NumberAnimation {
+        id: _dragLag
+        target: control
+        property: "dragLag"
+        to: 0
+        duration: 120
+        easing.type: Easing.OutCubic
+    }
 
     signal closeRequested(int index)
     signal closeOthersRequested(int index)
@@ -84,6 +99,14 @@ Item {
             return index
         const without = index - (index > dragIndex ? 1 : 0)
         return without + (without >= dropIndex ? 1 : 0)
+    }
+
+    function updateDrag(x) {
+        pointerX = x
+        // Whole in view; at an end the others scroll under it.
+        const first = _flick.contentX
+        dragX = Math.max(first, Math.min(first + Math.max(0, _flick.width - tabWidth), x + first - grabOffset))
+        dropIndex = Math.max(0, Math.min(count - 1, Math.round(dragX / tabWidth)))
     }
 
     function ensureVisible(index) {
@@ -151,6 +174,8 @@ Item {
 
     onViewChanged: syncTabs()
     Component.onCompleted: syncTabs()
+    // A narrower bar would otherwise leave the current tab cut off at an end.
+    onWidthChanged: ensureVisible(view ? view.currentIndex : -1)
 
     function rename(index) {
         editingIndex = index
@@ -159,8 +184,31 @@ Item {
 
     Connections {
         target: control.view
-        function onCurrentIndexChanged() { control.ensureVisible(control.view.currentIndex) }
+        // Not while a tab is dragged: the strip would scroll out from under it.
+        function onCurrentIndexChanged() {
+            if (control.dragIndex < 0)
+                control.ensureVisible(control.view.currentIndex)
+        }
         function onContentChildrenChanged() { control.syncTabs() }
+    }
+
+    // The track's pill, as the mask the crowded strip is clipped to.
+    FishUI.RoundedRectangle {
+        id: _pill
+        x: _flick.x
+        y: _flick.y
+        width: _flick.width
+        height: _flick.height
+        radius: height / 2
+        continuousCorners: false
+        color: "black"
+        visible: false
+    }
+
+    ShaderEffectSource {
+        id: _pillMask
+        sourceItem: _pill
+        visible: false
     }
 
     Flickable {
@@ -172,6 +220,20 @@ Item {
         flickableDirection: Flickable.HorizontalFlick
         boundsBehavior: Flickable.StopAtBounds
         interactive: contentWidth > width && control.dragIndex < 0
+
+        FishUI.WheelHandler {
+            target: _flick
+        }
+
+        // Crowded, the strip is clipped to the pill of the track, so both ends stay
+        // round as tabs scroll under them. Sampled texel for texel: a smoothed
+        // layer blurs the titles at fractional scales.
+        layer.enabled: contentWidth > width
+        layer.smooth: false
+        layer.effect: ShaderEffect {
+            property var maskSource: _pillMask
+            fragmentShader: "qrc:/fishui/shaders/opacitymask.frag.qsb"
+        }
 
         Rectangle {
             width: _flick.contentWidth
@@ -203,7 +265,7 @@ Item {
                 // Let go, or dropped in from another window, and not in its slot yet.
                 property bool landing: false
 
-                x: dragged ? control.dragX : (slot + slotShift) * control.slotWidth
+                x: dragged ? control.dragX + control.dragLag : (slot + slotShift) * control.slotWidth
                 z: dragged || landing ? 2 : selected ? 1 : 0
                 width: control.slotWidth
                 height: control.height
@@ -226,7 +288,7 @@ Item {
                 onDraggedChanged: {
                     if (!dragged) {
                         landing = true
-                        glideFrom(control.dragX / control.slotWidth)
+                        glideFrom((control.dragX + control.dragLag) / control.slotWidth)
                     }
                 }
 
@@ -299,11 +361,17 @@ Item {
 
                         const x = mapToItem(_flick.contentItem, mouse.x, mouse.y).x
                         const y = mapToItem(control, mouse.x, mouse.y).y
+                        let started = false
                         if (!didDrag && (Math.abs(x - pressX) > 8 || Math.abs(y - pressY) > 8)) {
                             didDrag = true
+                            started = true
                             _settle.restart()
+                            control.grabOffset = pressX - index * control.tabWidth
                             control.dragIndex = index
                             control.dropIndex = index
+                            // A dragged tab is shown first, as a pressed one is.
+                            control.view.currentIndex = index
+                            control.view.currentItem.forceActiveFocus()
                         }
 
                         if (didDrag && (y < -control.detachDistance
@@ -320,10 +388,13 @@ Item {
                         }
 
                         if (didDrag) {
-                            const limit = Math.max(0, _flick.contentWidth - control.tabWidth)
-                            control.dragX = Math.max(0, Math.min(limit, index * control.tabWidth + x - pressX))
-                            control.dropIndex = Math.max(0, Math.min(control.count - 1,
-                                                                     Math.round(control.dragX / control.tabWidth)))
+                            // From where the pointer was found before the tab started to follow it.
+                            control.updateDrag(x - _flick.contentX)
+                            // From its slot, rather than jumping the drag threshold at once.
+                            if (started) {
+                                control.dragLag = index * control.tabWidth - control.dragX
+                                _dragLag.restart()
+                            }
                         }
                     }
 
@@ -368,8 +439,10 @@ Item {
 
                 FishUI.Label {
                     anchors.fill: parent
-                    anchors.leftMargin: 28
-                    anchors.rightMargin: 28
+                    // A title long enough to reach the close button keeps clear of it
+                    // whether or not the button shows, so hovering never re-elides it.
+                    anchors.leftMargin: implicitWidth > parent.width - 56 ? 28 : 12
+                    anchors.rightMargin: anchors.leftMargin
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     text: tab.page ? tab.page.title : ""
@@ -477,8 +550,8 @@ Item {
 
             FishUI.Label {
                 anchors.fill: parent
-                anchors.leftMargin: 28
-                anchors.rightMargin: 28
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 text: control.incomingTitle
@@ -487,6 +560,20 @@ Item {
                 font.weight: Font.Medium
                 color: control.textColor
             }
+        }
+    }
+
+    // A tab held near an end of the bar scrolls the hidden tabs into view.
+    Timer {
+        interval: 30
+        repeat: true
+        running: control.dragIndex >= 0 && _flick.contentWidth > _flick.width
+        onTriggered: {
+            const delta = control.pointerX < 24 ? -8 : control.pointerX > _flick.width - 24 ? 8 : 0
+            if (delta === 0)
+                return
+            _flick.contentX = Math.max(0, Math.min(_flick.contentWidth - _flick.width, _flick.contentX + delta))
+            control.updateDrag(control.pointerX)
         }
     }
 
