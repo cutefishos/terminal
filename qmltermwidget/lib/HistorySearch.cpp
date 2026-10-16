@@ -16,18 +16,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
     02110-1301  USA.
 */
-#include <QApplication>
-#include <QTextStream>
-#include <QDebug>
-
 #include "TerminalCharacterDecoder.h"
 #include "Emulation.h"
 #include "HistorySearch.h"
+#include "tools.h"
 
-HistorySearch::HistorySearch(EmulationPtr emulation, const QRegularExpression& regExp,
-        bool forwards, int startColumn, int startLine,
-        QObject* parent) :
-QObject(parent),
+HistorySearch::HistorySearch(Emulation* emulation, const RegExp& regExp,
+        bool forwards, int startColumn, int startLine) :
 m_emulation(emulation),
 m_regExp(regExp),
 m_forwards(forwards),
@@ -38,10 +33,10 @@ m_startLine(startLine) {
 HistorySearch::~HistorySearch() {
 }
 
-void HistorySearch::search() {
+std::optional<HistorySearch::Result> HistorySearch::search() {
     bool found = false;
 
-    if (! m_regExp.pattern().isEmpty())
+    if (! m_regExp.pattern().empty())
     {
         if (m_forwards) {
             found = search(m_startColumn, m_startLine, -1, m_emulation->lineCount()) || search(0, 0, m_startColumn, m_startLine);
@@ -50,34 +45,25 @@ void HistorySearch::search() {
         }
 
         if (found) {
-            emit matchFound(m_foundStartColumn, m_foundStartLine, m_foundEndColumn, m_foundEndLine);
-        }
-        else {
-            emit noMatchFound();
+            return Result{m_foundStartColumn, m_foundStartLine, m_foundEndColumn, m_foundEndLine};
         }
     }
 
-    deleteLater();
+    return std::nullopt;
 }
 
 bool HistorySearch::search(int startColumn, int startLine, int endColumn, int endLine) {
-    //qDebug() << "search from" << startColumn << "," << startLine
-    //        <<  "to" << endColumn << "," << endLine;
-
     int linesRead = 0;
     int linesToRead = endLine - startLine + 1;
-
-    //qDebug() << "linesToRead:" << linesToRead;
 
     // We read process history from (and including) startLine to (and including) endLine in
     // blocks of at most 10K lines so that we do not use unhealthy amounts of memory
     int blockSize;
-    while ((blockSize = qMin(10000, linesToRead - linesRead)) > 0) {
+    while ((blockSize = kMin(10000, linesToRead - linesRead)) > 0) {
 
-        QString string;
-        QTextStream searchStream(&string);
+        std::u16string string;
         PlainTextDecoder decoder;
-        decoder.begin(&searchStream);
+        decoder.begin(&string);
         decoder.setRecordLinePositions(true);
 
         // Calculate lines to read and read them
@@ -92,50 +78,46 @@ bool HistorySearch::search(int startColumn, int startLine, int endColumn, int en
 
         // The String that Emulator.writeToStream produces has a newline at the end, and so ends with an
         // empty line - we ignore that.
-        int numberOfLinesInString = decoder.linePositions().size() - 1;
+        const std::vector<int> linePositions = decoder.linePositions();
+        int numberOfLinesInString = int(linePositions.size()) - 1;
         if (numberOfLinesInString > 0 && endColumn > -1 )
         {
-            endPosition = decoder.linePositions().at(numberOfLinesInString - 1) + endColumn;
+            endPosition = linePositions.at(numberOfLinesInString - 1) + endColumn;
         }
         else
         {
-            endPosition = string.size();
+            endPosition = int(string.size());
         }
 
         // So now we can log for m_regExp in the string between startColumn and endPosition
         int matchStart;
-	QRegularExpressionMatch match;
+        RegExp::Match match;
         if (m_forwards)
         {
-            matchStart = string.indexOf(m_regExp, startColumn, &match);
+            match = m_regExp.match(string, startColumn);
+            matchStart = match.hasMatch ? int(match.capturedStart()) : -1;
             if (matchStart >= endPosition)
                 matchStart = -1;
         }
         else
         {
-            matchStart = string.lastIndexOf(m_regExp, endPosition - 1, &match);
+            matchStart = int(m_regExp.lastIndexIn(string, endPosition - 1, &match));
             if (matchStart < startColumn)
                 matchStart = -1;
         }
 
         if (matchStart > -1)
         {
-            int matchEnd = matchStart + match.capturedLength() - 1;
-            //qDebug() << "Found in string from" << matchStart << "to" << matchEnd;
+            int matchEnd = matchStart + int(match.capturedLength()) - 1;
 
             // Translate startPos and endPos to startColum, startLine, endColumn and endLine in history.
-            int startLineNumberInString = findLineNumberInString(decoder.linePositions(), matchStart);
-            m_foundStartColumn = matchStart - decoder.linePositions().at(startLineNumberInString);
+            int startLineNumberInString = findLineNumberInString(linePositions, matchStart);
+            m_foundStartColumn = matchStart - linePositions.at(startLineNumberInString);
             m_foundStartLine = startLineNumberInString + startLine + linesRead;
 
-            int endLineNumberInString = findLineNumberInString(decoder.linePositions(), matchEnd);
-            m_foundEndColumn = matchEnd - decoder.linePositions().at(endLineNumberInString);
+            int endLineNumberInString = findLineNumberInString(linePositions, matchEnd);
+            m_foundEndColumn = matchEnd - linePositions.at(endLineNumberInString);
             m_foundEndLine = endLineNumberInString + startLine + linesRead;
-
-            //qDebug() << "m_foundStartColumn" << m_foundStartColumn
-            //        << "m_foundStartLine" << m_foundEndLine
-            //        << "m_foundEndColumn" << m_foundEndColumn
-            //        << "m_foundEndLine" << m_foundEndLine;
 
             return true;
         }
@@ -144,14 +126,13 @@ bool HistorySearch::search(int startColumn, int startLine, int endColumn, int en
         linesRead += blockSize;
     }
 
-    //qDebug() << "Not found";
     return false;
 }
 
 
-int HistorySearch::findLineNumberInString(QList<int> linePositions, int position) {
+int HistorySearch::findLineNumberInString(const std::vector<int>& linePositions, int position) {
     int lineNum = 0;
-    while (lineNum + 1 < linePositions.size() && linePositions[lineNum + 1] <= position)
+    while (lineNum + 1 < int(linePositions.size()) && linePositions[lineNum + 1] <= position)
         lineNum++;
 
     return lineNum;

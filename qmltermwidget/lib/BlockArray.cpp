@@ -21,7 +21,9 @@
 
 */
 
-#include <QtDebug>
+#include <cassert>
+
+#include "tools.h"
 
 // Own
 #include "BlockArray.h"
@@ -56,7 +58,7 @@ BlockArray::BlockArray()
 BlockArray::~BlockArray()
 {
     setHistorySize(0);
-    Q_ASSERT(!lastblock);
+    assert(!lastblock);
 }
 
 size_t BlockArray::append(Block * block)
@@ -137,7 +139,7 @@ const Block * BlockArray::at(size_t i)
     }
 
     if (i > index) {
-        qDebug() << "BlockArray::at() i > index\n";
+        CF_DEBUG(qtermwidgetLogger) << "BlockArray::at() i > index\n";
         return nullptr;
     }
 
@@ -148,7 +150,7 @@ const Block * BlockArray::at(size_t i)
 
     size_t j = i; // (current - (index - i) + (index/size+1)*size) % size ;
 
-    Q_ASSERT(j < size);
+    assert(j < size);
     unmap();
 
     Block * block = (Block *)mmap(nullptr, blocksize, PROT_READ, MAP_PRIVATE, ion, j * blocksize);
@@ -218,7 +220,7 @@ bool BlockArray::setHistorySize(size_t newsize)
             return false;
         }
 
-        Q_ASSERT(!lastblock);
+        assert(!lastblock);
 
         lastblock = new Block();
         size = newsize;
@@ -232,7 +234,7 @@ bool BlockArray::setHistorySize(size_t newsize)
     } else {
         decreaseBuffer(newsize);
         int res = ftruncate(ion, length*blocksize);
-        Q_UNUSED (res);
+        (void)res;
         size = newsize;
 
         return true;

@@ -1,9 +1,8 @@
 #ifndef LINECHARS_H
 #define LINECHARS_H
 
-#include <QtGlobal>
+#include <cstdint>
 
-class QPainter;
 
 namespace Konsole
 {
@@ -56,8 +55,6 @@ enum LineEncode
     BotR  = (1<<23)
 };
 
-// Box drawing that LineChars has no entry for: dashes, arcs and diagonals.
-void drawOtherLineChar(QPainter &painter, int x, int y, int w, int h, uchar code);
 
 }
 

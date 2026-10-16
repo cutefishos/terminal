@@ -20,17 +20,15 @@
 // Own
 #include "ScreenWindow.h"
 
-// Qt
-#include <QtDebug>
+#include "tools.h"
 
 // Konsole
 #include "Screen.h"
 
 using namespace Konsole;
 
-ScreenWindow::ScreenWindow(QObject* parent)
-    : QObject(parent)
-    , _screen(nullptr)
+ScreenWindow::ScreenWindow()
+    : _screen(nullptr)
     , _windowBuffer(nullptr)
     , _windowBufferSize(0)
     , _bufferNeedsUpdate(true)
@@ -46,7 +44,7 @@ ScreenWindow::~ScreenWindow()
 }
 void ScreenWindow::setScreen(Screen* screen)
 {
-    Q_ASSERT( screen );
+    assert( screen );
 
     _screen = screen;
 }
@@ -103,20 +101,20 @@ void ScreenWindow::fillUnusedArea()
 //
 int ScreenWindow::endWindowLine() const
 {
-    return qMin(currentLine() + windowLines() - 1,
+    return kMin(currentLine() + windowLines() - 1,
                 lineCount() - 1);
 }
-QVector<LineProperty> ScreenWindow::getLineProperties()
+std::vector<LineProperty> ScreenWindow::getLineProperties()
 {
-    QVector<LineProperty> result = _screen->getLineProperties(currentLine(),endWindowLine());
+    std::vector<LineProperty> result = _screen->getLineProperties(currentLine(),endWindowLine());
 
-    if (result.count() != windowLines())
+    if (int(result.size()) != windowLines())
         result.resize(windowLines());
 
     return result;
 }
 
-QString ScreenWindow::selectedText( bool preserveLineBreaks ) const
+std::string ScreenWindow::selectedText( bool preserveLineBreaks ) const
 {
     return _screen->selectedText( preserveLineBreaks );
 }
@@ -133,35 +131,35 @@ void ScreenWindow::getSelectionEnd( int& column , int& line )
 }
 void ScreenWindow::setSelectionStart( int column , int line , bool columnMode )
 {
-    _screen->setSelectionStart( column , qMin(line + currentLine(),endWindowLine())  , columnMode);
+    _screen->setSelectionStart( column , kMin(line + currentLine(),endWindowLine())  , columnMode);
 
     _bufferNeedsUpdate = true;
-    emit selectionChanged();
+    selectionChanged();
 }
 
 void ScreenWindow::setSelectionEnd( int column , int line )
 {
-    _screen->setSelectionEnd( column , qMin(line + currentLine(),endWindowLine()) );
+    _screen->setSelectionEnd( column , kMin(line + currentLine(),endWindowLine()) );
 
     _bufferNeedsUpdate = true;
-    emit selectionChanged();
+    selectionChanged();
 }
 
 bool ScreenWindow::isSelected( int column , int line )
 {
-    return _screen->isSelected( column , qMin(line + currentLine(),endWindowLine()) );
+    return _screen->isSelected( column , kMin(line + currentLine(),endWindowLine()) );
 }
 
 void ScreenWindow::clearSelection()
 {
     _screen->clearSelection();
 
-    emit selectionChanged();
+    selectionChanged();
 }
 
 void ScreenWindow::setWindowLines(int lines)
 {
-    Q_ASSERT(lines > 0);
+    assert(lines > 0);
     _windowLines = lines;
 }
 int ScreenWindow::windowLines() const
@@ -184,9 +182,9 @@ int ScreenWindow::columnCount() const
     return _screen->getColumns();
 }
 
-QPoint ScreenWindow::cursorPosition() const
+cutefish::base::Point ScreenWindow::cursorPosition() const
 {
-    QPoint position;
+    cutefish::base::Point position;
 
     position.setX( _screen->getCursorX() );
     position.setY( _screen->getCursorY() );
@@ -196,7 +194,7 @@ QPoint ScreenWindow::cursorPosition() const
 
 int ScreenWindow::currentLine() const
 {
-    return qBound(0,_currentLine,lineCount()-windowLines());
+    return kBound(0,_currentLine,lineCount()-windowLines());
 }
 
 void ScreenWindow::scrollBy( RelativeScrollMode mode , int amount )
@@ -219,7 +217,7 @@ bool ScreenWindow::atEndOfOutput() const
 void ScreenWindow::scrollTo( int line )
 {
     int maxCurrentLineNumber = lineCount() - windowLines();
-    line = qBound(0,line,maxCurrentLineNumber);
+    line = kBound(0,line,maxCurrentLineNumber);
 
     const int delta = line - _currentLine;
     _currentLine = line;
@@ -230,7 +228,7 @@ void ScreenWindow::scrollTo( int line )
 
     _bufferNeedsUpdate = true;
 
-    emit scrolled(_currentLine);
+    scrolled(_currentLine);
 }
 
 void ScreenWindow::setTrackOutput(bool trackOutput)
@@ -253,14 +251,14 @@ void ScreenWindow::resetScrollCount()
     _scrollCount = 0;
 }
 
-QRect ScreenWindow::scrollRegion() const
+cutefish::base::Rect ScreenWindow::scrollRegion() const
 {
     bool equalToScreenSize = windowLines() == _screen->getLines();
 
     if ( atEndOfOutput() && equalToScreenSize )
         return _screen->lastScrolledRegion();
     else
-        return {0,0,windowColumns(),windowLines()};
+        return cutefish::base::Rect(0,0,windowColumns(),windowLines());
 }
 
 void ScreenWindow::selectAll()
@@ -268,7 +266,7 @@ void ScreenWindow::selectAll()
     _screen->selectAll();
 
     _bufferNeedsUpdate = true;
-    emit selectionChanged();
+    selectionChanged();
 }
 
 void ScreenWindow::notifyOutputChanged()
@@ -278,7 +276,7 @@ void ScreenWindow::notifyOutputChanged()
     if ( _trackOutput )
     {
         _scrollCount -= _screen->scrolledLines();
-        _currentLine = qMax(0,_screen->getHistLines() - (windowLines()-_screen->getLines()));
+        _currentLine = kMax(0,_screen->getHistLines() - (windowLines()-_screen->getLines()));
     }
     else
     {
@@ -287,17 +285,17 @@ void ScreenWindow::notifyOutputChanged()
         // lines of output - in this case the screen
         // window's current line number will need to
         // be adjusted - otherwise the output will scroll
-        _currentLine = qMax(0,_currentLine -
+        _currentLine = kMax(0,_currentLine -
                               _screen->droppedLines());
 
         // ensure that the screen window's current position does
         // not go beyond the bottom of the screen
-        _currentLine = qMin( _currentLine , _screen->getHistLines() );
+        _currentLine = kMin( _currentLine , _screen->getHistLines() );
     }
 
     _bufferNeedsUpdate = true;
 
-    emit outputChanged();
+    outputChanged();
 }
 
 void ScreenWindow::handleCommandFromKeyboard(KeyboardTranslator::Command command)
@@ -328,7 +326,7 @@ void ScreenWindow::handleCommandFromKeyboard(KeyboardTranslator::Command command
     }
     if ( command & KeyboardTranslator::ScrollDownToBottomCommand )
     {
-        Q_EMIT scrollToEnd();
+        scrollToEnd();
         update = true;
     }
     if ( command & KeyboardTranslator::ScrollUpToTopCommand)
@@ -343,7 +341,7 @@ void ScreenWindow::handleCommandFromKeyboard(KeyboardTranslator::Command command
     {
         setTrackOutput( atEndOfOutput() );
 
-        Q_EMIT outputChanged();
+        outputChanged();
     }
 }
 

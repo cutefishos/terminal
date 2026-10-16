@@ -1,3 +1,0 @@
-module Cutefish.TermWidget
-plugin cutefishqmltermwidget
-QMLTermScrollbar 2.0 QMLTermScrollbar.qml

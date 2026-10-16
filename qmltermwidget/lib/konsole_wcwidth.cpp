@@ -7,7 +7,7 @@
  * Markus Kuhn -- 2001-01-12 -- public domain
  */
 
-#include <QString>
+#include <unicode/uchar.h>
 
 #ifdef HAVE_UTF8PROC
 #include <utf8proc.h>
@@ -44,4 +44,21 @@ int string_width( const std::wstring & wstr )
         w += konsole_wcwidth( wstr[ i ] );
     }
     return w;
+}
+
+bool konsole_isspace(char16_t c)
+{
+    if (c == 0x20 || (c >= 0x09 && c <= 0x0d))
+        return true;
+    if (c <= 127)
+        return false;
+    if (c == 0x85 || c == 0xa0)
+        return true;
+    const int8_t type = u_charType(c);
+    return type == U_SPACE_SEPARATOR || type == U_LINE_SEPARATOR || type == U_PARAGRAPH_SEPARATOR;
+}
+
+bool konsole_isnonspacingmark(char16_t c)
+{
+    return u_charType(c) == U_NON_SPACING_MARK;
 }

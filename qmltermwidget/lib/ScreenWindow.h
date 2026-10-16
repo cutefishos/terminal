@@ -20,10 +20,11 @@
 #ifndef SCREENWINDOW_H
 #define SCREENWINDOW_H
 
-// Qt
-#include <QObject>
-#include <QPoint>
-#include <QRect>
+#include <string>
+#include <vector>
+
+#include "base/geometry.h"
+#include "base/signal.h"
 
 // Konsole
 #include "Character.h"
@@ -48,12 +49,11 @@ class Screen;
  * lines are added to it.
  *
  * Whenever the output from the underlying screen is changed, the notifyOutputChanged() slot should
- * be called.  This in turn will update the window's position and emit the outputChanged() signal
+ * be called.  This in turn will update the window's position and the outputChanged() signal
  * if necessary.
  */
-class ScreenWindow : public QObject
+class ScreenWindow
 {
-Q_OBJECT
 
 public:
     /**
@@ -65,8 +65,8 @@ public:
      * to notify the window when the associated screen has changed and synchronize selection updates
      * between all views on a session.
      */
-    ScreenWindow(QObject* parent = nullptr);
-    ~ScreenWindow() override;
+    ScreenWindow();
+    ~ScreenWindow();
 
     /** Sets the screen which this window looks onto */
     void setScreen(Screen* screen);
@@ -86,7 +86,7 @@ public:
      * Returns the line attributes associated with the lines of characters which
      * are currently visible through this window
      */
-    QVector<LineProperty> getLineProperties();
+    std::vector<LineProperty> getLineProperties();
 
     /**
      * Returns the number of lines which the region of the window
@@ -113,7 +113,7 @@ public:
      * Like scrollCount(), this is not guaranteed to be accurate,
      * but allows views to optimize rendering.
      */
-    QRect scrollRegion() const;
+    cutefish::base::Rect scrollRegion() const;
 
     void selectAll();
 
@@ -163,7 +163,7 @@ public:
      * Returns the position of the cursor
      * within the window.
      */
-    QPoint cursorPosition() const;
+    cutefish::base::Point cursorPosition() const;
 
     /**
      * Convenience method. Returns true if the window is currently at the bottom
@@ -216,9 +216,8 @@ public:
      *
      * @param preserveLineBreaks See Screen::selectedText()
      */
-    QString selectedText( bool preserveLineBreaks ) const;
+    std::string selectedText( bool preserveLineBreaks ) const;
 
-public slots:
     /**
      * Notifies the window that the contents of the associated terminal screen have changed.
      * This moves the window to the bottom of the screen if trackOutput() is true and causes
@@ -228,26 +227,25 @@ public slots:
 
     void handleCommandFromKeyboard(KeyboardTranslator::Command command);
 
-signals:
     /**
      * Emitted when the contents of the associated terminal screen (see screen()) changes.
      */
-    void outputChanged();
+    cutefish::base::Signal<> outputChanged;
 
     /**
      * Emitted when the screen window is scrolled to a different position.
      *
      * @param line The line which is now at the top of the window.
      */
-    void scrolled(int line);
+    cutefish::base::Signal<int> scrolled;
 
     /** Emitted when the selection is changed. */
-    void selectionChanged();
+    cutefish::base::Signal<> selectionChanged;
 
-    void scrollToEnd();
+    cutefish::base::Signal<> scrollToEnd;
 
     /** Emitted when a key press sends input: the cursor should come into view. */
-    void cursorRevealRequested();
+    cutefish::base::Signal<> cursorRevealRequested;
 
 private:
     int endWindowLine() const;

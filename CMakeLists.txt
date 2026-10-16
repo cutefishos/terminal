@@ -1,69 +1,35 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(PROJECT_NAME cutefish-terminal)
-project(${PROJECT_NAME} LANGUAGES CXX)
+project(cutefish-terminal VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(GNUInstallDirs)
 include(CTest)
 
-set(QT Core Gui Network Qml Quick Widgets DBus LinguistTools ShaderTools)
-find_package(Qt6 REQUIRED ${QT})
-find_package(CutefishFramework REQUIRED COMPONENTS Application)
-
-# Where QML modules go, so the terminal widget plugin lands next to FishUI.
-find_program(QT_PATHS_EXECUTABLE NAMES qtpaths6 REQUIRED)
-execute_process(COMMAND ${QT_PATHS_EXECUTABLE} -query QT_INSTALL_QML
-    OUTPUT_VARIABLE INSTALL_QMLDIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(INSTALL_QMLDIR)
-    message(STATUS "qml directory:" "${INSTALL_QMLDIR}")
-else()
-    message(FATAL_ERROR "qml directory cannot be detected.")
-endif()
-
-set(SRCS
-    src/main.cpp
-    src/processhelper.h
-    src/processhelper.cpp
-    src/utils.cpp
-    src/fonts.cpp
-    src/windows.cpp
-    src/windows.h
-)
-
-set(RESOURCES
-    src/resources.qrc
-)
+find_package(CutefishToolkit REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-uc)
 
 add_subdirectory(qmltermwidget)
+
+add_executable(${PROJECT_NAME}
+    src/findbar.cpp
+    src/main.cpp
+    src/processhelper.cpp
+    src/settingsdialog.cpp
+    src/terminalpage.cpp
+    src/terminalsettings.cpp
+    src/terminalwindow.cpp
+    src/windows.cpp
+)
+target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_link_libraries(${PROJECT_NAME} PRIVATE terminal-view)
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES cutefish-terminal.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
-
-cutefish_add_application(${PROJECT_NAME} SOURCES ${SRCS} ${RESOURCES})
-target_link_libraries(${PROJECT_NAME}-module PRIVATE
-        Qt6::Core
-        Qt6::Qml
-        Qt6::Quick
-        Qt6::DBus
-)
-
-file(GLOB TS_FILES translations/*.ts)
-qt6_add_translation(QM_FILES ${TS_FILES})
-add_custom_target(translations DEPENDS ${QM_FILES} SOURCES ${TS_FILES})
-add_dependencies(${PROJECT_NAME} translations)
-install(FILES ${QM_FILES} DESTINATION /usr/share/cutefish-terminal/translations)
-
-install(FILES
-    cutefish-terminal.desktop
-    DESTINATION /usr/share/applications/
-    COMPONENT Runtime
-)

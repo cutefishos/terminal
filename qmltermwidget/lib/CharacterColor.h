@@ -23,14 +23,19 @@
 #ifndef CHARACTERCOLOR_H
 #define CHARACTERCOLOR_H
 
-// Qt
-#include <QColor>
+#include <cassert>
+#include <cstdint>
+
+#include "ui/geometry.h"
 
 //#include <kdemacros.h>
 #define KDE_NO_EXPORT
 
 namespace Konsole
 {
+
+// An undefined colour paints opaque black.
+using Color = cutefish::ui::Color;
 
 /**
  * An entry in a terminal display's color palette.
@@ -69,7 +74,7 @@ public:
    * @param tr Specifies that the color should be transparent when used as a background color.
    * @param weight Specifies the font weight to use when drawing text with this color.
    */
-  ColorEntry(QColor c, bool tr, FontWeight weight = UseCurrentFormat)
+  ColorEntry(Color c, bool tr, FontWeight weight = UseCurrentFormat)
           : color(c), transparent(tr), fontWeight(weight) {}
 
   /**
@@ -79,7 +84,7 @@ public:
   ColorEntry() : transparent(false), fontWeight(UseCurrentFormat) {}
 
   /** The color value of this entry for display. */
-  QColor color;
+  Color color;
 
   /**
    * If true character backgrounds using this color should be transparent.
@@ -158,7 +163,7 @@ public:
    *
    * TODO : Add documentation about available color spaces.
    */
-  CharacterColor(quint8 colorSpace, int co)
+  CharacterColor(uint8_t colorSpace, int co)
       : _colorSpace(colorSpace),
         _u(0),
         _v(0),
@@ -209,7 +214,7 @@ public:
    * The @p palette is only used if this color is one of the 16 system colors, otherwise
    * it is ignored.
    */
-  QColor color(const ColorEntry* palette) const;
+  Color color(const ColorEntry* palette) const;
 
   /**
    * Compares two colors and returns true if they represent the same color value and
@@ -223,12 +228,12 @@ public:
   friend bool operator != (const CharacterColor& a, const CharacterColor& b);
 
 private:
-  quint8 _colorSpace;
+  uint8_t _colorSpace;
 
   // bytes storing the character color
-  quint8 _u;
-  quint8 _v;
-  quint8 _w;
+  uint8_t _u;
+  uint8_t _v;
+  uint8_t _w;
 };
 
 inline bool operator == (const CharacterColor& a, const CharacterColor& b)
@@ -243,7 +248,7 @@ inline bool operator != (const CharacterColor& a, const CharacterColor& b)
     return !operator==(a,b);
 }
 
-inline const QColor color256(quint8 u, const ColorEntry* base)
+inline const Color color256(uint8_t u, const ColorEntry* base)
 {
   //   0.. 16: system colors
   if (u <   8) return base[u+2            ].color;
@@ -252,29 +257,29 @@ inline const QColor color256(quint8 u, const ColorEntry* base)
   u -= 8;
 
   //  16..231: 6x6x6 rgb color cube
-  if (u < 216) return QColor(((u/36)%6) ? (40*((u/36)%6)+55) : 0,
-                             ((u/ 6)%6) ? (40*((u/ 6)%6)+55) : 0,
-                             ((u/ 1)%6) ? (40*((u/ 1)%6)+55) : 0);
+  if (u < 216) return Color{uint8_t(((u/36)%6) ? (40*((u/36)%6)+55) : 0),
+                            uint8_t(((u/ 6)%6) ? (40*((u/ 6)%6)+55) : 0),
+                            uint8_t(((u/ 1)%6) ? (40*((u/ 1)%6)+55) : 0)};
   u -= 216;
 
   // 232..255: gray, leaving out black and white
-  int gray = u*10+8; return QColor(gray,gray,gray);
+  int gray = u*10+8; return Color{uint8_t(gray),uint8_t(gray),uint8_t(gray)};
 }
 
-inline QColor CharacterColor::color(const ColorEntry* base) const
+inline Color CharacterColor::color(const ColorEntry* base) const
 {
   switch (_colorSpace)
   {
     case COLOR_SPACE_DEFAULT: return base[_u+0+(_v?BASE_COLORS:0)].color;
     case COLOR_SPACE_SYSTEM: return base[_u+2+(_v?BASE_COLORS:0)].color;
     case COLOR_SPACE_256: return color256(_u,base);
-    case COLOR_SPACE_RGB: return {_u,_v,_w};
-    case COLOR_SPACE_UNDEFINED: return QColor();
+    case COLOR_SPACE_RGB: return Color{_u,_v,_w};
+    case COLOR_SPACE_UNDEFINED: return Color();
   }
 
-  Q_ASSERT(false); // invalid color space
+  assert(false); // invalid color space
 
-  return QColor();
+  return Color();
 }
 
 inline void CharacterColor::setIntensive()

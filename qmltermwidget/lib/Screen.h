@@ -23,11 +23,11 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-// Qt
-#include <QRect>
-#include <QSet>
-#include <QTextStream>
-#include <QVarLengthArray>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
+#include "base/geometry.h"
 
 // Konsole
 #include "Character.h"
@@ -367,7 +367,7 @@ public:
     void displayCharacter(wchar_t c);
 
     // Do composition with last shown character FIXME: Not implemented yet for KDE 4
-    void compose(const QString& compose);
+    void compose(const std::u16string& compose);
 
     /**
      * Resizes the image to a new fixed size of @p new_lines by @p new_columns.
@@ -399,7 +399,7 @@ public:
      * line is wrapped,
      * other attributes control the size of characters in the line.
      */
-    QVector<LineProperty> getLineProperties( int startLine , int endLine ) const;
+    std::vector<LineProperty> getLineProperties( int startLine , int endLine ) const;
 
 
     /** Return the number of lines. */
@@ -469,7 +469,7 @@ public:
      * @param preserveLineBreaks Specifies whether new line characters should
      * be inserted into the returned text at the end of each terminal line.
      */
-    QString selectedText(bool preserveLineBreaks) const;
+    std::string selectedText(bool preserveLineBreaks) const;
 
     /**
      * Copies part of the output to a stream.
@@ -544,7 +544,7 @@ public:
      * This is the area of the image from the top margin to the
      * bottom margin when the last scroll occurred.
      */
-    QRect lastScrolledRegion() const;
+    cutefish::base::Rect lastScrolledRegion() const;
 
     /**
      * Resets the count of the number of lines that the image has been scrolled up or down by,
@@ -576,7 +576,7 @@ public:
     static void fillWithDefaultChar(Character* dest, int count);
 
     /** Adds the extended characters on the screen and in its history to @p used. */
-    void collectUsedExtendedChars(QSet<uint> &used) const;
+    void collectUsedExtendedChars(std::unordered_set<uint> &used) const;
 
 private:
     Screen(const Screen &) = delete;
@@ -613,7 +613,10 @@ private:
     //the loc(x,y) macro can be used to generate these values from a column,line pair.
     //
     //NOTE: moveImage() can only move whole lines
-    void moveImage(int dest, int sourceBegin, int sourceEnd);
+    // `clearedFirst` to `clearedLast` are the lines the caller clears right
+    // after: what moves into them is not kept, and what moves out of them
+    // need not stay behind.
+    void moveImage(int dest, int sourceBegin, int sourceEnd, int clearedFirst = -1, int clearedLast = -2);
     // scroll up 'i' lines in current region, clearing the bottom 'i' lines
     void scrollUp(int from, int i);
     // scroll down 'i' lines in current region, clearing the top 'i' lines
@@ -644,15 +647,15 @@ private:
     int lines;
     int columns;
 
-    typedef QVector<Character> ImageLine;      // [0..columns]
+    typedef std::vector<Character> ImageLine;      // [0..columns]
     ImageLine*          screenLines;    // [lines]
 
     int _scrolledLines;
-    QRect _lastScrolledRegion;
+    cutefish::base::Rect _lastScrolledRegion;
 
     int _droppedLines;
 
-    QVarLengthArray<LineProperty,64> lineProperties;
+    std::vector<LineProperty> lineProperties;
 
     // history buffer ---------------
     HistoryScroll* history;
@@ -664,7 +667,7 @@ private:
     // cursor color and rendition info
     CharacterColor currentForeground;
     CharacterColor currentBackground;
-    quint8 currentRendition;
+    uint8_t currentRendition;
 
     // margins ----------------
     int _topMargin;
@@ -676,7 +679,7 @@ private:
 
     // ----------------------------
 
-    QBitArray tabStops;
+    std::vector<bool> tabStops;
 
     // selection -------------------
     int selBegin; // The first location selected.
@@ -687,7 +690,7 @@ private:
     // effective colors and rendition ------------
     CharacterColor effectiveForeground; // These are derived from
     CharacterColor effectiveBackground; // the cu_* variables above
-    quint8 effectiveRendition;          // to speed up operation
+    uint8_t effectiveRendition;          // to speed up operation
 
     class SavedState
     {
@@ -697,7 +700,7 @@ private:
 
         int cursorColumn;
         int cursorLine;
-        quint8 rendition;
+        uint8_t rendition;
         CharacterColor foreground;
         CharacterColor background;
     };

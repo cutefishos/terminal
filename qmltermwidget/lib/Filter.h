@@ -20,14 +20,11 @@
 #ifndef FILTER_H
 #define FILTER_H
 
-// Qt
-#include <QAction>
-#include <QUrl>
-#include <QList>
-#include <QObject>
-#include <QStringList>
-#include <QHash>
-#include <QRegularExpression>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "RegExp.h"
 
 namespace Konsole
 {
@@ -53,7 +50,7 @@ class Character;
  * When processing the text they should create instances of Filter::HotSpot subclasses for sections of interest
  * and add them to the filter's list of hotspots using addHotSpot()
  */
-class Filter : public QObject
+class Filter
 {
 public:
     /**
@@ -109,12 +106,7 @@ public:
         * one of the object names from the actions() list.  In which case the associated
         * action should be performed.
         */
-       virtual void activate(const QString& action = QString()) = 0;
-       /**
-        * Returns a list of actions associated with the hotspot which can be used in a
-        * menu or toolbar
-        */
-       virtual QList<QAction*> actions();
+       virtual void activate(const std::string& action = std::string()) = 0;
 
     protected:
        /** Sets the type of a hotspot.  This should only be set once */
@@ -131,7 +123,7 @@ public:
 
     /** Constructs a new filter. */
     Filter();
-    ~Filter() override;
+    virtual ~Filter();
 
     /** Causes the filter to process the block of text currently in its internal buffer */
     virtual void process() = 0;
@@ -149,30 +141,31 @@ public:
     HotSpot* hotSpotAt(int line , int column) const;
 
     /** Returns the list of hotspots identified by the filter */
-    QList<HotSpot*> hotSpots() const;
+    std::vector<HotSpot*> hotSpots() const;
 
     /** Returns the list of hotspots identified by the filter which occur on a given line */
-    QList<HotSpot*> hotSpotsAtLine(int line) const;
+    std::vector<HotSpot*> hotSpotsAtLine(int line) const;
 
     /**
      * TODO: Document me
      */
-    void setBuffer(const QString* buffer , const QList<int>* linePositions);
+    void setBuffer(const std::u16string* buffer , const std::vector<int>* linePositions);
 
 protected:
     /** Adds a new hotspot to the list */
     void addHotSpot(HotSpot*);
     /** Returns the internal buffer */
-    const QString* buffer();
+    const std::u16string* buffer();
     /** Converts a character position within buffer() to a line and column */
     void getLineColumn(int position , int& startLine , int& startColumn);
 
 private:
-    QMultiHash<int,HotSpot*> _hotspots;
-    QList<HotSpot*> _hotspotList;
+    // Per line, in the order added; a QMultiHash, which finds the latest first.
+    std::unordered_map<int,std::vector<HotSpot*>> _hotspots;
+    std::vector<HotSpot*> _hotspotList;
 
-    const QList<int>* _linePositions;
-    const QString* _buffer;
+    const std::vector<int>* _linePositions;
+    const std::u16string* _buffer;
 };
 
 /**
@@ -184,7 +177,6 @@ private:
  */
 class RegExpFilter : public Filter
 {
-    Q_OBJECT
 public:
     /**
      * Type of hotspot created by RegExpFilter.  The capturedTexts() method can be used to find the text
@@ -194,14 +186,14 @@ public:
     {
     public:
         HotSpot(int startLine, int startColumn, int endLine , int endColumn);
-        void activate(const QString& action = QString()) override;
+        void activate(const std::string& action = std::string()) override;
 
         /** Sets the captured texts associated with this hotspot */
-        void setCapturedTexts(const QStringList& texts);
+        void setCapturedTexts(const std::vector<std::u16string>& texts);
         /** Returns the texts found by the filter when matching the filter's regular expression */
-        QStringList capturedTexts() const;
+        std::vector<std::u16string> capturedTexts() const;
     private:
-        QStringList _capturedTexts;
+        std::vector<std::u16string> _capturedTexts;
     };
 
     /** Constructs a new regular expression filter */
@@ -213,9 +205,9 @@ public:
      * Regular expressions which match the empty string are treated as not matching
      * anything.
      */
-    void setRegExp(const QRegularExpression& text);
+    void setRegExp(const RegExp& text);
     /** Returns the regular expression which the filter searches for in blocks of text */
-    QRegularExpression regExp() const;
+    RegExp regExp() const;
 
     /**
      * Reimplemented to search the filter's text buffer for text matching regExp()
@@ -234,19 +226,15 @@ protected:
                                     int endLine,int endColumn);
 
 private:
-    QRegularExpression _searchText;
+    RegExp _searchText;
 };
-
-class FilterObject;
 
 /** A filter which matches URLs in blocks of text */
 class UrlFilter : public RegExpFilter
 {
-    Q_OBJECT
 public:
     /**
-     * Hotspot type created by UrlFilter instances.  The activate() method opens a web browser
-     * at the given URL when called.
+     * Hotspot type created by UrlFilter instances.
      */
     class HotSpot : public RegExpFilter::HotSpot
     {
@@ -254,18 +242,11 @@ public:
         HotSpot(int startLine,int startColumn,int endLine,int endColumn);
         ~HotSpot() override;
 
-        FilterObject* getUrlObject() const;
+        void activate(const std::string& action = std::string()) override;
 
-        QList<QAction*> actions() override;
-
-        /**
-         * Open a web browser at the current URL.  The url itself can be determined using
-         * the capturedTexts() method.
-         */
-        void activate(const QString& action = QString()) override;
-
-        /** The link as it would be opened: a scheme is added to bare www. and e-mail matches. */
-        QUrl url() const;
+        /** The link as it would be opened: a scheme is added to bare www. and e-mail matches.
+         *  Empty when the match is neither. */
+        std::string url() const;
 
     private:
         enum UrlType
@@ -275,8 +256,6 @@ public:
             Unknown
         };
         UrlType urlType() const;
-
-        FilterObject* _urlObject;
 
         HotSpot( const HotSpot& ) = delete;
         HotSpot& operator= ( const HotSpot& ) = delete;
@@ -289,28 +268,11 @@ protected:
 
 private:
 
-    static const QRegularExpression FullUrlRegExp;
-    static const QRegularExpression EmailAddressRegExp;
+    static const RegExp FullUrlRegExp;
+    static const RegExp EmailAddressRegExp;
 
     // combined OR of FullUrlRegExp and EmailAddressRegExp
-    static const QRegularExpression CompleteUrlRegExp;
-signals:
-    void activated(const QUrl& url, bool fromContextMenu);
-};
-
-class FilterObject : public QObject
-{
-    Q_OBJECT
-public:
-    FilterObject(Filter::HotSpot* filter) : _filter(filter) {}
-
-    void emitActivated(const QUrl& url, bool fromContextMenu);
-public slots:
-    void activate();
-private:
-    Filter::HotSpot* _filter;
-signals:
-    void activated(const QUrl& url, bool fromContextMenu);
+    static const RegExp CompleteUrlRegExp;
 };
 
 /**
@@ -330,7 +292,7 @@ signals:
  * The hotSpots() and hotSpotsAtLine() method return all of the hotspots in the text and on
  * a given line respectively.
  */
-class FilterChain : protected QList<Filter*>
+class FilterChain : protected std::vector<Filter*>
 {
 public:
     virtual ~FilterChain();
@@ -352,17 +314,17 @@ public:
     void process();
 
     /** Sets the buffer for each filter in the chain to process. */
-    void setBuffer(const QString* buffer , const QList<int>* linePositions);
+    void setBuffer(const std::u16string* buffer , const std::vector<int>* linePositions);
 
     /** Gets the (first named) RegExpFilter that is not a UrlFilter. */
-    RegExpFilter* getRegExpFilter(const QString& name = QString()) const;
+    RegExpFilter* getRegExpFilter() const;
 
     /** Returns the first hotspot which occurs at @p line, @p column or 0 if no hotspot was found */
     Filter::HotSpot* hotSpotAt(int line , int column) const;
     /** Returns a list of all the hotspots in all the chain's filters */
-    QList<Filter::HotSpot*> hotSpots() const;
+    std::vector<Filter::HotSpot*> hotSpots() const;
     /** Returns a list of all hotspots at the given line in all the chain's filters */
-    QList<Filter::HotSpot> hotSpotsAtLine(int line) const;
+
 
 };
 
@@ -382,11 +344,11 @@ public:
      * @param lineProperties The line properties to set for image
      */
     void setImage(const Character* const image , int lines , int columns,
-                  const QVector<LineProperty>& lineProperties);
+                  const std::vector<LineProperty>& lineProperties);
 
 private:
-    QString* _buffer;
-    QList<int>* _linePositions;
+    std::u16string* _buffer;
+    std::vector<int>* _linePositions;
 };
 
 }

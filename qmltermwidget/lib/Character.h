@@ -23,12 +23,13 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-// Qt
-#include <QHash>
-#include <QSet>
+#include <cstdint>
+#include <unordered_map>
+#include <unordered_set>
 
 // Local
 #include "CharacterColor.h"
+#include "konsole_wcwidth.h"
 
 namespace Konsole
 {
@@ -72,10 +73,10 @@ public:
    * @param _b The color used to draw the character's background.
    * @param _r A set of rendition flags which specify how this character is to be drawn.
    */
-  inline Character(quint16 _c = ' ',
+  inline Character(uint16_t _c = ' ',
             CharacterColor  _f = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_FORE_COLOR),
             CharacterColor  _b = CharacterColor(COLOR_SPACE_DEFAULT,DEFAULT_BACK_COLOR),
-            quint8  _r = DEFAULT_RENDITION)
+            uint8_t  _r = DEFAULT_RENDITION)
        : character(_c), rendition(_r), foregroundColor(_f), backgroundColor(_b) {}
 
   /** The unicode character value for this character.
@@ -86,7 +87,7 @@ public:
   wchar_t character;
 
   /** A combination of RENDITION flags which specify options for drawing the character. */
-  quint8  rendition;
+  uint8_t  rendition;
 
   /** The foreground color used to draw this character. */
   CharacterColor  foregroundColor;
@@ -128,7 +129,7 @@ public:
 
   inline bool isSpace() const
   {
-      return (rendition & RE_EXTENDED_CHAR) ? false : QChar(character).isSpace();
+      return (rendition & RE_EXTENDED_CHAR) ? false : konsole_isspace(char16_t(character));
   }
 };
 
@@ -218,7 +219,7 @@ public:
      * Keeps track of all screens.
      * Used in createExtendedChar for checking all screens.
      */
-    QSet<ScreenWindow*> windows;
+    std::unordered_set<ScreenWindow*> windows;
 
     /** The global ExtendedCharTable instance. */
     static ExtendedCharTable instance;
@@ -235,11 +236,10 @@ private:
     // internal, maps hash keys to character sequence buffers.  The first ushort
     // in each value is the length of the buffer, followed by the ushorts in the buffer
     // themselves.
-    QHash<uint,uint*> extendedCharTable;
+    std::unordered_map<uint,uint*> extendedCharTable;
 };
 
 }
-Q_DECLARE_TYPEINFO(Konsole::Character, Q_MOVABLE_TYPE);
 
 #endif // CHARACTER_H
 

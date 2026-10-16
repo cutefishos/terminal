@@ -24,9 +24,8 @@
 
 #include "Character.h"
 
-#include <QList>
-
-class QTextStream;
+#include <string>
+#include <vector>
 
 namespace Konsole
 {
@@ -46,9 +45,12 @@ public:
     virtual ~TerminalCharacterDecoder() {}
 
     /** Begin decoding characters.  The resulting text is appended to @p output. */
-    virtual void begin(QTextStream* output) = 0;
+    virtual void begin(std::u16string* output) = 0;
     /** End decoding. */
     virtual void end() = 0;
+
+    // QString::fromStdWString() appended to the output.
+    static void appendWide(std::u16string& output, const std::wstring& text);
 
     /**
      * Converts a line of terminal characters with associated properties into a text string
@@ -88,11 +90,11 @@ public:
      * at which new lines where added.  Returns an empty if setTrackLinePositions() is false or if
      * the output device is not a string.
      */
-    QList<int> linePositions() const;
+    std::vector<int> linePositions() const;
     /** Enables recording of character positions at which new lines are added.  See linePositions() */
     void setRecordLinePositions(bool record);
 
-    void begin(QTextStream* output) override;
+    void begin(std::u16string* output) override;
     void end() override;
 
     void decodeLine(const Character* const characters,
@@ -101,11 +103,11 @@ public:
 
 
 private:
-    QTextStream* _output;
+    std::u16string* _output;
     bool _includeTrailingWhitespace;
 
     bool _recordLinePositions;
-    QList<int> _linePositions;
+    std::vector<int> _linePositions;
 };
 
 /**
@@ -129,17 +131,17 @@ public:
                             int count,
                             LineProperty properties) override;
 
-    void begin(QTextStream* output) override;
+    void begin(std::u16string* output) override;
     void end() override;
 
 private:
-    void openSpan(std::wstring& text , const QString& style);
+    void openSpan(std::wstring& text , const std::string& style);
     void closeSpan(std::wstring& text);
 
-    QTextStream* _output;
+    std::u16string* _output;
     const ColorEntry* _colorTable;
     bool _innerSpanOpen;
-    quint8 _lastRendition;
+    uint8_t _lastRendition;
     CharacterColor _lastForeColor;
     CharacterColor _lastBackColor;
 

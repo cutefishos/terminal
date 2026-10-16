@@ -19,44 +19,40 @@
 #ifndef TASK_H
 #define	TASK_H
 
-#include <QObject>
-#include <QPointer>
-#include <QMap>
-#include <QRegularExpression>
-
-#include <Session.h>
-#include <ScreenWindow.h>
+#include <optional>
+#include <vector>
 
 #include "Emulation.h"
+#include "RegExp.h"
 #include "TerminalCharacterDecoder.h"
 
 using namespace Konsole;
 
-typedef QPointer<Emulation> EmulationPtr;
-
-class HistorySearch : public QObject
+class HistorySearch
 {
-    Q_OBJECT
-
 public:
-    explicit HistorySearch(EmulationPtr emulation, const QRegularExpression& regExp, bool forwards,
-                           int startColumn, int startLine, QObject* parent);
+    struct Result
+    {
+        int startColumn = 0;
+        int startLine = 0;
+        int endColumn = 0;
+        int endLine = 0;
+    };
 
-    ~HistorySearch() override;
+    explicit HistorySearch(Emulation* emulation, const RegExp& regExp, bool forwards,
+                           int startColumn, int startLine);
+    ~HistorySearch();
 
-    void search();
-
-signals:
-    void matchFound(int startColumn, int startLine, int endColumn, int endLine);
-    void noMatchFound();
+    // The match, or nothing when there is none or the pattern is empty.
+    std::optional<Result> search();
 
 private:
     bool search(int startColumn, int startLine, int endColumn, int endLine);
-    int findLineNumberInString(QList<int> linePositions, int position);
+    int findLineNumberInString(const std::vector<int>& linePositions, int position);
 
 
-    EmulationPtr m_emulation;
-    QRegularExpression m_regExp;
+    Emulation* m_emulation;
+    RegExp m_regExp;
     bool m_forwards = false;
     int m_startColumn = 0;
     int m_startLine = 0;
@@ -68,4 +64,3 @@ private:
 };
 
 #endif	/* TASK_H */
-

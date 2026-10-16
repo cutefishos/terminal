@@ -4,23 +4,26 @@ A terminal emulator for Cutefish.
 
 ### Third Party Code
 
+The emulator core comes from Konsole by way of
 [qmltermwidget](https://github.com/Swordfish90/qmltermwidget).
 
 ## Dependencies
 
-Terminal uses Qt 6, FishUI and the Cutefish framework (`cutefish-framework`).
+Terminal is built on [cutefish-toolkit](https://github.com/cutefishos/cutefish-toolkit);
+install it first.
 
+Debian/Ubuntu Dependencies:
 ```sh
-sudo apt install cmake qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools
+sudo apt install cmake pkg-config libicu-dev libpcre2-dev libxkbcommon-dev
 ```
 
 ## Build and install
 ```sh
 mkdir build
 cd build
-cmake ..
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
 make
-make install
+sudo make install
 ```
 
 ## License

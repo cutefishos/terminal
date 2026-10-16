@@ -2,88 +2,87 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "processhelper.h"
-#include "applicationlauncher.h"
-#include <QDesktopServices>
-#include <QCoreApplication>
-#include <QUrl>
-#include <QDir>
-#include <QFileInfo>
 
-#include <QDBusMessage>
-#include <QDBusConnection>
-#include <QDBusPendingReply>
+#include <filesystem>
+#include <unistd.h>
 
-ProcessHelper *SELF = nullptr;
+#include "base/dbus.h"
+#include "base/paths.h"
+#include "base/process.h"
+#include "base/strings.h"
+#include "base/url.h"
 
-ProcessHelper *ProcessHelper::self()
+namespace strings = cutefish::base::strings;
+
+namespace ProcessHelper
 {
-    if (!SELF)
-        SELF = new ProcessHelper;
 
-    return SELF;
+// An absolute or home-relative path becomes a file URL, anything else stays a link.
+static std::string fromUserInput(const std::string& text)
+{
+    const std::string trimmed(strings::trimmed(text));
+    if (trimmed.starts_with('/'))
+        return cutefish::base::url::fromLocalFile(trimmed);
+    if (trimmed.starts_with("~/"))
+        return cutefish::base::url::fromLocalFile(cutefish::base::paths::home() + trimmed.substr(1));
+    return trimmed;
 }
 
-ProcessHelper::ProcessHelper(QObject *parent)
-    : QObject(parent)
+bool openUrl(const std::string& url)
 {
-
-}
-
-bool ProcessHelper::startDetached(const QString &program, const QStringList &arguments)
-{
-    return ApplicationLauncher::startDetached(QStringList{program} + arguments);
-}
-
-bool ProcessHelper::openUrl(const QString &url)
-{
-    QUrl _url = QUrl::fromUserInput(url);
-
-    if (url.isNull())
+    if (url.empty())
         return false;
-
-    return QDesktopServices::openUrl(_url);
+    return cutefish::base::Process::startDetached("xdg-open", {fromUserInput(url)}) > 0;
 }
 
 // Asynchronous, so a file manager that is slow to start never stalls the terminal.
-static void callFileManager(const QString &method, const QString &path)
+static void callFileManager(const char* method, const std::string& path)
 {
-    QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.FileManager1"),
-                                                          QStringLiteral("/org/freedesktop/FileManager1"),
-                                                          QStringLiteral("org.freedesktop.FileManager1"),
-                                                          method);
-    message << QStringList { QUrl::fromLocalFile(path).toString() }
-            << QString::number(QCoreApplication::applicationPid());
-    QDBusConnection::sessionBus().asyncCall(message);
+    cutefish::base::dbus::Connection* bus = cutefish::base::dbus::Connection::session();
+    if (!bus)
+        return;
+    cutefish::base::dbus::Proxy proxy(bus, "org.freedesktop.FileManager1", "/org/freedesktop/FileManager1",
+                                      "org.freedesktop.FileManager1");
+    proxy.send(method, std::vector<std::string>{cutefish::base::url::fromLocalFile(path)},
+               std::to_string(getpid()));
 }
 
-bool ProcessHelper::openFileManager(const QString &url)
+bool openFileManager(const std::string& path)
 {
-    callFileManager(QStringLiteral("ShowFolders"), url);
+    callFileManager("ShowFolders", path);
     return true;
 }
 
-bool ProcessHelper::showInFileManager(const QString &path)
+bool showInFileManager(const std::string& path)
 {
-    callFileManager(QStringLiteral("ShowItems"), path);
+    callFileManager("ShowItems", path);
     return true;
 }
 
-QString ProcessHelper::existingPath(const QString &text, const QString &baseDir) const
+std::string existingPath(const std::string& text, const std::string& baseDir)
 {
-    QString path = text.trimmed();
+    std::string path(strings::trimmed(text));
 
-    if (path.isEmpty() || path.contains(QLatin1Char('\n')) || path.length() > 4096)
-        return QString();
+    if (path.empty() || path.find('\n') != std::string::npos || strings::utf16Length(path) > 4096)
+        return std::string();
 
     // Shells print quoted names for paths with spaces.
-    if (path.length() > 1
-            && (path.startsWith(QLatin1Char('\'')) || path.startsWith(QLatin1Char('"')))
-            && path.endsWith(path.at(0)))
-        path = path.mid(1, path.length() - 2);
+    if (path.size() > 1 && (path.front() == '\'' || path.front() == '"') && path.back() == path.front())
+        path = path.substr(1, path.size() - 2);
 
-    if (path == QLatin1String("~") || path.startsWith(QLatin1String("~/")))
-        path.replace(0, 1, QDir::homePath());
+    if (path == "~" || path.starts_with("~/"))
+        path.replace(0, 1, cutefish::base::paths::home());
 
-    const QFileInfo info(QDir(baseDir), path);
-    return info.exists() ? info.absoluteFilePath() : QString();
+    // Relative to baseDir, cleaned lexically; symbolic links are not resolved.
+    std::error_code error;
+    const std::filesystem::path base = baseDir.empty() ? std::filesystem::current_path(error) : std::filesystem::path(baseDir);
+    std::filesystem::path full = std::filesystem::path(path).is_absolute() ? std::filesystem::path(path) : base / path;
+    full = full.lexically_normal();
+    std::string result = full.string();
+    while (result.size() > 1 && result.back() == '/')
+        result.pop_back();
+
+    return std::filesystem::exists(full, error) ? result : std::string();
+}
+
 }

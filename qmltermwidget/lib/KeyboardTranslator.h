@@ -22,19 +22,17 @@
 #ifndef KEYBOARDTRANSLATOR_H
 #define KEYBOARDTRANSLATOR_H
 
-// Qt
-#include <QHash>
-#include <QList>
-#include <QKeySequence>
-#include <QMetaType>
-#include <QVarLengthArray>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "KeyCodes.h"
 
 // Konsole
 //#include "konsole_export.h"
 #define KONSOLEPRIVATE_EXPORT
 
-class QIODevice;
-class QTextStream;
 
 namespace Konsole
 {
@@ -90,7 +88,7 @@ public:
         /** Indicates that the numpad is in application mode. */
         ApplicationKeypadState = 32
     };
-    Q_DECLARE_FLAGS(States,State)
+    typedef int States;
 
     /**
      * This enum describes commands which are associated with particular key sequences.
@@ -118,7 +116,7 @@ public:
         /** Echos the operating system specific erase character. */
         EraseCommand = 256
     };
-    Q_DECLARE_FLAGS(Commands,Command)
+    typedef int Commands;
 
     /**
      * Represents an association between a key sequence pressed by the user
@@ -156,11 +154,11 @@ public:
          *
          * @param modifiers The keyboard modifiers being pressed.
          */
-        QByteArray text(bool expandWildCards = false,
-                        Qt::KeyboardModifiers modifiers = Qt::NoModifier) const;
+        std::string text(bool expandWildCards = false,
+                        uint32_t modifiers = NoModifier) const;
 
         /** Sets the character sequence associated with this entry */
-        void setText(const QByteArray& text);
+        void setText(const std::string& text);
 
         /**
          * Returns the character sequence associated with this entry,
@@ -171,8 +169,8 @@ public:
          * @param expandWildCards See text()
          * @param modifiers See text()
          */
-        QByteArray escapedText(bool expandWildCards = false,
-                               Qt::KeyboardModifiers modifiers = Qt::NoModifier) const;
+        std::string escapedText(bool expandWildCards = false,
+                               uint32_t modifiers = NoModifier) const;
 
         /** Returns the character code ( from the Qt::Key enum ) associated with this entry */
         int keyCode() const;
@@ -187,15 +185,15 @@ public:
          * If a modifier is not set in modifierMask() then the entry matches whether the modifier
          * is pressed or not.
          */
-        Qt::KeyboardModifiers modifiers() const;
+        uint32_t modifiers() const;
 
         /** Returns the keyboard modifiers which are valid in this entry.  See modifiers() */
-        Qt::KeyboardModifiers modifierMask() const;
+        uint32_t modifierMask() const;
 
         /** See modifiers() */
-        void setModifiers( Qt::KeyboardModifiers modifiers );
+        void setModifiers( uint32_t modifiers );
         /** See modifierMask() and modifiers() */
-        void setModifierMask( Qt::KeyboardModifiers modifiers );
+        void setModifierMask( uint32_t modifiers );
 
         /**
          * Returns a bitwise-OR of the enabled state flags associated with this entry.
@@ -225,7 +223,7 @@ public:
          * Returns this entry's conditions ( ie. its key code, modifier and state criteria )
          * as a string.
          */
-        QString conditionToString() const;
+        std::string conditionToString() const;
 
         /**
          * Returns this entry's result ( ie. its command or character sequence )
@@ -234,50 +232,50 @@ public:
          * @param expandWildCards See text()
          * @param modifiers See text()
          */
-        QString resultToString(bool expandWildCards = false,
-                               Qt::KeyboardModifiers modifiers = Qt::NoModifier) const;
+        std::string resultToString(bool expandWildCards = false,
+                               uint32_t modifiers = NoModifier) const;
 
         /**
          * Returns true if this entry matches the given key sequence, specified
          * as a combination of @p keyCode , @p modifiers and @p state.
          */
         bool matches( int keyCode ,
-                      Qt::KeyboardModifiers modifiers ,
+                      uint32_t modifiers ,
                       States flags ) const;
 
         bool operator==(const Entry& rhs) const;
 
     private:
-        void insertModifier( QString& item , int modifier ) const;
-        void insertState( QString& item , int state ) const;
-        QByteArray unescape(const QByteArray& text) const;
+        void insertModifier( std::string& item , int modifier ) const;
+        void insertState( std::string& item , int state ) const;
+        std::string unescape(const std::string& text) const;
 
         int _keyCode;
-        Qt::KeyboardModifiers _modifiers;
-        Qt::KeyboardModifiers _modifierMask;
+        uint32_t _modifiers;
+        uint32_t _modifierMask;
         States _state;
         States _stateMask;
 
         Command _command;
-        QByteArray _text;
+        std::string _text;
     };
 
     /** Constructs a new keyboard translator with the given @p name */
-    KeyboardTranslator(const QString& name);
+    KeyboardTranslator(const std::string& name);
 
     //KeyboardTranslator(const KeyboardTranslator& other);
 
     /** Returns the name of this keyboard translator */
-    QString name() const;
+    std::string name() const;
 
     /** Sets the name of this keyboard translator */
-    void setName(const QString& name);
+    void setName(const std::string& name);
 
     /** Returns the descriptive name of this keyboard translator */
-    QString description() const;
+    std::string description() const;
 
     /** Sets the descriptive name of this keyboard translator */
-    void setDescription(const QString& description);
+    void setDescription(const std::string& description);
 
     /**
      * Looks for an entry in this keyboard translator which matches the given
@@ -291,7 +289,7 @@ public:
      * @param state Optional flags which specify the current state of the terminal
      */
     Entry findEntry(int keyCode ,
-                    Qt::KeyboardModifiers modifiers ,
+                    uint32_t modifiers ,
                     States state = NoState) const;
 
     /**
@@ -312,21 +310,20 @@ public:
     void removeEntry(const Entry& entry);
 
     /** Returns a list of all entries in the translator. */
-    QList<Entry> entries() const;
+    std::vector<Entry> entries() const;
 
     /** The modifier code for the actual Ctrl key on this OS. */
-    static const Qt::KeyboardModifier CTRL_MOD;
+    static const uint32_t CTRL_MOD;
 
 private:
 
-    QMultiHash<int,Entry> _entries; // entries in this keyboard translation,
+    // Per key code, in the order added; a QMultiHash, which finds the latest first.
+    std::unordered_map<int,std::vector<Entry>> _entries; // entries in this keyboard translation,
                                                  // entries are indexed according to
                                                  // their keycode
-    QString _name;
-    QString _description;
+    std::string _name;
+    std::string _description;
 };
-Q_DECLARE_OPERATORS_FOR_FLAGS(KeyboardTranslator::States)
-Q_DECLARE_OPERATORS_FOR_FLAGS(KeyboardTranslator::Commands)
 
 /**
  * Parses the contents of a Keyboard Translator (.keytab) file and
@@ -360,13 +357,13 @@ class KeyboardTranslatorReader
 {
 public:
     /** Constructs a new reader which parses the given @p source */
-    KeyboardTranslatorReader( QIODevice* source );
+    KeyboardTranslatorReader( const std::string& source );
 
     /**
      * Returns the description text.
      * TODO: More documentation
      */
-    QString description() const;
+    std::string description() const;
 
     /** Returns true if there is another entry in the source stream */
     bool hasNextEntry() const;
@@ -385,8 +382,8 @@ public:
      *
      * The condition and result strings are in the same format as in
      */
-    static KeyboardTranslator::Entry createEntry( const QString& condition ,
-                                                  const QString& result );
+    static KeyboardTranslator::Entry createEntry( const std::string& condition ,
+                                                  const std::string& result );
 private:
     struct Token
     {
@@ -400,24 +397,29 @@ private:
             OutputText
         };
         Type type;
-        QString text;
+        std::string text;
     };
-    QList<Token> tokenize(const QString&);
+    std::vector<Token> tokenize(const std::string&);
     void readNext();
-    bool decodeSequence(const QString& ,
+    bool decodeSequence(const std::string& ,
                                 int& keyCode,
-                                Qt::KeyboardModifiers& modifiers,
-                                Qt::KeyboardModifiers& modifierMask,
+                                uint32_t& modifiers,
+                                uint32_t& modifierMask,
                                 KeyboardTranslator::States& state,
                                 KeyboardTranslator::States& stateFlags);
 
-    static bool parseAsModifier(const QString& item , Qt::KeyboardModifier& modifier);
-    static bool parseAsStateFlag(const QString& item , KeyboardTranslator::State& state);
-    static bool parseAsKeyCode(const QString& item , int& keyCode);
-       static bool parseAsCommand(const QString& text , KeyboardTranslator::Command& command);
+    static bool parseAsModifier(const std::string& item , uint32_t& modifier);
+    static bool parseAsStateFlag(const std::string& item , KeyboardTranslator::State& state);
+    static bool parseAsKeyCode(const std::string& item , int& keyCode);
+       static bool parseAsCommand(const std::string& text , KeyboardTranslator::Command& command);
 
-    QIODevice* _source;
-    QString _description;
+    // Reads the next line, its line break kept, as QIODevice::readLine().
+    std::string readLine();
+    bool atEnd() const;
+
+    std::string _source;
+    size_t _sourcePosition = 0;
+    std::string _description;
     KeyboardTranslator::Entry _nextEntry;
     bool _hasNext;
 
@@ -433,20 +435,19 @@ public:
      * Constructs a new writer which saves data into @p destination.
      * The caller is responsible for closing the device when writing is complete.
      */
-    KeyboardTranslatorWriter(QIODevice* destination);
+    KeyboardTranslatorWriter(std::string* destination);
     ~KeyboardTranslatorWriter();
 
     /**
      * Writes the header for the keyboard translator.
      * @param description Description of the keyboard translator.
      */
-    void writeHeader( const QString& description );
+    void writeHeader( const std::string& description );
     /** Writes a translator entry. */
     void writeEntry( const KeyboardTranslator::Entry& entry );
 
 private:
-    QIODevice* _destination;
-    QTextStream* _writer;
+    std::string* _destination;
 
     KeyboardTranslatorWriter(const KeyboardTranslatorWriter&) = delete;
     KeyboardTranslatorWriter& operator=(const KeyboardTranslatorWriter&) = delete;
@@ -485,7 +486,7 @@ public:
      *
      * TODO: More documentation
      */
-    bool deleteTranslator(const QString& name);
+    bool deleteTranslator(const std::string& name);
 
     /** Returns the default translator for Konsole. */
     const KeyboardTranslator* defaultTranslator();
@@ -497,30 +498,30 @@ public:
      * The first time that a translator with a particular name is requested,
      * the on-disk .keyboard file is loaded and parsed.
      */
-    const KeyboardTranslator* findTranslator(const QString& name);
+    const KeyboardTranslator* findTranslator(const std::string& name);
     /**
      * Returns a list of the names of available keyboard translators.
      *
      * The first time this is called, a search for available
      * translators is started.
      */
-    QList<QString> allTranslators();
+    std::vector<std::string> allTranslators();
 
     /** Returns the global KeyboardTranslatorManager instance. */
    static KeyboardTranslatorManager* instance();
 
 private:
-    static const QByteArray defaultTranslatorText;
+    static const std::string defaultTranslatorText;
 
     void findTranslators(); // locate the available translators
-    KeyboardTranslator* loadTranslator(const QString& name); // loads the translator
+    KeyboardTranslator* loadTranslator(const std::string& name); // loads the translator
                                                              // with the given name
-    KeyboardTranslator* loadTranslator(QIODevice* device,const QString& name);
+    KeyboardTranslator* loadTranslator(const std::string& source,const std::string& name);
 
     bool saveTranslator(const KeyboardTranslator* translator);
-    QString findTranslatorPath(const QString& name);
+    std::string findTranslatorPath(const std::string& name);
 
-    QHash<QString,KeyboardTranslator*> _translators; // maps translator-name -> KeyboardTranslator
+    std::unordered_map<std::string,KeyboardTranslator*> _translators; // maps translator-name -> KeyboardTranslator
                                                      // instance
     bool _haveLoadedAll;
 };
@@ -528,17 +529,17 @@ private:
 inline int KeyboardTranslator::Entry::keyCode() const { return _keyCode; }
 inline void KeyboardTranslator::Entry::setKeyCode(int keyCode) { _keyCode = keyCode; }
 
-inline void KeyboardTranslator::Entry::setModifiers( Qt::KeyboardModifiers modifier )
+inline void KeyboardTranslator::Entry::setModifiers( uint32_t modifier )
 {
     _modifiers = modifier;
 }
-inline Qt::KeyboardModifiers KeyboardTranslator::Entry::modifiers() const { return _modifiers; }
+inline uint32_t KeyboardTranslator::Entry::modifiers() const { return _modifiers; }
 
-inline void  KeyboardTranslator::Entry::setModifierMask( Qt::KeyboardModifiers mask )
+inline void  KeyboardTranslator::Entry::setModifierMask( uint32_t mask )
 {
    _modifierMask = mask;
 }
-inline Qt::KeyboardModifiers KeyboardTranslator::Entry::modifierMask() const { return _modifierMask; }
+inline uint32_t KeyboardTranslator::Entry::modifierMask() const { return _modifierMask; }
 
 inline bool KeyboardTranslator::Entry::isNull() const
 {
@@ -551,7 +552,7 @@ inline void KeyboardTranslator::Entry::setCommand( Command command )
 }
 inline KeyboardTranslator::Command KeyboardTranslator::Entry::command() const { return _command; }
 
-inline void KeyboardTranslator::Entry::setText( const QByteArray& text )
+inline void KeyboardTranslator::Entry::setText( const std::string& text )
 {
     _text = unescape(text);
 }
@@ -559,18 +560,18 @@ inline int oneOrZero(int value)
 {
     return value ? 1 : 0;
 }
-inline QByteArray KeyboardTranslator::Entry::text(bool expandWildCards,Qt::KeyboardModifiers modifiers) const
+inline std::string KeyboardTranslator::Entry::text(bool expandWildCards,uint32_t modifiers) const
 {
-    QByteArray expandedText = _text;
+    std::string expandedText = _text;
 
     if (expandWildCards)
     {
         int modifierValue = 1;
-        modifierValue += oneOrZero(modifiers & Qt::ShiftModifier);
-        modifierValue += oneOrZero(modifiers & Qt::AltModifier) << 1;
+        modifierValue += oneOrZero(modifiers & ShiftModifier);
+        modifierValue += oneOrZero(modifiers & AltModifier) << 1;
         modifierValue += oneOrZero(modifiers & KeyboardTranslator::CTRL_MOD) << 2;
 
-        for (int i=0;i<_text.length();i++)
+        for (int i=0;i<int(_text.length());i++)
         {
             if (expandedText[i] == '*')
                 expandedText[i] = '0' + modifierValue;
@@ -594,8 +595,6 @@ inline KeyboardTranslator::States KeyboardTranslator::Entry::stateMask() const {
 
 }
 
-Q_DECLARE_METATYPE(Konsole::KeyboardTranslator::Entry)
-Q_DECLARE_METATYPE(const Konsole::KeyboardTranslator*)
 
 #endif // KEYBOARDTRANSLATOR_H
 

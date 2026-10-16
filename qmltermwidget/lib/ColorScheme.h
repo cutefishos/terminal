@@ -22,19 +22,19 @@
 #ifndef COLORSCHEME_H
 #define COLORSCHEME_H
 
-// Qt
-#include <QHash>
-#include <QList>
-#include <QMetaType>
-#include <QIODevice>
-#include <QSet>
-#include <QSettings>
-#include <QString>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace cutefish::base {
+class Settings;
+}
 
 // Konsole
 #include "CharacterColor.h"
 
-class QIODevice;
 //class KConfig;
 
 namespace Konsole
@@ -58,14 +58,14 @@ public:
     ~ColorScheme();
 
     /** Sets the descriptive name of the color scheme. */
-    void setDescription(const QString& description);
+    void setDescription(const std::string& description);
     /** Returns the descriptive name of the color scheme. */
-    QString description() const;
+    std::string description() const;
 
     /** Sets the name of the color scheme */
-    void setName(const QString& name);
+    void setName(const std::string& name);
     /** Returns the name of the color scheme */
-    QString name() const;
+    std::string name() const;
 
 #if 0
 // Implemented upstream - in user apps
@@ -74,7 +74,7 @@ public:
     /** Writes the color scheme to the specified configuration source */
     void write(KConfig& config) const;
 #endif
-    void read(const QString & filename);
+    void read(const std::string & filename);
 
     /** Sets a single entry within the color palette. */
     void setColorTableEntry(int index , const ColorEntry& entry);
@@ -103,13 +103,13 @@ public:
      * this is the primary color used to draw the
      * text in this scheme.
      */
-    QColor foregroundColor() const;
+    Color foregroundColor() const;
     /**
      * Convenience method.  Returns the background color for
      * this scheme, this is the primary color used to
      * draw the terminal background in this scheme.
      */
-    QColor backgroundColor() const;
+    Color backgroundColor() const;
 
     /**
      * Returns true if this color scheme has a dark background.
@@ -127,12 +127,12 @@ public:
      *
      * TODO: More documentation
      */
-    void setOpacity(qreal opacity);
+    void setOpacity(double opacity);
     /**
      * Returns the opacity level for this color scheme, see setOpacity()
      * TODO: More documentation
      */
-    qreal opacity() const;
+    double opacity() const;
 
     /**
      * Enables randomization of the background color.  This will cause
@@ -145,8 +145,8 @@ public:
     /** Returns true if the background color is randomized. */
     bool randomizedBackgroundColor() const;
 
-    static QString colorNameForIndex(int index);
-    static QString translatedColorNameForIndex(int index);
+    static std::string colorNameForIndex(int index);
+    static std::string translatedColorNameForIndex(int index);
 
 private:
     // specifies how much a particular color can be randomized by
@@ -160,9 +160,9 @@ private:
             return ( hue == 0 && saturation == 0 && value == 0 );
         }
 
-        quint16 hue;
-        quint8  saturation;
-        quint8  value;
+        uint16_t hue;
+        uint8_t  saturation;
+        uint8_t  value;
     };
 
     // returns the active color table.  if none has been set specifically,
@@ -175,23 +175,23 @@ private:
     // and sets the palette entry at 'index' to the entry read.
     void readColorEntry(KConfig& config , int index);
     // writes a single colour entry to a KConfig source
-    void writeColorEntry(KConfig& config , const QString& colorName, const ColorEntry& entry,const RandomizationRange& range) const;
+    void writeColorEntry(KConfig& config , const std::string& colorName, const ColorEntry& entry,const RandomizationRange& range) const;
 #endif
-    void readColorEntry(QSettings *s, int index);
+    void readColorEntry(cutefish::base::Settings *s, int index);
 
     // sets the amount of randomization allowed for a particular color
     // in the palette.  creates the randomization table if
     // it does not already exist
-    void setRandomizationRange( int index , quint16 hue , quint8 saturation , quint8 value );
+    void setRandomizationRange( int index , uint16_t hue , uint8_t saturation , uint8_t value );
 
-    QString _description;
-    QString _name;
-    qreal _opacity;
+    std::string _description;
+    std::string _name;
+    double _opacity;
     ColorEntry* _table; // pointer to custom color table or 0 if the default
                         // color scheme is being used
 
 
-    static const quint16 MAX_HUE = 340;
+    static const uint16_t MAX_HUE = 340;
 
     RandomizationRange* _randomTable;   // pointer to randomization table or 0
                                         // if no colors in the color scheme support
@@ -254,7 +254,7 @@ public:
      * The first time that a color scheme with a particular name is
      * requested, the configuration information is loaded from disk.
      */
-    const ColorScheme* findColorScheme(const QString& name);
+    const ColorScheme* findColorScheme(const std::string& name);
 
 #if 0
     /**
@@ -268,7 +268,7 @@ public:
     /**
      * Deletes a color scheme.  Returns true on successful deletion or false otherwise.
      */
-    bool deleteColorScheme(const QString& name);
+    bool deleteColorScheme(const std::string& name);
 
     /**
      * Returns a list of the all the available color schemes.
@@ -277,7 +277,7 @@ public:
      *
      * Subsequent calls will be inexpensive.
      */
-    QList<const ColorScheme*> allColorSchemes();
+    std::vector<const ColorScheme*> allColorSchemes();
 
     /** Returns the global color scheme manager instance. */
     static ColorSchemeManager* instance();
@@ -294,27 +294,27 @@ public:
      * @param[in] path The path to KDE 4 .colorscheme or KDE 3 .schema.
      * @return Whether the color scheme is loaded successfully.
      */
-    bool loadCustomColorScheme(const QString& path);
+    bool loadCustomColorScheme(const std::string& path);
 
     /**
      * @brief Allows to add a custom location of color schemes.
      *
      * @param[in] custom_dir Custom location of color schemes (must end with /).
      */
-    void addCustomColorSchemeDir(const QString& custom_dir);
+    void addCustomColorSchemeDir(const std::string& custom_dir);
 
 private:
     // loads a color scheme from a KDE 4+ .colorscheme file
-    bool loadColorScheme(const QString& path);
+    bool loadColorScheme(const std::string& path);
     // returns a list of paths of color schemes in the KDE 4+ .colorscheme file format
-    QList<QString> listColorSchemes();
+    std::vector<std::string> listColorSchemes();
     // loads all of the color schemes
     void loadAllColorSchemes();
     // finds the path of a color scheme
-    QString findColorSchemePath(const QString& name) const;
+    std::string findColorSchemePath(const std::string& name) const;
 
-    QHash<QString,const ColorScheme*> _colorSchemes;
-    QSet<ColorScheme*> _modifiedSchemes;
+    std::unordered_map<std::string,const ColorScheme*> _colorSchemes;
+    std::unordered_set<ColorScheme*> _modifiedSchemes;
 
     bool _haveLoadedAll;
 
@@ -323,6 +323,5 @@ private:
 
 }
 
-Q_DECLARE_METATYPE(const Konsole::ColorScheme*)
 
 #endif //COLORSCHEME_H

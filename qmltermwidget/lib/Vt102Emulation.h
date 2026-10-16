@@ -26,12 +26,12 @@
 // Standard Library
 #include <cstdio>
 
-// Qt
-#include <QKeyEvent>
-#include <QHash>
-#include <QTimer>
-#include <QStringEncoder>
-#include <QVector>
+#include <cstring>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "base/timer.h"
 
 // Konsole
 #include "Emulation.h"
@@ -79,7 +79,6 @@ struct CharCodes
  */
 class Vt102Emulation : public Emulation
 {
-Q_OBJECT
 
 public:
   /** Constructs a new emulation */
@@ -91,11 +90,11 @@ public:
   void reset() override;
   char eraseChar() const override;
 
-public slots:
+public:
   // reimplemented from Emulation
   void sendString(const char*,int length = -1) override;
-  void sendText(const QString& text) override;
-  void sendKeyEvent(QKeyEvent*, bool fromPaste) override;
+  void sendText(const std::string& text) override;
+  void sendKeyEvent(KeyEvent*, bool fromPaste) override;
   void sendMouseEvent(int buttons, int column, int line, int eventType) override;
   virtual void focusLost();
   virtual void focusGained();
@@ -106,7 +105,7 @@ protected:
   void resetMode(int mode) override;
   void receiveChar(wchar_t cc) override;
 
-private slots:
+private:
   //causes changeTitle() to be emitted for each (int,QString) pair in pendingTitleUpdates
   //used to buffer multiple title updates
   void updateTitle();
@@ -119,7 +118,6 @@ private:
   void saveCursor();
   void restoreCursor();
   void resetCharset(int scrno);
-  QKeyEvent * remapKeyModifiersForMac(QKeyEvent *event);
 
 
   void setMargins(int top, int bottom);
@@ -171,12 +169,12 @@ private:
   void reportTerminalParms(int p);
 
   int kittyKeyboardFlags() const;
-  QVector<int> &kittyKeyboardStack();
+  std::vector<int> &kittyKeyboardStack();
   void reportKittyKeyboardFlags();
   void pushKittyKeyboardFlags(int flags);
   void popKittyKeyboardFlags(int count);
   void setKittyKeyboardFlags(int flags, int mode);
-  bool sendKittyKeyEvent(QKeyEvent *event, KeyboardTranslator::States states);
+  bool sendKittyKeyEvent(KeyEvent *event, KeyboardTranslator::States states);
 
   void onScrollLock();
   void scrollLock(const bool lock);
@@ -205,16 +203,15 @@ private:
   //or window title.
   //these calls occur when certain escape sequences are seen in the
   //output from the terminal
-  QHash<int,QString> _pendingTitleUpdates;
-  QTimer* _titleUpdateTimer;
+  // In key order, so a batch of updates applies the same way every time.
+  std::map<int,std::string> _pendingTitleUpdates;
+  cutefish::base::Timer _titleUpdateTimer;
 
   bool _reportFocusEvents;
 
   // The kitty keyboard protocol flags an application pushed, for the main and
   // the alternate screen; the last entry is in effect.
-  QVector<int> _kittyKeyboardFlags[2];
-
-  QStringEncoder _toUtf8;
+  std::vector<int> _kittyKeyboardFlags[2];
 };
 
 }

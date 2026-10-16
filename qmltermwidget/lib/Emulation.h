@@ -24,15 +24,16 @@
 #define EMULATION_H
 
 // System
+#include <chrono>
 #include <cstdio>
 
-// Qt
-#include <QKeyEvent>
-//#include <QPointer>
-#include <QTextStream>
-#include <QElapsedTimer>
-#include <QTimer>
-#include <QStringDecoder>
+#include <string>
+#include <vector>
+
+#include "base/elapsed_timer.h"
+#include "base/geometry.h"
+#include "base/signal.h"
+#include "base/timer.h"
 
 #include "KeyboardTranslator.h"
 
@@ -40,6 +41,20 @@ namespace Konsole
 {
 
 class HistoryType;
+
+// QStringDecoder(QStringConverter::Utf8): stateful across chunks, an initial
+// byte order mark dropped, an invalid sequence giving U+FFFD as Qt gives it.
+class Utf8Decoder
+{
+public:
+    // Appends the UTF-16 for `bytes` to `output`.
+    void decode(const char* bytes, int length, std::u16string& output);
+
+private:
+    bool _headerDone = false;
+    int _remainingChars = 0;
+    unsigned char _stateData[4] = {};
+};
 class Screen;
 class ScreenWindow;
 class TerminalCharacterDecoder;
@@ -89,7 +104,7 @@ enum
  * output.  Each screen window covers the same number of lines and columns as the
  * image size returned by imageSize().  The screen window can be moved up and down
  * and provides transparent access to both the current on-screen image and the
- * previous output.  The screen windows emit an outputChanged signal
+ * previous output.  The screen windows an outputChanged signal
  * when the section of the image they are looking at changes.
  * Graphical views can then render the contents of a screen window, listening for notifications
  * of output changes from the screen window which they are associated with and updating
@@ -99,7 +114,7 @@ enum
  * as keypresses and mouse activity into a character string which can be sent
  * to the terminal program.  Key presses can be processed by calling the sendKeyEvent() slot,
  * while mouse events can be processed using the sendMouseEvent() slot.  When the character
- * stream has been produced, the emulation will emit a sendData() signal with a pointer
+ * stream has been produced, the emulation will a sendData() signal with a pointer
  * to the character buffer.  This data should be fed to the standard input of the terminal
  * process.  The translation of key presses into an output character stream is performed
  * using a lookup in a set of key bindings which map key sequences to output
@@ -118,9 +133,8 @@ enum
  * how long the emulation has been active/idle for and also respond to
  * a 'bell' event in different ways.
  */
-class Emulation : public QObject
+class Emulation
 {
-Q_OBJECT
 
 public:
 
@@ -146,7 +160,7 @@ public:
 
    /** Constructs a new terminal emulation */
    Emulation();
-  ~Emulation() override;
+  virtual ~Emulation();
 
   /**
    * Creates a new window onto the output from this emulation.  The contents
@@ -156,7 +170,7 @@ public:
   ScreenWindow* createWindow();
 
   /** Returns the size of the screen image which the emulation produces */
-  QSize imageSize() const;
+  cutefish::base::Size imageSize() const;
 
   /**
    * Returns the total number of lines, including those stored in the history.
@@ -215,12 +229,12 @@ public:
    * ( received through sendKeyEvent() ) into character
    * streams to send to the terminal.
    */
-  void setKeyBindings(const QString& name);
+  void setKeyBindings(const std::string& name);
   /**
    * Returns the name of the emulation's current key bindings.
    * See setKeyBindings()
    */
-  QString keyBindings() const;
+  std::string keyBindings() const;
 
   /**
    * Copies the current image into the history and clears the screen.
@@ -241,7 +255,6 @@ public:
 
   bool programBracketedPasteMode() const;
 
-public slots:
 
   /** Change the size of the emulation's image */
   virtual void setImageSize(int lines, int columns);
@@ -250,13 +263,13 @@ public slots:
    * Interprets a sequence of characters and sends the result to the terminal.
    * This is equivalent to calling sendKeyEvent() for each character in @p text in succession.
    */
-  virtual void sendText(const QString& text) = 0;
+  virtual void sendText(const std::string& text) = 0;
 
   /**
    * Interprets a key press event and emits the sendData() signal with
    * the resulting character stream.
    */
-  virtual void sendKeyEvent(QKeyEvent*, bool fromPaste);
+  virtual void sendKeyEvent(KeyEvent*, bool fromPaste);
 
   /**
    * Converts information about a mouse event into an xterm-compatible escape
@@ -287,7 +300,6 @@ public slots:
    */
   void receiveData(const char* buffer,int len);
 
-signals:
 
   /**
    * Emitted when a buffer of data is ready to send to the
@@ -296,7 +308,7 @@ signals:
    * @param data The buffer of data ready to be sent
    * @param len The length of @p data in bytes
    */
-  void sendData(const char* data,int len);
+  cutefish::base::Signal<const char*,int> sendData;
 
   /**
    * Requests that sending of input to the emulation
@@ -307,7 +319,7 @@ signals:
    * suspended.  Otherwise requests that sending of
    * input be resumed.
    */
-  void lockPtyRequest(bool suspend);
+  cutefish::base::Signal<bool> lockPtyRequest;
 
   /**
    * Requests that the pty used by the terminal process
@@ -315,7 +327,7 @@ signals:
    *
    * TODO: More documentation
    */
-  void useUtf8Request(bool);
+  cutefish::base::Signal<bool> useUtf8Request;
 
   /**
    * Emitted when the activity state of the emulation is set.
@@ -323,10 +335,10 @@ signals:
    * @param state The new activity state, one of NOTIFYNORMAL, NOTIFYACTIVITY
    * or NOTIFYBELL
    */
-  void stateSet(int state);
+  cutefish::base::Signal<int> stateSet;
 
   /** TODO Document me */
-  void zmodemDetected();
+  cutefish::base::Signal<> zmodemDetected;
 
 
   /**
@@ -337,7 +349,7 @@ signals:
    *
    * TODO: Document how the parameter works.
    */
-  void changeTabTextColorRequest(int color);
+  cutefish::base::Signal<int> changeTabTextColorRequest;
 
   /**
    * This is emitted when the program running in the shell indicates whether or
@@ -346,9 +358,9 @@ signals:
    * @param usesMouse This will be true if the program wants to be informed about
    * mouse events or false otherwise.
    */
-  void programUsesMouseChanged(bool usesMouse);
+  cutefish::base::Signal<bool> programUsesMouseChanged;
 
-  void programBracketedPasteModeChanged(bool bracketedPasteMode);
+  cutefish::base::Signal<bool> programBracketedPasteModeChanged;
 
   /**
    * Emitted when the contents of the screen image change.
@@ -359,10 +371,10 @@ signals:
    * Normally there is no need for objects other than the screen windows
    * created with createWindow() to listen for this signal.
    *
-   * ScreenWindow objects created using createWindow() will emit their
+   * ScreenWindow objects created using createWindow() will their
    * own outputChanged() signal in response to this signal.
    */
-  void outputChanged();
+  cutefish::base::Signal<> outputChanged;
 
   /**
    * Emitted when the program running in the terminal wishes to update the
@@ -396,25 +408,25 @@ signals:
    * @param newTitle Specifies the new title
    */
 
-  void titleChanged(int title,const QString& newTitle);
+  cutefish::base::Signal<int,const std::string&> titleChanged;
 
   /**
    * Emitted when the program running in the terminal changes the
    * screen size.
    */
-  void imageSizeChanged(int lineCount , int columnCount);
+  cutefish::base::Signal<int,int> imageSizeChanged;
 
   /**
    * Emitted when the setImageSize() is called on this emulation for
    * the first time.
    */
-  void imageSizeInitialized();
+  cutefish::base::Signal<> imageSizeInitialized;
 
   /**
    * Emitted after receiving the escape sequence which asks to change
    * the terminal emulator's size
    */
-  void imageResizeRequest(const QSize& sizz);
+  cutefish::base::Signal<const cutefish::base::Size&> imageResizeRequest;
 
   /**
    * Emitted when the terminal program requests to change various properties
@@ -427,14 +439,14 @@ signals:
    * @param text A string expected to contain a series of key and value pairs in
    * the form:  name=value;name2=value2 ...
    */
-  void profileChangeCommandReceived(const QString& text);
+  cutefish::base::Signal<const std::string&> profileChangeCommandReceived;
 
   /**
    * Emitted when a flow control key combination ( Ctrl+S or Ctrl+Q ) is pressed.
    * @param suspendKeyPressed True if Ctrl+S was pressed to suspend output or Ctrl+Q to
    * resume output.
    */
-  void flowControlKeyPressed(bool suspendKeyPressed);
+  cutefish::base::Signal<bool> flowControlKeyPressed;
 
   /**
    * Emitted when the cursor shape or its blinking state is changed via
@@ -443,10 +455,10 @@ signals:
    * @param cursorShape One of 3 possible values in KeyboardCursorShape enum
    * @param blinkingCursorEnabled Whether to enable blinking or not
    */
-  void cursorChanged(KeyboardCursorShape cursorShape, bool blinkingCursorEnabled);
+  cutefish::base::Signal<KeyboardCursorShape,bool> cursorChanged;
 
-  void handleCommandFromKeyboard(KeyboardTranslator::Command command);
-  void outputFromKeypressEvent(void);
+  cutefish::base::Signal<KeyboardTranslator::Command> handleCommandFromKeyboard;
+  cutefish::base::Signal<> outputFromKeypressEvent;
 
 protected:
   virtual void setMode(int mode) = 0;
@@ -475,7 +487,7 @@ protected:
   void setCodec(EmulationCodec codec); // codec number, 0 = locale, 1=utf8
 
 
-  QList<ScreenWindow*> _windows;
+  std::vector<ScreenWindow*> _windows;
 
   Screen* _currentScreen;  // pointer to the screen which is currently active,
                             // this is one of the elements in the screen[] array
@@ -488,7 +500,10 @@ protected:
 
   const KeyboardTranslator* _keyTranslator; // the keyboard layout
 
-protected slots:
+  // Connections between this emulation, its screens and its windows.
+  std::vector<cutefish::base::Subscription> _ownConnections;
+
+protected:
   /**
    * Schedules an update of attached views.
    * Repeated calls to bufferedUpdate() in close succession will result in only a single update,
@@ -496,7 +511,7 @@ protected slots:
    */
   void bufferedUpdate();
 
-private slots:
+private:
 
   // triggered by timer, causes the emulation to send an updated screen image to each
   // view
@@ -509,10 +524,11 @@ private slots:
 private:
   bool _usesMouse;
   bool _bracketedPasteMode;
-  QTimer _bulkTimer1{this};
-  QTimer _bulkTimer2{this};
-  QElapsedTimer _lastShow;
-  QStringDecoder _toUtf16;
+  cutefish::base::Timer _bulkTimer1;
+  cutefish::base::Timer _bulkTimer2;
+  cutefish::base::ElapsedTimer _lastShow;
+  Utf8Decoder _toUtf16;
+  std::u16string _decoded;
 };
 
 }

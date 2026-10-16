@@ -17,4 +17,8 @@ int konsole_wcwidth(wchar_t ucs);
 
 int string_width( const std::wstring & wstr );
 
+// QChar::isSpace() and QChar::category() == Mark_NonSpacing of a UTF-16 unit.
+bool konsole_isspace(char16_t c);
+bool konsole_isnonspacingmark(char16_t c);
+
 #endif

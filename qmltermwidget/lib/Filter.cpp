@@ -21,56 +21,34 @@
 #include "Filter.h"
 
 // System
+#include <algorithm>
 #include <iostream>
 
-// Qt
-#include <QAction>
-#include <QApplication>
-#include <QtAlgorithms>
-#include <QClipboard>
-#include <QString>
-#include <QTextStream>
-#include <QSharedData>
-#include <QFile>
-#include <QDesktopServices>
-#include <QUrl>
-
-// KDE
-//#include <KLocale>
-//#include <KRun>
+#include "base/strings.h"
 
 // Konsole
 #include "TerminalCharacterDecoder.h"
 #include "konsole_wcwidth.h"
 
 using namespace Konsole;
+namespace strings = cutefish::base::strings;
 
 FilterChain::~FilterChain()
 {
-    QMutableListIterator<Filter*> iter(*this);
-
-    while ( iter.hasNext() )
-    {
-        Filter* filter = iter.next();
-        iter.remove();
+    for (Filter* filter : *this)
         delete filter;
-    }
+    std::vector<Filter*>::clear();
 }
 
-RegExpFilter* FilterChain::getRegExpFilter(const QString& name) const
+RegExpFilter* FilterChain::getRegExpFilter() const
 {
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
+    for (Filter* filter : *this)
     {
-        Filter* filter = iter.next();
-        if (auto f = qobject_cast<RegExpFilter*>(filter))
+        if (auto f = dynamic_cast<RegExpFilter*>(filter))
         {
-            if (qobject_cast<UrlFilter*>(filter) == nullptr)
+            if (dynamic_cast<UrlFilter*>(filter) == nullptr)
             {
-                if (name.isEmpty() || f->objectName() == name)
-                {
-                    return f;
-                }
+                return f;
             }
         }
     }
@@ -79,44 +57,39 @@ RegExpFilter* FilterChain::getRegExpFilter(const QString& name) const
 
 void FilterChain::addFilter(Filter* filter)
 {
-    append(filter);
+    push_back(filter);
 }
 void FilterChain::removeFilter(Filter* filter)
 {
-    removeAll(filter);
+    std::erase(*this, filter);
 }
 bool FilterChain::containsFilter(Filter* filter)
 {
-    return contains(filter);
+    return std::find(begin(), end(), filter) != end();
 }
 void FilterChain::reset()
 {
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
-        iter.next()->reset();
+    for (Filter* filter : *this)
+        filter->reset();
 }
-void FilterChain::setBuffer(const QString* buffer , const QList<int>* linePositions)
+void FilterChain::setBuffer(const std::u16string* buffer , const std::vector<int>* linePositions)
 {
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
-        iter.next()->setBuffer(buffer,linePositions);
+    for (Filter* filter : *this)
+        filter->setBuffer(buffer,linePositions);
 }
 void FilterChain::process()
 {
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
-        iter.next()->process();
+    for (Filter* filter : *this)
+        filter->process();
 }
 void FilterChain::clear()
 {
-    QList<Filter*>::clear();
+    std::vector<Filter*>::clear();
 }
 Filter::HotSpot* FilterChain::hotSpotAt(int line , int column) const
 {
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
+    for (Filter* filter : *this)
     {
-        Filter* filter = iter.next();
         Filter::HotSpot* spot = filter->hotSpotAt(line,column);
         if ( spot != nullptr )
         {
@@ -127,18 +100,16 @@ Filter::HotSpot* FilterChain::hotSpotAt(int line , int column) const
     return nullptr;
 }
 
-QList<Filter::HotSpot*> FilterChain::hotSpots() const
+std::vector<Filter::HotSpot*> FilterChain::hotSpots() const
 {
-    QList<Filter::HotSpot*> list;
-    QListIterator<Filter*> iter(*this);
-    while (iter.hasNext())
+    std::vector<Filter::HotSpot*> list;
+    for (Filter* filter : *this)
     {
-        Filter* filter = iter.next();
-        list << filter->hotSpots();
+        const std::vector<Filter::HotSpot*> spots = filter->hotSpots();
+        list.insert(list.end(), spots.begin(), spots.end());
     }
     return list;
 }
-//QList<Filter::HotSpot*> FilterChain::hotSpotsAtLine(int line) const;
 
 TerminalImageFilterChain::TerminalImageFilterChain()
 : _buffer(nullptr)
@@ -152,7 +123,7 @@ TerminalImageFilterChain::~TerminalImageFilterChain()
     delete _linePositions;
 }
 
-void TerminalImageFilterChain::setImage(const Character* const image , int lines , int columns, const QVector<LineProperty>& lineProperties)
+void TerminalImageFilterChain::setImage(const Character* const image , int lines , int columns, const std::vector<LineProperty>& lineProperties)
 {
     if (empty())
         return;
@@ -166,8 +137,8 @@ void TerminalImageFilterChain::setImage(const Character* const image , int lines
     decoder.setTrailingWhitespace(true);
 
     // setup new shared buffers for the filters to process on
-    QString* newBuffer = new QString();
-    QList<int>* newLinePositions = new QList<int>();
+    std::u16string* newBuffer = new std::u16string();
+    std::vector<int>* newLinePositions = new std::vector<int>();
     setBuffer( newBuffer , newLinePositions );
 
     // free the old buffers
@@ -177,12 +148,11 @@ void TerminalImageFilterChain::setImage(const Character* const image , int lines
     _buffer = newBuffer;
     _linePositions = newLinePositions;
 
-    QTextStream lineStream(_buffer);
-    decoder.begin(&lineStream);
+    decoder.begin(_buffer);
 
     for (int i=0 ; i < lines ; i++)
     {
-        _linePositions->append(_buffer->length());
+        _linePositions->push_back(int(_buffer->length()));
         decoder.decodeLine(image + i*columns,columns,LINE_DEFAULT);
 
         // pretend that each line ends with a newline character.
@@ -195,8 +165,9 @@ void TerminalImageFilterChain::setImage(const Character* const image , int lines
         // TODO - Use the "line wrapped" attribute associated with lines in a
         // terminal image to avoid adding this imaginary character for wrapped
         // lines
-        if ( !(lineProperties.value(i,LINE_DEFAULT) & LINE_WRAPPED) )
-            lineStream << QLatin1Char('\n');
+        const LineProperty property = i < int(lineProperties.size()) ? lineProperties[i] : LineProperty(LINE_DEFAULT);
+        if ( !(property & LINE_WRAPPED) )
+            _buffer->push_back(u'\n');
     }
     decoder.end();
 }
@@ -209,17 +180,19 @@ _buffer(nullptr)
 
 Filter::~Filter()
 {
-    qDeleteAll(_hotspotList);
+    for (HotSpot* spot : _hotspotList)
+        delete spot;
     _hotspotList.clear();
 }
 void Filter::reset()
 {
-    qDeleteAll(_hotspotList);
+    for (HotSpot* spot : _hotspotList)
+        delete spot;
     _hotspots.clear();
     _hotspotList.clear();
 }
 
-void Filter::setBuffer(const QString* buffer , const QList<int>* linePositions)
+void Filter::setBuffer(const std::u16string* buffer , const std::vector<int>* linePositions)
 {
     _buffer = buffer;
     _linePositions = linePositions;
@@ -227,36 +200,47 @@ void Filter::setBuffer(const QString* buffer , const QList<int>* linePositions)
 
 void Filter::getLineColumn(int position , int& startLine , int& startColumn)
 {
-    Q_ASSERT( _linePositions );
-    Q_ASSERT( _buffer );
+    assert( _linePositions );
+    assert( _buffer );
 
 
-    for (int i = 0 ; i < _linePositions->count() ; i++)
+    for (int i = 0 ; i < int(_linePositions->size()) ; i++)
     {
         int nextLine = 0;
 
-        if ( i == _linePositions->count()-1 )
-            nextLine = _buffer->length() + 1;
+        if ( i == int(_linePositions->size())-1 )
+            nextLine = int(_buffer->length()) + 1;
         else
-            nextLine = _linePositions->value(i+1);
+            nextLine = (*_linePositions)[i+1];
 
-        if ( _linePositions->value(i) <= position && position < nextLine )
+        if ( (*_linePositions)[i] <= position && position < nextLine )
         {
             startLine = i;
-            startColumn = string_width(buffer()->mid(_linePositions->value(i),position - _linePositions->value(i)).toStdWString());
+            // QString::toStdWString(): UTF-16 to code points, a lone surrogate kept.
+            const std::u16string part = buffer()->substr(size_t((*_linePositions)[i]),
+                                                         size_t(position - (*_linePositions)[i]));
+            std::wstring wide;
+            for (size_t unit = 0; unit < part.size(); ++unit)
+            {
+                const char16_t current = part[unit];
+                if ((current & 0xfc00) == 0xd800 && unit + 1 < part.size() && (part[unit + 1] & 0xfc00) == 0xdc00)
+                {
+                    wide.push_back(wchar_t((char32_t(current) << 10) + part[unit + 1] - 0x35fdc00));
+                    ++unit;
+                }
+                else
+                {
+                    wide.push_back(wchar_t(current));
+                }
+            }
+            startColumn = string_width(wide);
             return;
         }
     }
 }
 
 
-/*void Filter::addLine(const QString& text)
-{
-    _linePositions << _buffer.length();
-    _buffer.append(text);
-}*/
-
-const QString* Filter::buffer()
+const std::u16string* Filter::buffer()
 {
     return _buffer;
 }
@@ -265,30 +249,29 @@ Filter::HotSpot::~HotSpot()
 }
 void Filter::addHotSpot(HotSpot* spot)
 {
-    _hotspotList << spot;
+    _hotspotList.push_back(spot);
 
     for (int line = spot->startLine() ; line <= spot->endLine() ; line++)
     {
-        _hotspots.insert(line,spot);
+        _hotspots[line].push_back(spot);
     }
 }
-QList<Filter::HotSpot*> Filter::hotSpots() const
+std::vector<Filter::HotSpot*> Filter::hotSpots() const
 {
     return _hotspotList;
 }
-QList<Filter::HotSpot*> Filter::hotSpotsAtLine(int line) const
+std::vector<Filter::HotSpot*> Filter::hotSpotsAtLine(int line) const
 {
-    return _hotspots.values(line);
+    auto found = _hotspots.find(line);
+    if (found == _hotspots.end())
+        return {};
+    return std::vector<HotSpot*>(found->second.rbegin(), found->second.rend());
 }
 
 Filter::HotSpot* Filter::hotSpotAt(int line , int column) const
 {
-    QListIterator<HotSpot*> spotIter(_hotspots.values(line));
-
-    while (spotIter.hasNext())
+    for (HotSpot* spot : hotSpotsAtLine(line))
     {
-        HotSpot* spot = spotIter.next();
-
         if ( spot->startLine() == line && spot->startColumn() > column )
             continue;
         if ( spot->endLine() == line && spot->endColumn() < column )
@@ -307,10 +290,6 @@ Filter::HotSpot::HotSpot(int startLine , int startColumn , int endLine , int end
     , _endColumn(endColumn)
     , _type(NotSpecified)
 {
-}
-QList<QAction*> Filter::HotSpot::actions()
-{
-    return QList<QAction*>();
 }
 int Filter::HotSpot::startLine() const
 {
@@ -347,62 +326,57 @@ RegExpFilter::HotSpot::HotSpot(int startLine,int startColumn,int endLine,int end
     setType(Marker);
 }
 
-void RegExpFilter::HotSpot::activate(const QString&)
+void RegExpFilter::HotSpot::activate(const std::string&)
 {
 }
 
-void RegExpFilter::HotSpot::setCapturedTexts(const QStringList& texts)
+void RegExpFilter::HotSpot::setCapturedTexts(const std::vector<std::u16string>& texts)
 {
     _capturedTexts = texts;
 }
-QStringList RegExpFilter::HotSpot::capturedTexts() const
+std::vector<std::u16string> RegExpFilter::HotSpot::capturedTexts() const
 {
     return _capturedTexts;
 }
 
-void RegExpFilter::setRegExp(const QRegularExpression& regExp)
+void RegExpFilter::setRegExp(const RegExp& regExp)
 {
     _searchText = regExp;
 }
-QRegularExpression RegExpFilter::regExp() const
+RegExp RegExpFilter::regExp() const
 {
     return _searchText;
 }
-/*void RegExpFilter::reset(int)
-{
-    _buffer = QString();
-}*/
+
 void RegExpFilter::process()
 {
-    const QString* text = buffer();
+    const std::u16string* text = buffer();
 
-    Q_ASSERT( text );
+    assert( text );
 
     // ignore any regular expressions which match an empty string.
     // otherwise the while loop below will run indefinitely
-    static const QString emptyString;
-    auto match = _searchText.match(emptyString, 0,
-        QRegularExpression::NormalMatch, QRegularExpression::AnchorAtOffsetMatchOption);
-    if (match.hasMatch())
+    static const std::u16string emptyString;
+    auto match = _searchText.match(emptyString, 0, true);
+    if (match.hasMatch)
     {
         return;
     }
 
     match = _searchText.match(*text);
-    while (match.hasMatch()) {
+    while (match.hasMatch) {
         int startLine = 0;
         int endLine = 0;
         int startColumn = 0;
         int endColumn = 0;
 
-        QStringList captureList;
+        std::vector<std::u16string> captureList;
         for (int i = 0; i <= match.lastCapturedIndex(); i++) {
-            QString text = match.captured(i);
-            captureList.append(text);
+            captureList.push_back(match.captured(*text, i));
         }
 
-        getLineColumn(match.capturedStart(), startLine, startColumn);
-        getLineColumn(match.capturedEnd(), endLine, endColumn);
+        getLineColumn(int(match.capturedStart()), startLine, startColumn);
+        getLineColumn(int(match.capturedEnd()), endLine, endColumn);
 
         RegExpFilter::HotSpot* spot = newHotSpot(startLine, startColumn, endLine, endColumn);
         spot->setCapturedTexts(captureList);
@@ -427,75 +401,81 @@ RegExpFilter::HotSpot* RegExpFilter::newHotSpot(int startLine,int startColumn,
 RegExpFilter::HotSpot* UrlFilter::newHotSpot(int startLine,int startColumn,int endLine,
                                                     int endColumn)
 {
-    HotSpot *spot = new UrlFilter::HotSpot(startLine,startColumn,
+    return new UrlFilter::HotSpot(startLine,startColumn,
                                                endLine,endColumn);
-    connect(spot->getUrlObject(), &FilterObject::activated, this, &UrlFilter::activated);
-    return spot;
 }
-
 UrlFilter::HotSpot::HotSpot(int startLine,int startColumn,int endLine,int endColumn)
 : RegExpFilter::HotSpot(startLine,startColumn,endLine,endColumn)
-, _urlObject(new FilterObject(this))
 {
     setType(Link);
 }
 
 UrlFilter::HotSpot::UrlType UrlFilter::HotSpot::urlType() const
 {
-    QString url = capturedTexts().constFirst();
+    std::u16string url = capturedTexts().front();
 
-    if ( FullUrlRegExp.match(url).hasMatch() )
+    if ( FullUrlRegExp.match(url).hasMatch )
         return StandardUrl;
-    else if ( EmailAddressRegExp.match(url).hasMatch() )
+    else if ( EmailAddressRegExp.match(url).hasMatch )
         return Email;
     else
         return Unknown;
 }
 
-void UrlFilter::HotSpot::activate(const QString& actionName)
+void UrlFilter::HotSpot::activate(const std::string&)
 {
-    QString url = capturedTexts().constFirst();
-
-    const UrlType kind = urlType();
-
-    if ( actionName == QLatin1String("copy-action") )
-    {
-        QApplication::clipboard()->setText(url);
-        return;
-    }
-
-    if ( actionName.isEmpty() || actionName == QLatin1String("open-action") || actionName == QLatin1String("click-action") )
-    {
-        if ( kind == StandardUrl || kind == Email )
-            _urlObject->emitActivated(this->url(), actionName != QLatin1String("click-action"));
-    }
 }
 
-QUrl UrlFilter::HotSpot::url() const
+// QUrl's normalisation of a link before toString(): the scheme and the host
+// in lower case.
+static std::string normalizedUrl(const std::string& url)
 {
-    QString url = capturedTexts().constFirst();
+    const size_t colon = url.find(':');
+    if (colon == std::string::npos)
+        return url;
 
+    std::string result = strings::toAsciiLower(url.substr(0, colon)) + url.substr(colon);
+    if (result.compare(colon, 3, "://") != 0)
+        return result;
+
+    const size_t authority = colon + 3;
+    size_t end = result.find_first_of("/?#", authority);
+    if (end == std::string::npos)
+        end = result.size();
+    size_t host = result.rfind('@', end);
+    host = host == std::string::npos || host < authority ? authority : host + 1;
+    size_t hostEnd = result.find(':', host);
+    if (hostEnd == std::string::npos || hostEnd > end)
+        hostEnd = end;
+    for (size_t i = host; i < hostEnd; ++i)
+        result[i] = strings::toAsciiLower(result[i]);
+    return result;
+}
+
+std::string UrlFilter::HotSpot::url() const
+{
+    std::u16string url = capturedTexts().front();
     const UrlType kind = urlType();
 
     if ( kind == StandardUrl )
     {
         // if the URL path does not include the protocol ( eg. "www.kde.org" ) then
         // prepend http:// ( eg. "www.kde.org" --> "http://www.kde.org" )
-        if (!url.contains(QLatin1String("://")))
+        if (url.find(u"://") == std::u16string::npos)
         {
-            url.prepend(QLatin1String("http://"));
+            url.insert(0, u"http://");
         }
     }
     else if ( kind == Email )
     {
-        url.prepend(QLatin1String("mailto:"));
+        url.insert(0, u"mailto:");
     }
     else
     {
-        return QUrl();
+        return std::string();
     }
 
-    return QUrl(url, QUrl::StrictMode);
+    return normalizedUrl(strings::utf16ToUtf8(url));
 }
 
 // Note:  Altering these regular expressions can have a major effect on the performance of the filters
@@ -506,14 +486,14 @@ QUrl UrlFilter::HotSpot::url() const
 //regexp matches:
 // full url:
 // protocolname:// or www. followed by anything other than whitespaces, <, >, ' or ", and ends before whitespaces, <, >, ', ", ], !, comma and dot
-const QRegularExpression UrlFilter::FullUrlRegExp(QLatin1String("(www\\.(?!\\.)|[a-z][a-z0-9+.-]*://)[^\\s<>'\"]+[^!,\\.\\s<>'\"\\]]"));
+const RegExp UrlFilter::FullUrlRegExp(u"(www\\.(?!\\.)|[a-z][a-z0-9+.-]*://)[^\\s<>'\"]+[^!,\\.\\s<>'\"\\]]");
 // email address:
 // [word chars, dots or dashes]@[word chars, dots or dashes].[word chars]
-const QRegularExpression UrlFilter::EmailAddressRegExp(QLatin1String("\\b(\\w|\\.|-)+@(\\w|\\.|-)+\\.\\w+\\b"));
+const RegExp UrlFilter::EmailAddressRegExp(u"\\b(\\w|\\.|-)+@(\\w|\\.|-)+\\.\\w+\\b");
 
 // matches full url or email address
-const QRegularExpression UrlFilter::CompleteUrlRegExp(QLatin1Char('(')+FullUrlRegExp.pattern()+QLatin1Char('|')+
-                                            EmailAddressRegExp.pattern()+QLatin1Char(')'));
+const RegExp UrlFilter::CompleteUrlRegExp(u'(' + FullUrlRegExp.pattern() + u'|' +
+                                            EmailAddressRegExp.pattern() + u')');
 
 UrlFilter::UrlFilter()
 {
@@ -522,59 +502,4 @@ UrlFilter::UrlFilter()
 
 UrlFilter::HotSpot::~HotSpot()
 {
-    delete _urlObject;
 }
-
-void FilterObject::emitActivated(const QUrl& url, bool fromContextMenu)
-{
-    emit activated(url, fromContextMenu);
-}
-
-void FilterObject::activate()
-{
-    _filter->activate(sender()->objectName());
-}
-
-FilterObject* UrlFilter::HotSpot::getUrlObject() const
-{
-    return _urlObject;
-}
-
-QList<QAction*> UrlFilter::HotSpot::actions()
-{
-    QList<QAction*> list;
-
-    const UrlType kind = urlType();
-
-    QAction* openAction = new QAction(_urlObject);
-    QAction* copyAction = new QAction(_urlObject);;
-
-    Q_ASSERT( kind == StandardUrl || kind == Email );
-
-    if ( kind == StandardUrl )
-    {
-        openAction->setText(QObject::tr("Open Link"));
-        copyAction->setText(QObject::tr("Copy Link Address"));
-    }
-    else if ( kind == Email )
-    {
-        openAction->setText(QObject::tr("Send Email To..."));
-        copyAction->setText(QObject::tr("Copy Email Address"));
-    }
-
-    // object names are set here so that the hotspot performs the
-    // correct action when activated() is called with the triggered
-    // action passed as a parameter.
-    openAction->setObjectName( QLatin1String("open-action" ));
-    copyAction->setObjectName( QLatin1String("copy-action" ));
-
-    QObject::connect( openAction , &QAction::triggered , _urlObject , &FilterObject::activate );
-    QObject::connect( copyAction , &QAction::triggered , _urlObject , &FilterObject::activate );
-
-    list << openAction;
-    list << copyAction;
-
-    return list;
-}
-
-//#include "Filter.moc"

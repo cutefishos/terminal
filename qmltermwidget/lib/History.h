@@ -22,10 +22,11 @@
 #define TEHISTORY_H
 
 // Qt
-#include <QBitRef>
-#include <QHash>
-#include <QVector>
-#include <QTemporaryFile>
+#include <cassert>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // KDE
 //#include <ktemporaryfile.h>
@@ -66,7 +67,6 @@ public:
 private:
   int  ion;
   int  length;
-  QTemporaryFile tmpFile;
 
   //pointer to start of mmap'ed file data, or 0 if the file is not mmap'ed
   char* fileMap;
@@ -110,9 +110,9 @@ public:
   virtual void addCells(const Character a[], int count) = 0;
   // convenience method - this is virtual so that subclasses can take advantage
   // of QVector's implicit copying
-  virtual void addCellsVector(const QVector<Character>& cells)
+  virtual void addCellsVector(const std::vector<Character>& cells)
   {
-    addCells(cells.data(),cells.size());
+    addCells(cells.data(),int(cells.size()));
   }
 
   virtual void addLine(bool previousWrapped=false) = 0;
@@ -138,7 +138,7 @@ protected:
 class HistoryScrollFile : public HistoryScroll
 {
 public:
-  HistoryScrollFile(const QString &logFileName);
+  HistoryScrollFile(const std::string &logFileName);
   ~HistoryScrollFile() override;
 
   int  getLines() const override;
@@ -152,7 +152,7 @@ public:
 private:
   int startOfLine(int lineno) const;
 
-  QString m_logFileName;
+  std::string m_logFileName;
   mutable HistoryFile index; // lines Row(int)
   mutable HistoryFile cells; // text  Row(Character)
   mutable HistoryFile lineflags; // flags Row(unsigned char)
@@ -165,7 +165,7 @@ private:
 class HistoryScrollBuffer : public HistoryScroll
 {
 public:
-  typedef QVector<Character> HistoryLine;
+  typedef std::vector<Character> HistoryLine;
 
   HistoryScrollBuffer(unsigned int maxNbLines = 1000);
   ~HistoryScrollBuffer() override;
@@ -176,7 +176,7 @@ public:
   bool isWrappedLine(int lineno) const override;
 
   void addCells(const Character a[], int count) override;
-  void addCellsVector(const QVector<Character>& cells) override;
+  void addCellsVector(const std::vector<Character>& cells) override;
   void addLine(bool previousWrapped=false) override;
 
   void setMaxNbLines(unsigned int nbLines);
@@ -187,7 +187,7 @@ private:
   int bufferIndex(int lineNumber) const;
 
   HistoryLine* _historyBuffer;
-  QBitArray _wrappedLine;
+  std::vector<bool> _wrappedLine;
   int _maxLineCount;
   int _usedLines;
   int _head;
@@ -209,7 +209,7 @@ public:
   virtual bool isWrappedLine(int lineno);
 
   virtual void addCells(const Character a[], int count);
-  virtual void addCells(const QVector<Character>& cells);
+  virtual void addCells(const std::vector<Character>& cells);
   virtual void addLine(bool previousWrapped=false);
 
 };*/
@@ -255,7 +255,7 @@ public:
 
 protected:
   mutable BlockArray m_blockArray;
-  QHash<int,size_t> m_lineLengths;
+  std::unordered_map<int,size_t> m_lineLengths;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -263,7 +263,7 @@ protected:
 // This implementation uses a list of fixed-sized blocks
 // where history lines are allocated in (avoids heap fragmentation)
 //////////////////////////////////////////////////////////////////////
-typedef QVector<Character> TextLine;
+typedef std::vector<Character> TextLine;
 
 class CharacterFormat
 {
@@ -283,8 +283,8 @@ public:
   }
 
   CharacterColor fgColor, bgColor;
-  quint16 startPos;
-  quint8 rendition;
+  uint16_t startPos;
+  uint8_t rendition;
 };
 
 class CompactHistoryBlock
@@ -293,9 +293,9 @@ public:
 
   CompactHistoryBlock(){
     blockLength = 4096*64; // 256kb
-    head = (quint8*) mmap(nullptr, blockLength, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
-    //head = (quint8*) malloc(blockLength);
-    Q_ASSERT(head != MAP_FAILED);
+    head = (uint8_t*) mmap(nullptr, blockLength, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
+    //head = (uint8_t*) malloc(blockLength);
+    assert(head != MAP_FAILED);
     tail = blockStart = head;
     allocCount=0;
   }
@@ -314,9 +314,9 @@ public:
 
 private:
   size_t blockLength;
-  quint8* head;
-  quint8* tail;
-  quint8* blockStart;
+  uint8_t* head;
+  uint8_t* tail;
+  uint8_t* blockStart;
   int allocCount;
 };
 
@@ -327,9 +327,9 @@ public:
 
   void *allocate( size_t size );
   void deallocate(void *);
-  int length() {return list.size();}
+  int length() {return int(list.size());}
 private:
-  QList<CompactHistoryBlock*> list;
+  std::vector<CompactHistoryBlock*> list;
 };
 
 class CompactHistoryLine
@@ -351,15 +351,15 @@ public:
 protected:
   CompactHistoryBlockList& blockList;
   CharacterFormat* formatArray;
-  quint16 length;
-  quint16* text;
-  quint16 formatLength;
+  uint16_t length;
+  uint16_t* text;
+  uint16_t formatLength;
   bool wrapped;
 };
 
 class CompactHistoryScroll : public HistoryScroll
 {
-  typedef QList<CompactHistoryLine*> HistoryArray;
+  typedef std::vector<CompactHistoryLine*> HistoryArray;
 
 public:
   CompactHistoryScroll(unsigned int maxNbLines = 1000);
@@ -442,16 +442,16 @@ protected:
 class HistoryTypeFile : public HistoryType
 {
 public:
-  HistoryTypeFile(const QString& fileName=QString());
+  HistoryTypeFile(const std::string& fileName=std::string());
 
   bool isEnabled() const override;
-  virtual const QString& getFileName() const;
+  virtual const std::string& getFileName() const;
   int maximumLineCount() const override;
 
   HistoryScroll* scroll(HistoryScroll *) const override;
 
 protected:
-  QString m_fileName;
+  std::string m_fileName;
 };
 
 

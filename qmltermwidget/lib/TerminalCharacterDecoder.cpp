@@ -25,8 +25,9 @@
 // stdlib
 #include <cwctype>
 
-// Qt
-#include <QTextStream>
+#include <cstdio>
+
+#include "tools.h"
 
 // KDE
 //#include <kdebug.h>
@@ -37,6 +38,25 @@
 #include <cwctype>
 
 using namespace Konsole;
+
+void TerminalCharacterDecoder::appendWide(std::u16string& output, const std::wstring& text)
+{
+    // A byte order mark in front is dropped, as Qt's UTF-32 decoder drops it.
+    const size_t first = !text.empty() && char32_t(text[0]) == 0xfeff ? 1 : 0;
+    for (size_t i = first; i < text.size(); ++i)
+    {
+        const char32_t ucs4 = char32_t(text[i]);
+        if (ucs4 < 0x10000)
+        {
+            output.push_back(char16_t(ucs4));
+        }
+        else
+        {
+            output.push_back(char16_t((ucs4 >> 10) + 0xd7c0));
+            output.push_back(char16_t(ucs4 % 0x400 + 0xdc00));
+        }
+    }
+}
 PlainTextDecoder::PlainTextDecoder()
  : _output(nullptr)
  , _includeTrailingWhitespace(true)
@@ -52,10 +72,10 @@ bool PlainTextDecoder::trailingWhitespace() const
 {
     return _includeTrailingWhitespace;
 }
-void PlainTextDecoder::begin(QTextStream* output)
+void PlainTextDecoder::begin(std::u16string* output)
 {
    _output = output;
-   if (!_linePositions.isEmpty())
+   if (!_linePositions.empty())
        _linePositions.clear();
 }
 void PlainTextDecoder::end()
@@ -67,18 +87,18 @@ void PlainTextDecoder::setRecordLinePositions(bool record)
 {
     _recordLinePositions = record;
 }
-QList<int> PlainTextDecoder::linePositions() const
+std::vector<int> PlainTextDecoder::linePositions() const
 {
     return _linePositions;
 }
 void PlainTextDecoder::decodeLine(const Character* const characters, int count, LineProperty /*properties*/)
 {
-    Q_ASSERT( _output );
+    assert( _output );
 
-    if (_recordLinePositions && _output->string())
+    if (_recordLinePositions)
     {
-        int pos = _output->string()->size();
-        _linePositions << pos;
+        int pos = int(_output->size());
+        _linePositions.push_back(pos);
     }
 
     if (characters == nullptr)
@@ -125,7 +145,7 @@ void PlainTextDecoder::decodeLine(const Character* const characters, int count, 
                     str.push_back(chars[nchar]);
                 }
                 plainText += str;
-                i += qMax(1, string_width(str));
+                i += kMax(1, string_width(str));
             }
             else
             {
@@ -135,10 +155,18 @@ void PlainTextDecoder::decodeLine(const Character* const characters, int count, 
         else
         {
             plainText.push_back(characters[i].character);
-            i += qMax(1, konsole_wcwidth(characters[i].character));
+            i += kMax(1, konsole_wcwidth(characters[i].character));
         }
     }
-    *_output << QString::fromStdWString(plainText);
+    appendWide(*_output, plainText);
+}
+
+// QColor::name(): #rrggbb in lower case.
+static std::string colorName(const Color& color)
+{
+    char name[8];
+    std::snprintf(name, sizeof(name), "#%02x%02x%02x", color.r, color.g, color.b);
+    return name;
 }
 
 HTMLDecoder::HTMLDecoder() :
@@ -150,27 +178,27 @@ HTMLDecoder::HTMLDecoder() :
 
 }
 
-void HTMLDecoder::begin(QTextStream* output)
+void HTMLDecoder::begin(std::u16string* output)
 {
     _output = output;
 
     std::wstring text;
 
     //open monospace span
-    openSpan(text,QLatin1String("font-family:monospace"));
+    openSpan(text,"font-family:monospace");
 
-    *output << QString::fromStdWString(text);
+    appendWide(*output, text);
 }
 
 void HTMLDecoder::end()
 {
-    Q_ASSERT( _output );
+    assert( _output );
 
     std::wstring text;
 
     closeSpan(text);
 
-    *_output << QString::fromStdWString(text);
+    appendWide(*_output, text);
 
     _output = nullptr;
 
@@ -180,7 +208,7 @@ void HTMLDecoder::end()
 void HTMLDecoder::decodeLine(const Character* const characters, int count, LineProperty /*properties*/
                             )
 {
-    Q_ASSERT( _output );
+    assert( _output );
 
     std::wstring text;
 
@@ -201,7 +229,7 @@ void HTMLDecoder::decodeLine(const Character* const characters, int count, LineP
             _lastBackColor = characters[i].backgroundColor;
 
             //build up style string
-            QString style;
+            std::string style;
 
             bool useBold;
             ColorEntry::FontWeight weight = characters[i].fontWeight(_colorTable);
@@ -211,19 +239,19 @@ void HTMLDecoder::decodeLine(const Character* const characters, int count, LineP
                 useBold = weight == ColorEntry::Bold;
 
             if (useBold)
-                style.append(QLatin1String("font-weight:bold;"));
+                style.append("font-weight:bold;");
 
             if ( _lastRendition & RE_UNDERLINE )
-                    style.append(QLatin1String("font-decoration:underline;"));
+                    style.append("font-decoration:underline;");
 
             //colours - a colour table must have been defined first
             if ( _colorTable )
             {
-                style.append( QString::fromLatin1("color:%1;").arg(_lastForeColor.color(_colorTable).name() ) );
+                style.append( "color:" + colorName(_lastForeColor.color(_colorTable)) + ";" );
 
                 if (!characters[i].isTransparent(_colorTable))
                 {
-                    style.append( QString::fromLatin1("background-color:%1;").arg(_lastBackColor.color(_colorTable).name() ) );
+                    style.append( "background-color:" + colorName(_lastBackColor.color(_colorTable)) + ";" );
                 }
             }
 
@@ -292,11 +320,12 @@ void HTMLDecoder::decodeLine(const Character* const characters, int count, LineP
     //start new line
     text.append(L"<br>");
 
-    *_output << QString::fromStdWString(text);
+    appendWide(*_output, text);
 }
-void HTMLDecoder::openSpan(std::wstring& text , const QString& style)
+void HTMLDecoder::openSpan(std::wstring& text , const std::string& style)
 {
-    text.append( QString(QLatin1String("<span style=\"%1\">")).arg(style).toStdWString() );
+    const std::string span = "<span style=\"" + style + "\">";
+    text.append(span.begin(), span.end());
 }
 
 void HTMLDecoder::closeSpan(std::wstring& text)

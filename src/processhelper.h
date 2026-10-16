@@ -1,27 +1,21 @@
 // SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#ifndef PROCESSHELPER_H
-#define PROCESSHELPER_H
+#pragma once
 
-#include <QObject>
+#include <string>
 
-class ProcessHelper : public QObject
+namespace ProcessHelper
 {
-    Q_OBJECT
 
-public:
-    static ProcessHelper *self();
-    explicit ProcessHelper(QObject *parent = nullptr);
+// Opens a link or a file with the application the desktop has for it.
+bool openUrl(const std::string& url);
+// The file manager on a folder, or showing a file in its folder; neither waits.
+bool openFileManager(const std::string& path);
+bool showInFileManager(const std::string& path);
 
-    Q_INVOKABLE bool startDetached(const QString &program, const QStringList &arguments);
-    Q_INVOKABLE bool openUrl(const QString &url);
-    Q_INVOKABLE bool openFileManager(const QString &url);
-    Q_INVOKABLE bool showInFileManager(const QString &path);
+// The file or folder that selected text names, resolved against baseDir,
+// or an empty string when it does not name one.
+std::string existingPath(const std::string& text, const std::string& baseDir);
 
-    // The file or folder that selected text names, resolved against baseDir,
-    // or an empty string when it does not name one.
-    Q_INVOKABLE QString existingPath(const QString &text, const QString &baseDir) const;
-};
-
-#endif // PROCESSHELPER_H
+}

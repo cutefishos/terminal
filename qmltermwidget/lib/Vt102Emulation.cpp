@@ -22,7 +22,6 @@
 
 // Own
 #include "Vt102Emulation.h"
-#include "mac-vkcode.h"
 #include "tools.h"
 
 // Standard
@@ -31,28 +30,36 @@
 #include <cstring>
 #include <unistd.h>
 
-// Qt
-#include <QEvent>
-#include <QKeyEvent>
-#include <QDebug>
+#include <unicode/uchar.h>
+
+#include "base/strings.h"
 
 // Konsole
 #include "KeyboardTranslator.h"
 #include "Screen.h"
+#include "TerminalCharacterDecoder.h"
 
 
 using namespace Konsole;
+namespace strings = cutefish::base::strings;
+
+// assert for i in [0..31] : vt100extended(vt100_graphics[i]) == i.
+
+unsigned short Konsole::vt100_graphics[32] =
+{ // 0/8     1/9    2/10    3/11    4/12    5/13    6/14    7/15
+  0x0020, 0x25C6, 0x2592, 0x2409, 0x240c, 0x240d, 0x240a, 0x00b0,
+  0x00b1, 0x2424, 0x240b, 0x2518, 0x2510, 0x250c, 0x2514, 0x253c,
+  0xF800, 0xF801, 0x2500, 0xF803, 0xF804, 0x251c, 0x2524, 0x2534,
+  0x252c, 0x2502, 0x2264, 0x2265, 0x03C0, 0x2260, 0x00A3, 0x00b7
+};
 
 Vt102Emulation::Vt102Emulation()
     : Emulation(),
      prevCC(0),
-     _titleUpdateTimer(new QTimer(this)),
-     _reportFocusEvents(false),
-     _toUtf8(QStringEncoder::Utf8)
+     _reportFocusEvents(false)
 {
-  _titleUpdateTimer->setSingleShot(true);
-  QObject::connect(_titleUpdateTimer, &QTimer::timeout,
-          this, &Konsole::Vt102Emulation::updateTitle);
+  _titleUpdateTimer.setSingleShot(true);
+  _titleUpdateTimer.onTimeout = [this] { updateTitle(); };
 
   initTokenizer();
   reset();
@@ -191,7 +198,7 @@ void Vt102Emulation::addDigit(int digit)
 
 void Vt102Emulation::addArgument()
 {
-  argc = qMin(argc+1,MAXARGS-1);
+  argc = kMin(argc+1,MAXARGS-1);
   argv[argc] = 0;
 }
 
@@ -204,7 +211,7 @@ void Vt102Emulation::addSubArgument()
 void Vt102Emulation::addToCurrentToken(wchar_t cc)
 {
   tokenBuffer[tokenBufferPos] = cc;
-  tokenBufferPos = qMin(tokenBufferPos+1,MAX_TOKEN_LENGTH-1);
+  tokenBufferPos = kMin(tokenBufferPos+1,MAX_TOKEN_LENGTH-1);
 }
 
 // Character Class flags used while decoding
@@ -220,23 +227,23 @@ void Vt102Emulation::addToCurrentToken(wchar_t cc)
 void Vt102Emulation::initTokenizer()
 {
   int i;
-  quint8* s;
+  uint8_t* s;
   for(i = 0;i < 256; ++i)
     charClass[i] = 0;
   for(i = 0;i < 32; ++i)
     charClass[i] |= CTL;
   for(i = 32;i < 256; ++i)
     charClass[i] |= CHR;
-  for(s = (quint8*)"@ABCDEFGHILMPSTXZbcdfry"; *s; ++s)
+  for(s = (uint8_t*)"@ABCDEFGHILMPSTXZbcdfry"; *s; ++s)
     charClass[*s] |= CPN;
   // resize = \e[8;<row>;<col>t
-  for(s = (quint8*)"t"; *s; ++s)
+  for(s = (uint8_t*)"t"; *s; ++s)
     charClass[*s] |= CPS;
-  for(s = (quint8*)"0123456789"; *s; ++s)
+  for(s = (uint8_t*)"0123456789"; *s; ++s)
     charClass[*s] |= DIG;
-  for(s = (quint8*)"()+*%"; *s; ++s)
+  for(s = (uint8_t*)"()+*%"; *s; ++s)
     charClass[*s] |= SCS;
-  for(s = (quint8*)"()+*#[]%"; *s; ++s)
+  for(s = (uint8_t*)"()+*#[]%"; *s; ++s)
     charClass[*s] |= GRP;
 
   resetTokenizer();
@@ -455,24 +462,33 @@ void Vt102Emulation::processWindowAttributeChange()
   // copy from the first char after ';', and skipping the ending delimiter
   // 0x07 or 0x92. Note that as control characters in OSC text parts are
   // ignored, only the second char in ST ("\e\\") is appended to tokenBuffer.
-  QString newValue = QString::fromWCharArray(tokenBuffer + i + 1, tokenBufferPos-i-2);
+  // QString::fromWCharArray() with a negative size reads up to a null.
+  int valueLength = tokenBufferPos-i-2;
+  if (valueLength < 0)
+  {
+    valueLength = 0;
+    while (i + 1 + valueLength < MAX_TOKEN_LENGTH && tokenBuffer[i + 1 + valueLength])
+      ++valueLength;
+  }
+  std::u16string newValue16;
+  TerminalCharacterDecoder::appendWide(newValue16, std::wstring(tokenBuffer + i + 1, valueLength));
+  std::string newValue = strings::utf16ToUtf8(newValue16);
 
   // The code is whatever number the sequence carried; a stream of distinct
   // ones within the timer's 20 ms must not grow the map without bound.
-  if (_pendingTitleUpdates.size() >= 64 && !_pendingTitleUpdates.contains(attributeToChange))
+  if (_pendingTitleUpdates.size() >= 64 && !_pendingTitleUpdates.count(attributeToChange))
     updateTitle();
   _pendingTitleUpdates[attributeToChange] = newValue;
-  _titleUpdateTimer->start(20);
+  _titleUpdateTimer.start(std::chrono::milliseconds(20));
 }
 
 void Vt102Emulation::updateTitle()
 {
-    QListIterator<int> iter( _pendingTitleUpdates.keys() );
-    while (iter.hasNext()) {
-        int arg = iter.next();
-        emit titleChanged( arg , _pendingTitleUpdates[arg] );
-    }
+    const std::map<int,std::string> updates = std::move(_pendingTitleUpdates);
     _pendingTitleUpdates.clear();
+    for (const auto& update : updates) {
+        titleChanged( update.first , update.second );
+    }
 }
 
 // Interpreting Codes ---------------------------------------------------------
@@ -509,7 +525,7 @@ void Vt102Emulation::processToken(int token, wchar_t p, int q)
     case TY_CTL('D'      ) : /* EOT: ignored                      */ break;
     case TY_CTL('E'      ) :      reportAnswerBack     (          ); break; //VT100
     case TY_CTL('F'      ) : /* ACK: ignored                      */ break;
-    case TY_CTL('G'      ) : emit stateSet(NOTIFYBELL);
+    case TY_CTL('G'      ) : stateSet(NOTIFYBELL);
                                 break; //VT100
     case TY_CTL('H'      ) : _currentScreen->backspace            (          ); break; //VT100
     case TY_CTL('I'      ) : _currentScreen->tab                  (          ); break; //VT100
@@ -593,11 +609,11 @@ void Vt102Emulation::processToken(int token, wchar_t p, int q)
 
 // resize = \e[8;<row>;<col>t
     case TY_CSI_PS('t',   8) : setImageSize( p /*lines */, q /* columns */ );
-                               emit imageResizeRequest(QSize(q, p));
+                               imageResizeRequest(cutefish::base::Size(q, p));
                                break;
 
 // change tab text color : \e[28;<color>t  color: 0-16,777,215
-    case TY_CSI_PS('t',   28) : emit changeTabTextColorRequest      ( p        );          break;
+    case TY_CSI_PS('t',   28) : changeTabTextColorRequest      ( p        );          break;
 
     case TY_CSI_PS('K',   0) : _currentScreen->clearToEndOfLine     (          ); break;
     case TY_CSI_PS('K',   1) : _currentScreen->clearToBeginOfLine   (          ); break;
@@ -697,12 +713,12 @@ void Vt102Emulation::processToken(int token, wchar_t p, int q)
     case TY_CSI_PS('x',   1) :      reportTerminalParms  (         3); break; //VT100
 
     case TY_CSI_PS_SP('q',   0) : /* fall through */
-    case TY_CSI_PS_SP('q',   1) : emit cursorChanged(KeyboardCursorShape::BlockCursor,     true ); break;
-    case TY_CSI_PS_SP('q',   2) : emit cursorChanged(KeyboardCursorShape::BlockCursor,     false); break;
-    case TY_CSI_PS_SP('q',   3) : emit cursorChanged(KeyboardCursorShape::UnderlineCursor, true ); break;
-    case TY_CSI_PS_SP('q',   4) : emit cursorChanged(KeyboardCursorShape::UnderlineCursor, false); break;
-    case TY_CSI_PS_SP('q',   5) : emit cursorChanged(KeyboardCursorShape::IBeamCursor,     true ); break;
-    case TY_CSI_PS_SP('q',   6) : emit cursorChanged(KeyboardCursorShape::IBeamCursor,     false); break;
+    case TY_CSI_PS_SP('q',   1) : cursorChanged(KeyboardCursorShape::BlockCursor,     true ); break;
+    case TY_CSI_PS_SP('q',   2) : cursorChanged(KeyboardCursorShape::BlockCursor,     false); break;
+    case TY_CSI_PS_SP('q',   3) : cursorChanged(KeyboardCursorShape::UnderlineCursor, true ); break;
+    case TY_CSI_PS_SP('q',   4) : cursorChanged(KeyboardCursorShape::UnderlineCursor, false); break;
+    case TY_CSI_PS_SP('q',   5) : cursorChanged(KeyboardCursorShape::IBeamCursor,     true ); break;
+    case TY_CSI_PS_SP('q',   6) : cursorChanged(KeyboardCursorShape::IBeamCursor,     false); break;
 
     case TY_CSI_PN('@'      ) : _currentScreen->insertChars          (p         ); break;
     case TY_CSI_PN('A'      ) : _currentScreen->cursorUp             (p         ); break; //VT100
@@ -914,9 +930,9 @@ void Vt102Emulation::clearScreenAndSetColumns(int columnCount)
 void Vt102Emulation::sendString(const char* s , int length)
 {
   if ( length >= 0 )
-    emit sendData(s,length);
+    sendData(s,length);
   else
-    emit sendData(s,strlen(s));
+    sendData(s,strlen(s));
 }
 
 void Vt102Emulation::reportCursorPosition()
@@ -925,7 +941,7 @@ void Vt102Emulation::reportCursorPosition()
   char tmp[sz];
   const size_t r = snprintf(tmp, sz, "\033[%d;%dR",_currentScreen->getCursorY()+1,_currentScreen->getCursorX()+1);
   if (sz <= r) {
-    qWarning("Vt102Emulation::reportCursorPosition: Buffer too small\n");
+    CF_WARNING(qtermwidgetLogger) << "Vt102Emulation::reportCursorPosition: Buffer too small";
   }
   sendString(tmp);
 }
@@ -960,7 +976,7 @@ void Vt102Emulation::reportTerminalParms(int p)
   char tmp[sz];
   const size_t r = snprintf(tmp, sz, "\033[%d;1;1;112;112;1;0x",p); // not really true.
   if (sz <= r) {
-    qWarning("Vt102Emulation::reportTerminalParms: Buffer too small\n");
+    CF_WARNING(qtermwidgetLogger) << "Vt102Emulation::reportTerminalParms: Buffer too small";
   }
   sendString(tmp);
 }
@@ -991,11 +1007,11 @@ static constexpr int KittyStackDepth = 8;
 
 int Vt102Emulation::kittyKeyboardFlags() const
 {
-    const QVector<int> &stack = _kittyKeyboardFlags[_currentScreen == _screen[1]];
-    return stack.isEmpty() ? 0 : stack.last();
+    const std::vector<int> &stack = _kittyKeyboardFlags[_currentScreen == _screen[1]];
+    return stack.empty() ? 0 : stack.back();
 }
 
-QVector<int> &Vt102Emulation::kittyKeyboardStack()
+std::vector<int> &Vt102Emulation::kittyKeyboardStack()
 {
     return _kittyKeyboardFlags[_currentScreen == _screen[1]];
 }
@@ -1009,35 +1025,35 @@ void Vt102Emulation::reportKittyKeyboardFlags()
 
 void Vt102Emulation::pushKittyKeyboardFlags(int flags)
 {
-    QVector<int> &stack = kittyKeyboardStack();
-    if (stack.size() == KittyStackDepth)
-        stack.removeFirst();
-    stack.append(flags & KittyDisambiguate);
+    std::vector<int> &stack = kittyKeyboardStack();
+    if (int(stack.size()) == KittyStackDepth)
+        stack.erase(stack.begin());
+    stack.push_back(flags & KittyDisambiguate);
 }
 
 void Vt102Emulation::popKittyKeyboardFlags(int count)
 {
-    QVector<int> &stack = kittyKeyboardStack();
-    stack.resize(qMax(0, stack.size() - qMax(1, count)));
+    std::vector<int> &stack = kittyKeyboardStack();
+    stack.resize(kMax(0, int(stack.size()) - kMax(1, count)));
 }
 
 void Vt102Emulation::setKittyKeyboardFlags(int flags, int mode)
 {
-    QVector<int> &stack = kittyKeyboardStack();
-    if (stack.isEmpty())
-        stack.append(0);
+    std::vector<int> &stack = kittyKeyboardStack();
+    if (stack.empty())
+        stack.push_back(0);
 
     flags &= KittyDisambiguate;
     switch (mode) {
     case 0: // An omitted mode means 1.
     case 1:
-        stack.last() = flags;
+        stack.back() = flags;
         break;
     case 2:
-        stack.last() |= flags;
+        stack.back() |= flags;
         break;
     case 3:
-        stack.last() &= ~flags;
+        stack.back() &= ~flags;
         break;
     }
 }
@@ -1083,12 +1099,10 @@ void Vt102Emulation::sendMouseEvent( int cb, int cx, int cy , int eventType )
             // The xterm extension uses UTF-8 (up to 2 bytes) to encode
             // coordinate+32, no matter what the locale is. We could easily
             // convert manually, but QString can also do it for us.
-            QChar coords[2];
-            coords[0] = QChar(cx + 0x20);
-            coords[1] = QChar(cy + 0x20);
-            QString coordsStr = QString(coords, 2);
-            QByteArray utf8 = coordsStr.toUtf8();
-            snprintf(command, sizeof(command), "\033[M%c%s", cb + 0x20, utf8.constData());
+            std::string utf8;
+            strings::appendUtf8(utf8, char32_t(cx + 0x20));
+            strings::appendUtf8(utf8, char32_t(cy + 0x20));
+            snprintf(command, sizeof(command), "\033[M%c%s", cb + 0x20, utf8.c_str());
         }
     } else if (cx <= 223 && cy <= 223) {
         snprintf(command, sizeof(command), "\033[M%c%c%c", cb + 0x20, cx + 0x20, cy + 0x20);
@@ -1123,40 +1137,18 @@ void Vt102Emulation::focusGained(void)
         sendString("\033[I");
 }
 
-void Vt102Emulation::sendText( const QString& text )
+void Vt102Emulation::sendText( const std::string& text )
 {
-  if (!text.isEmpty())
+  if (!text.empty())
   {
-    QKeyEvent event(QEvent::KeyPress,
-                    0,
-                    Qt::NoModifier,
-                    text);
+    KeyEvent event;
+    event.key = 0;
+    event.modifiers = NoModifier;
+    event.text = text;
     sendKeyEvent(&event, false); // expose as a big fat keypress event
   }
 }
-QKeyEvent * Vt102Emulation::remapKeyModifiersForMac(QKeyEvent *event) {
-  Qt::KeyboardModifiers modifiers = event->modifiers();
 
-  QFlags<Qt::KeyboardModifier> isTheLabeledKeyCommandPressed = modifiers & Qt::ControlModifier;
-  QFlags<Qt::KeyboardModifier> isTheLabeledKeyControlPressed = modifiers & Qt::MetaModifier;
-  if (isTheLabeledKeyCommandPressed){
-    modifiers &= ~Qt::ControlModifier;
-    modifiers |= Qt::MetaModifier;
-  } else {
-    modifiers &= ~Qt::MetaModifier;
-  }
-
-  if (isTheLabeledKeyControlPressed) {
-    modifiers &= ~Qt::MetaModifier;
-    modifiers |= Qt::ControlModifier;
-  } else {
-    modifiers &= ~Qt::ControlModifier;
-  }
-
-  return new QKeyEvent(QEvent::None, event->key(), modifiers,
-                      event->nativeScanCode(), event->nativeVirtualKey(), event->nativeModifiers(),
-                      event->text(), event->isAutoRepeat(), event->count());
-}
 
 namespace {
 
@@ -1171,61 +1163,61 @@ struct KittyKey
 
 // Keys that type no text, as the protocol numbers them.
 static constexpr KittyKey kittyFunctionKeys[] = {
-    {Qt::Key_Escape, 27, 'u'},
-    {Qt::Key_Return, 13, 'u'},
-    {Qt::Key_Enter, 13, 'u'},
-    {Qt::Key_Tab, 9, 'u'},
-    {Qt::Key_Backtab, 9, 'u'},
-    {Qt::Key_Backspace, 127, 'u'},
-    {Qt::Key_Insert, 2, '~'},
-    {Qt::Key_Delete, 3, '~'},
-    {Qt::Key_Left, 1, 'D'},
-    {Qt::Key_Right, 1, 'C'},
-    {Qt::Key_Up, 1, 'A'},
-    {Qt::Key_Down, 1, 'B'},
-    {Qt::Key_PageUp, 5, '~'},
-    {Qt::Key_PageDown, 6, '~'},
-    {Qt::Key_Home, 1, 'H'},
-    {Qt::Key_End, 1, 'F'},
-    {Qt::Key_ScrollLock, 57359, 'u'},
-    {Qt::Key_Print, 57361, 'u'},
-    {Qt::Key_Pause, 57362, 'u'},
-    {Qt::Key_Menu, 57363, 'u'},
-    {Qt::Key_F1, 1, 'P'},
-    {Qt::Key_F2, 1, 'Q'},
-    {Qt::Key_F3, 13, '~'},
-    {Qt::Key_F4, 1, 'S'},
-    {Qt::Key_F5, 15, '~'},
-    {Qt::Key_F6, 17, '~'},
-    {Qt::Key_F7, 18, '~'},
-    {Qt::Key_F8, 19, '~'},
-    {Qt::Key_F9, 20, '~'},
-    {Qt::Key_F10, 21, '~'},
-    {Qt::Key_F11, 23, '~'},
-    {Qt::Key_F12, 24, '~'},
+    {Key_Escape, 27, 'u'},
+    {Key_Return, 13, 'u'},
+    {Key_Enter, 13, 'u'},
+    {Key_Tab, 9, 'u'},
+    {Key_Backtab, 9, 'u'},
+    {Key_Backspace, 127, 'u'},
+    {Key_Insert, 2, '~'},
+    {Key_Delete, 3, '~'},
+    {Key_Left, 1, 'D'},
+    {Key_Right, 1, 'C'},
+    {Key_Up, 1, 'A'},
+    {Key_Down, 1, 'B'},
+    {Key_PageUp, 5, '~'},
+    {Key_PageDown, 6, '~'},
+    {Key_Home, 1, 'H'},
+    {Key_End, 1, 'F'},
+    {Key_ScrollLock, 57359, 'u'},
+    {Key_Print, 57361, 'u'},
+    {Key_Pause, 57362, 'u'},
+    {Key_Menu, 57363, 'u'},
+    {Key_F1, 1, 'P'},
+    {Key_F2, 1, 'Q'},
+    {Key_F3, 13, '~'},
+    {Key_F4, 1, 'S'},
+    {Key_F5, 15, '~'},
+    {Key_F6, 17, '~'},
+    {Key_F7, 18, '~'},
+    {Key_F8, 19, '~'},
+    {Key_F9, 20, '~'},
+    {Key_F10, 21, '~'},
+    {Key_F11, 23, '~'},
+    {Key_F12, 24, '~'},
 };
 
 // The keypad has numbers of its own; its digits are 57399 to 57408.
 static constexpr KittyKey kittyKeypadKeys[] = {
-    {Qt::Key_Period, 57409, 'u'},
-    {Qt::Key_Slash, 57410, 'u'},
-    {Qt::Key_Asterisk, 57411, 'u'},
-    {Qt::Key_Minus, 57412, 'u'},
-    {Qt::Key_Plus, 57413, 'u'},
-    {Qt::Key_Enter, 57414, 'u'},
-    {Qt::Key_Equal, 57415, 'u'},
-    {Qt::Key_Comma, 57416, 'u'},
-    {Qt::Key_Left, 57417, 'u'},
-    {Qt::Key_Right, 57418, 'u'},
-    {Qt::Key_Up, 57419, 'u'},
-    {Qt::Key_Down, 57420, 'u'},
-    {Qt::Key_PageUp, 57421, 'u'},
-    {Qt::Key_PageDown, 57422, 'u'},
-    {Qt::Key_Home, 57423, 'u'},
-    {Qt::Key_End, 57424, 'u'},
-    {Qt::Key_Insert, 57425, 'u'},
-    {Qt::Key_Delete, 57426, 'u'},
-    {Qt::Key_Clear, 57427, 'u'},
+    {Key_Period, 57409, 'u'},
+    {Key_Slash, 57410, 'u'},
+    {Key_Asterisk, 57411, 'u'},
+    {Key_Minus, 57412, 'u'},
+    {Key_Plus, 57413, 'u'},
+    {Key_Enter, 57414, 'u'},
+    {Key_Equal, 57415, 'u'},
+    {Key_Comma, 57416, 'u'},
+    {Key_Left, 57417, 'u'},
+    {Key_Right, 57418, 'u'},
+    {Key_Up, 57419, 'u'},
+    {Key_Down, 57420, 'u'},
+    {Key_PageUp, 57421, 'u'},
+    {Key_PageDown, 57422, 'u'},
+    {Key_Home, 57423, 'u'},
+    {Key_End, 57424, 'u'},
+    {Key_Insert, 57425, 'u'},
+    {Key_Delete, 57426, 'u'},
+    {Key_Clear, 57427, 'u'},
 };
 
 template<size_t N>
@@ -1241,17 +1233,17 @@ static const KittyKey *findKittyKey(const KittyKey (&keys)[N], int key)
 static bool isModifierKey(int key)
 {
     switch (key) {
-    case Qt::Key_Shift:
-    case Qt::Key_Control:
-    case Qt::Key_Meta:
-    case Qt::Key_Alt:
-    case Qt::Key_AltGr:
-    case Qt::Key_Super_L:
-    case Qt::Key_Super_R:
-    case Qt::Key_Hyper_L:
-    case Qt::Key_Hyper_R:
-    case Qt::Key_CapsLock:
-    case Qt::Key_NumLock:
+    case Key_Shift:
+    case Key_Control:
+    case Key_Meta:
+    case Key_Alt:
+    case Key_AltGr:
+    case Key_Super_L:
+    case Key_Super_R:
+    case Key_Hyper_L:
+    case Key_Hyper_R:
+    case Key_CapsLock:
+    case Key_NumLock:
         return true;
     default:
         return false;
@@ -1259,122 +1251,118 @@ static bool isModifierKey(int key)
 }
 
 // The character of the key itself: the protocol wants the unshifted one.
-static uint kittyKeyNumber(const QKeyEvent *event)
+static uint kittyKeyNumber(const KeyEvent *event)
 {
-    const int key = event->key();
-    if (key >= Qt::Key_A && key <= Qt::Key_Z)
-        return key - Qt::Key_A + 'a';
+    const int key = event->key;
+    if (key >= Key_A && key <= Key_Z)
+        return key - Key_A + 'a';
 
     uint number = 0;
     // Below its special keys, Qt's key is the Unicode character.
-    if (key > 0 && key < Qt::Key_Escape) {
-        number = QChar::toLower(char32_t(key));
+    if (key > 0 && key < Key_Escape) {
+        number = uint(u_tolower(UChar32(key)));
     } else {
-        const QList<uint> text = event->text().toUcs4();
-        if (!text.isEmpty())
-            number = QChar::toLower(char32_t(text.first()));
+        const std::u32string text = strings::utf8ToUtf32(event->text);
+        if (!text.empty())
+            number = uint(u_tolower(UChar32(text.front())));
     }
 
     // Qt names the symbol Shift typed; this takes it back for the US layout.
     static const char shifted[] = "~!@#$%^&*()_+{}|:\"<>?";
     static const char unshifted[] = "`1234567890-=[]\\;',./";
-    if ((event->modifiers() & Qt::ShiftModifier) && number > 0 && number < 128) {
+    if ((event->modifiers & ShiftModifier) && number > 0 && number < 128) {
         if (const char *symbol = strchr(shifted, int(number)))
-            number = uchar(unshifted[symbol - shifted]);
+            number = (unsigned char)(unshifted[symbol - shifted]);
     }
 
     return number < 0x20 || number == 0x7f ? 0 : number;
 }
 
-static QByteArray kittySequence(int number, char final, int modifiers)
+static std::string kittySequence(int number, char final, int modifiers)
 {
-    QByteArray sequence("\033[");
+    std::string sequence("\033[");
     if (final == 'u' || final == '~')
-        sequence += QByteArray::number(number);
+        sequence += std::to_string(number);
     else if (modifiers)
         sequence += '1';
     if (modifiers)
-        sequence += ';' + QByteArray::number(modifiers + 1);
+        sequence += ';' + std::to_string(modifiers + 1);
     return sequence + final;
 }
 
-bool Vt102Emulation::sendKittyKeyEvent(QKeyEvent *event, KeyboardTranslator::States states)
+bool Vt102Emulation::sendKittyKeyEvent(KeyEvent *event, KeyboardTranslator::States states)
 {
-    const int key = event->key();
+    const int key = event->key;
     // Pasted and composed text comes without a key and goes out as it is.
     if (key == 0)
         return false;
     if (isModifierKey(key))
         return true;
 
-    const Qt::KeyboardModifiers qtModifiers = event->modifiers();
+    const uint32_t qtModifiers = event->modifiers;
 
     // Keys that act on the terminal itself, such as scrolling, keep doing so.
     if (_keyTranslator) {
         const KeyboardTranslator::Command command = _keyTranslator->findEntry(key, qtModifiers, states).command();
         if (command != KeyboardTranslator::NoCommand && !(command & KeyboardTranslator::EraseCommand)) {
-            Q_EMIT handleCommandFromKeyboard(command);
+            handleCommandFromKeyboard(KeyboardTranslator::Command(command));
             return true;
         }
     }
 
     int modifiers = 0;
-    if ((qtModifiers & Qt::ShiftModifier) || key == Qt::Key_Backtab)
+    if ((qtModifiers & ShiftModifier) || key == Key_Backtab)
         modifiers |= 1;
-    if (qtModifiers & Qt::AltModifier)
+    if (qtModifiers & AltModifier)
         modifiers |= 2;
-    if (qtModifiers & Qt::ControlModifier)
+    if (qtModifiers & ControlModifier)
         modifiers |= 4;
-    if (qtModifiers & Qt::MetaModifier)
+    if (qtModifiers & MetaModifier)
         modifiers |= 8;
-    const bool keypad = qtModifiers & Qt::KeypadModifier;
+    const bool keypad = qtModifiers & KeypadModifier;
 
-    const QString text = event->text();
-    const bool printable = !text.isEmpty() && std::none_of(text.cbegin(), text.cend(), [](QChar c) {
-        return c.unicode() < 0x20 || c.unicode() == 0x7f;
+    const std::string& text = event->text;
+    const bool printable = !text.empty() && std::none_of(text.cbegin(), text.cend(), [](char c) {
+        return (unsigned char)c < 0x20 || c == 0x7f;
     });
 
     const KittyKey *entry = keypad ? findKittyKey(kittyKeypadKeys, key) : nullptr;
     if (!entry)
         entry = findKittyKey(kittyFunctionKeys, key);
 
-    QByteArray sequence;
+    std::string sequence;
     // Enter, Tab and Backspace stay as they were, so a shell that a program
     // left in this mode still takes a typed reset.
-    if (!modifiers && !keypad && (key == Qt::Key_Return || key == Qt::Key_Enter)) {
+    if (!modifiers && !keypad && (key == Key_Return || key == Key_Enter)) {
         sequence = "\r";
-    } else if (!modifiers && key == Qt::Key_Tab) {
+    } else if (!modifiers && key == Key_Tab) {
         sequence = "\t";
-    } else if (!modifiers && key == Qt::Key_Backspace) {
+    } else if (!modifiers && key == Key_Backspace) {
         sequence = "\x7f";
     } else if (printable && !(modifiers & ~1)) {
         // Shift went into the text.
-        sequence = _toUtf8(text);
-    } else if (keypad && key >= Qt::Key_0 && key <= Qt::Key_9) {
-        sequence = kittySequence(57399 + key - Qt::Key_0, 'u', modifiers);
+        sequence = text;
+    } else if (keypad && key >= Key_0 && key <= Key_9) {
+        sequence = kittySequence(57399 + key - Key_0, 'u', modifiers);
     } else if (entry) {
         sequence = kittySequence(entry->number, entry->final, modifiers);
-    } else if (key >= Qt::Key_F13 && key <= Qt::Key_F35) {
-        sequence = kittySequence(57376 + key - Qt::Key_F13, 'u', modifiers);
+    } else if (key >= Key_F13 && key <= Key_F35) {
+        sequence = kittySequence(57376 + key - Key_F13, 'u', modifiers);
     } else if (const uint number = kittyKeyNumber(event)) {
         sequence = kittySequence(number, 'u', modifiers);
     } else {
         return false;
     }
 
-    Q_EMIT outputFromKeypressEvent();
-    Q_EMIT sendData(sequence.constData(), sequence.length());
+    outputFromKeypressEvent();
+    sendData(sequence.c_str(), int(sequence.length()));
     return true;
 }
 
-void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
+void Vt102Emulation::sendKeyEvent(KeyEvent* origEvent, bool fromPaste)
 {
-#if defined(Q_OS_MAC)
-    QScopedPointer<QKeyEvent> event(remapKeyModifiersForMac(origEvent));
-#else
-    QKeyEvent *event = origEvent;
-#endif
-    Qt::KeyboardModifiers modifiers = event->modifiers();
+    KeyEvent *event = origEvent;
+    uint32_t modifiers = event->modifiers;
     KeyboardTranslator::States states = KeyboardTranslator::NoState;
 
     // get current states
@@ -1382,7 +1370,7 @@ void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
     if (getMode(MODE_Ansi)     ) states |= KeyboardTranslator::AnsiState;
     if (getMode(MODE_AppCuKeys)) states |= KeyboardTranslator::CursorKeysState;
     if (getMode(MODE_AppScreen)) states |= KeyboardTranslator::AlternateScreenState;
-    if (getMode(MODE_AppKeyPad) && (modifiers & Qt::KeypadModifier))
+    if (getMode(MODE_AppKeyPad) && (modifiers & KeypadModifier))
         states |= KeyboardTranslator::ApplicationKeypadState;
 
     if (!fromPaste && kittyKeyboardFlags() && sendKittyKeyEvent(event, states))
@@ -1391,13 +1379,13 @@ void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
     // check flow control state
     if (modifiers & KeyboardTranslator::CTRL_MOD)
     {
-        switch (event->key()) {
-        case Qt::Key_S:
-            emit flowControlKeyPressed(true);
+        switch (event->key) {
+        case Key_S:
+            flowControlKeyPressed(true);
             break;
-        case Qt::Key_Q:
-        case Qt::Key_C: // cancel flow control
-            emit flowControlKeyPressed(false);
+        case Key_Q:
+        case Key_C: // cancel flow control
+            flowControlKeyPressed(false);
             break;
         }
     }
@@ -1406,31 +1394,31 @@ void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
     if ( _keyTranslator )
     {
     KeyboardTranslator::Entry entry = _keyTranslator->findEntry(
-                                                event->key() ,
+                                                event->key ,
                                                 modifiers,
                                                 states );
         // send result to terminal
-        QByteArray textToSend;
+        std::string textToSend;
 
         // special handling for the Alt (aka. Meta) modifier.  pressing
         // Alt+[Character] results in Esc+[Character] being sent
         // (unless there is an entry defined for this particular combination
         //  in the keyboard modifier)
 
-        bool wantsAltModifier = entry.modifiers() & entry.modifierMask() & Qt::AltModifier;
-        bool wantsMetaModifier = entry.modifiers() & entry.modifierMask() & Qt::MetaModifier;
+        bool wantsAltModifier = entry.modifiers() & entry.modifierMask() & AltModifier;
+        bool wantsMetaModifier = entry.modifiers() & entry.modifierMask() & MetaModifier;
         bool wantsAnyModifier = entry.state() &
                                 entry.stateMask() & KeyboardTranslator::AnyModifierState;
 
-        if ( modifiers & Qt::AltModifier && !(wantsAltModifier || wantsAnyModifier)
-             && !event->text().isEmpty() )
+        if ( modifiers & AltModifier && !(wantsAltModifier || wantsAnyModifier)
+             && !event->text.empty() )
         {
-            textToSend.prepend("\033");
+            textToSend.insert(0, "\033");
         }
-        if ( modifiers & Qt::MetaModifier && !(wantsMetaModifier || wantsAnyModifier)
-             && !event->text().isEmpty() )
+        if ( modifiers & MetaModifier && !(wantsMetaModifier || wantsAnyModifier)
+             && !event->text.empty() )
         {
-            textToSend.prepend("\030@s");
+            textToSend.insert(0, "\030@s");
         }
 
         if ( entry.command() != KeyboardTranslator::NoCommand )
@@ -1438,52 +1426,50 @@ void Vt102Emulation::sendKeyEvent(QKeyEvent* origEvent, bool fromPaste)
             if (entry.command() & KeyboardTranslator::EraseCommand) {
                 textToSend += eraseChar();
             } else {
-                Q_EMIT handleCommandFromKeyboard(entry.command());
+                handleCommandFromKeyboard(entry.command());
             }
 
             // TODO command handling
         }
-        else if ( !entry.text().isEmpty() )
+        else if ( !entry.text().empty() )
         {
-            QString str = QString::fromUtf8(entry.text(true,modifiers));
-            QByteArray bytes = _toUtf8(str);
-            textToSend += bytes;
+            // Through UTF-16 and back, as invalid UTF-8 in a key binding reads.
+            textToSend += strings::sanitizedUtf8(entry.text(true,modifiers));
         }
-        else if((modifiers & KeyboardTranslator::CTRL_MOD) && event->key() == Qt::Key_Space) {
+        else if((modifiers & KeyboardTranslator::CTRL_MOD) && event->key == Key_Space) {
             textToSend += '\0';
         }
-        else if((modifiers & KeyboardTranslator::CTRL_MOD) && event->key() >= 0x40 && event->key() < 0x5f) {
-            textToSend += (event->key() & 0x1f);
+        else if((modifiers & KeyboardTranslator::CTRL_MOD) && event->key >= 0x40 && event->key < 0x5f) {
+            textToSend += char(event->key & 0x1f);
         }
-        else if(event->key() == Qt::Key_Tab) {
-            textToSend += 0x09;
+        else if(event->key == Key_Tab) {
+            textToSend += char(0x09);
         }
-        else if (event->key() == Qt::Key_PageUp) {
+        else if (event->key == Key_PageUp) {
             textToSend += "\033[5~";
         }
-        else if (event->key() == Qt::Key_PageDown) {
+        else if (event->key == Key_PageDown) {
             textToSend += "\033[6~";
         }
         else {
-	    QByteArray bytes = _toUtf8(event->text());
-	    textToSend += bytes;
+            textToSend += event->text;
         }
 
         if (!fromPaste && textToSend.length()) {
-            Q_EMIT outputFromKeypressEvent();
+            outputFromKeypressEvent();
         }
-        Q_EMIT sendData( textToSend.constData() , textToSend.length() );
+        sendData( textToSend.c_str() , int(textToSend.length()) );
     }
     else
     {
         // print an error message to the terminal if no key translator has been
         // set
-        QString translatorError =  tr("No keyboard translator available.  "
-                                         "The information needed to convert key presses "
-                                         "into characters to send to the terminal "
-                                         "is missing.");
+        std::string translatorError = "No keyboard translator available.  "
+                                      "The information needed to convert key presses "
+                                      "into characters to send to the terminal "
+                                      "is missing.";
         reset();
-        receiveData( translatorError.toUtf8().constData() , translatorError.size() );
+        receiveData( translatorError.c_str() , int(translatorError.size()) );
     }
 }
 
@@ -1533,7 +1519,8 @@ wchar_t Vt102Emulation::applyCharset(wchar_t c)
 void Vt102Emulation::resetCharset(int scrno)
 {
   _charset[scrno].cu_cs = 0;
-  qstrncpy(_charset[scrno].charset,"BBBB",4);
+  // qstrncpy(): three characters and the terminating null.
+  std::memcpy(_charset[scrno].charset,"BBB",4);
   _charset[scrno].sa_graphic = false;
   _charset[scrno].sa_pound = false;
   _charset[scrno].graphic = false;
@@ -1645,11 +1632,11 @@ void Vt102Emulation::setMode(int m)
     case MODE_Mouse1001:
     case MODE_Mouse1002:
     case MODE_Mouse1003:
-        emit programUsesMouseChanged(false);
+        programUsesMouseChanged(false);
     break;
 
     case MODE_BracketedPaste:
-        emit programBracketedPasteModeChanged(true);
+        programBracketedPasteModeChanged(true);
 
     break;
 
@@ -1677,11 +1664,11 @@ void Vt102Emulation::resetMode(int m)
     case MODE_Mouse1001 :
     case MODE_Mouse1002 :
     case MODE_Mouse1003 :
-        emit programUsesMouseChanged(true);
+        programUsesMouseChanged(true);
     break;
 
     case MODE_BracketedPaste:
-        emit programBracketedPasteModeChanged(false);
+        programBracketedPasteModeChanged(false);
     break;
 
     case MODE_AppScreen :
@@ -1712,8 +1699,8 @@ void Vt102Emulation::restoreMode(int m)
 char Vt102Emulation::eraseChar() const
 {
   KeyboardTranslator::Entry entry = _keyTranslator->findEntry(
-                                            Qt::Key_Backspace,
-                                            Qt::NoModifier,
+                                            Key_Backspace,
+                                            NoModifier,
                                             KeyboardTranslator::NoState);
   if ( entry.text().size() > 0 )
       return entry.text().at(0);
@@ -1725,7 +1712,9 @@ void Vt102Emulation::reportDecodingError()
 {
   if (tokenBufferPos == 0 || ( tokenBufferPos == 1 && (tokenBuffer[0] & 0xff) >= 32) )
     return;
-  qCDebug(qtermwidgetLogger) << "Undecodable sequence:" << QString::fromWCharArray(tokenBuffer, tokenBufferPos);
+  std::u16string sequence;
+  TerminalCharacterDecoder::appendWide(sequence, std::wstring(tokenBuffer, tokenBufferPos));
+  CF_DEBUG(qtermwidgetLogger) << "Undecodable sequence:" << strings::utf16ToUtf8(sequence);
 }
 
 //#include "Vt102Emulation.moc"
