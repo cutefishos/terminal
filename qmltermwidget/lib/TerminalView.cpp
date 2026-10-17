@@ -1640,6 +1640,9 @@ void TerminalView::sendPaste(std::u16string text, bool appendReturn)
 void TerminalView::bracketText(std::u16string& text) const
 {
     if (_bracketedPasteMode) {
+        // An end marker inside the text would end the paste there and run the rest as typed.
+        for (size_t end; (end = text.find(u"\033[201~")) != std::u16string::npos;)
+            text.erase(end, 6);
         text.insert(0, u"\033[200~");
         text.append(u"\033[201~");
     }

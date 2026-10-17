@@ -22,6 +22,7 @@
 #include "TerminalFont.h"
 #include "TerminalSession.h"
 #include "TerminalView.h"
+#include "Vt102Emulation.h"
 #include "tools.h"
 
 #include "terminalpage.h"
@@ -194,6 +195,35 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     ui::TestInput::setKeyboardFocus(surface, false);
     surface.grab();
     EXPECT_FALSE(terminal->isCursorBlinking());
+}
+
+// A tab whose program takes the keyboard raw, asks for bracketed paste and
+// writes what it receives to `path`.
+static TerminalWindow::Options recorder(const std::string& directory, const std::string& path)
+{
+    TerminalWindow::Options options;
+    options.startDirectory = directory;
+    options.command = {"/bin/sh", "-c", "stty raw -echo; printf '\\033[?2004h'; exec cat > '" + path + "'"};
+    options.restoresSize = false;
+    return options;
+}
+
+static std::string contents(const std::string& path)
+{
+    return base::file::read(path).value_or(std::string());
+}
+
+TEST_F(WindowTest, PasteCannotEndTheBracketEarly)
+{
+    const std::string path = m_directory.path() + "/received";
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(recorder(m_directory.path(), path));
+    TerminalPage* page = window->currentPage();
+    ASSERT_TRUE(waitFor([&] { return page->session().emulation()->programBracketedPasteMode(); }));
+
+    page->terminal()->pasteText("echo \033[201~touch pwned");
+    const std::string expected = "\033[200~echo touch pwned\033[201~";
+    EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }
 
 namespace {
