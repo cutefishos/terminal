@@ -56,6 +56,9 @@ public:
               std::span<const cutefish::ui::GlyphCluster> clusters, cutefish::ui::SizeF stretch,
               cutefish::ui::PointF stretchOrigin);
 
+    // Shaped clusters kept by the renderers of every style.
+    size_t cachedClusters() const;
+
 private:
     cutefish::ui::FontSpec spec(int style) const;
 

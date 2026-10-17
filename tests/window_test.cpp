@@ -6,11 +6,17 @@
 #include <chrono>
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "base/event_loop.h"
 #include "base/file.h"
 #include "base/timer.h"
+#include "ui/glyph_run.h"
+#include "ui/painter.h"
+#include "ui/view.h"
+#include "ui/window.h"
 
+#include "TerminalFont.h"
 #include "tools.h"
 
 #include "terminalpage.h"
@@ -96,4 +102,52 @@ TEST_F(WindowTest, ShellExitClosesItsTab)
     TerminalWindow* window = windows.create(shell());
     window->openTab(m_directory.path(), {"/bin/sh", "-c", "exit 0"});
     EXPECT_TRUE(waitFor([&] { return window->tabCount() == 1; }));
+}
+
+namespace {
+
+class Canvas : public ui::View
+{
+public:
+    explicit Canvas(std::function<void(ui::Painter&)> draw)
+        : m_draw(std::move(draw))
+    {
+    }
+
+protected:
+    void paint(ui::Painter& painter) override { m_draw(painter); }
+
+private:
+    std::function<void(ui::Painter&)> m_draw;
+};
+
+}
+
+TEST(TerminalFontTest, ShapedClustersStayBounded)
+{
+    Konsole::TerminalFont font;
+    font.setFont("Monospace", 10);
+
+    // Distinct ideographs, a hundred a call, as output of every code point would draw them.
+    auto draw = [&font](ui::Painter& painter) {
+        char32_t character = 0x4E00;
+        std::vector<std::u32string> texts;
+        for (int call = 0; call < 200; ++call) {
+            texts.clear();
+            for (int i = 0; i < 100; ++i)
+                texts.emplace_back(1, character++);
+            std::vector<ui::GlyphCluster> clusters;
+            for (const std::u32string& text : texts)
+                clusters.push_back({text, 0});
+            font.draw(painter, Konsole::TerminalFont::Regular, ui::Color::rgb(0), 1, 12, clusters, {1, 1}, {});
+        }
+    };
+
+    ui::Window window;
+    window.resize({100, 60});
+    window.setContentView(std::make_unique<Canvas>(draw));
+    window.show();
+    window.grab();
+
+    EXPECT_LE(font.cachedClusters(), 8192u + 100u);
 }

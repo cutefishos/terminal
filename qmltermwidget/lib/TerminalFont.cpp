@@ -16,6 +16,10 @@ static const char REPCHAR[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                               "abcdefgjijklmnopqrstuvwxyz"
                               "0123456789./+@";
 
+// Shaped clusters a renderer keeps; output can name any of the million code
+// points and endless combining sequences, so the cache starts over past this.
+static constexpr size_t kMaximumCachedClusters = 8192;
+
 TerminalFont::TerminalFont() = default;
 
 TerminalFont::~TerminalFont() = default;
@@ -79,7 +83,19 @@ void TerminalFont::draw(ui::Painter& painter, int style, Color color, double sca
     std::unique_ptr<ui::GlyphRenderer>& renderer = _renderers[style & 3];
     if (!renderer || renderer->scale() != scale)
         renderer = std::make_unique<ui::GlyphRenderer>(spec(style), scale);
+    else if (renderer->cachedClusters() > kMaximumCachedClusters)
+        renderer->clearCache();
     renderer->draw(painter, color, baseline, clusters, stretch, stretchOrigin);
+}
+
+size_t TerminalFont::cachedClusters() const
+{
+    size_t count = 0;
+    for (const auto& renderer : _renderers) {
+        if (renderer)
+            count += renderer->cachedClusters();
+    }
+    return count;
 }
 
 }
