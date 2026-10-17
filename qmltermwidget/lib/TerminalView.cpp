@@ -1356,8 +1356,9 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
 
         if (_scrollMaximum > 0) {
             setScrollbarValue(_scrollValue - lines);
-        } else {
-            // A program without mouse reporting, such as less, scrolls on Up / Down.
+        } else if (_session && _session->emulation()->usesAlternateScreen()) {
+            // A full-screen program without mouse reporting, such as less, scrolls
+            // on Up / Down; at a prompt those would recall the shell's history.
             KeyEvent keyScrollEvent{lines > 0 ? Key_Up : Key_Down, NoModifier, std::string()};
             for (int i = 0; i < std::abs(lines); i++)
                 keyPressed(keyScrollEvent, false);

@@ -255,6 +255,9 @@ public:
 
   bool programBracketedPasteMode() const;
 
+  /** Whether a full-screen program has switched to the alternate screen. */
+  bool usesAlternateScreen() const { return _currentScreen == _screen[1]; }
+
 
   /** Change the size of the emulation's image */
   virtual void setImageSize(int lines, int columns);

@@ -199,11 +199,12 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
 
 // A tab whose program takes the keyboard raw, asks for bracketed paste and
 // writes what it receives to `path`.
-static TerminalWindow::Options recorder(const std::string& directory, const std::string& path)
+static TerminalWindow::Options recorder(const std::string& directory, const std::string& path,
+                                        const std::string& output = "\\033[?2004h")
 {
     TerminalWindow::Options options;
     options.startDirectory = directory;
-    options.command = {"/bin/sh", "-c", "stty raw -echo; printf '\\033[?2004h'; exec cat > '" + path + "'"};
+    options.command = {"/bin/sh", "-c", "stty raw -echo; printf '" + output + "'; exec cat > '" + path + "'"};
     options.restoresSize = false;
     return options;
 }
@@ -251,6 +252,36 @@ TEST_F(WindowTest, DroppedFileUrlsWithAHostBecomePaths)
     page->dropUrls({"file://localhost/tmp/a%23b", "file://elsewhere/tmp/c", "https://example.com/d"});
     const std::string expected = "\033[200~'/tmp/a#b' file://elsewhere/tmp/c https://example.com/d \033[201~";
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
+}
+
+// A wheel turn up, three lines, over the middle of the window.
+static void scrollUp(TerminalWindow* window)
+{
+    ui::Window& surface = window->window();
+    surface.grab();
+    ui::ScrollEvent event;
+    event.value120Y = -120;
+    ui::TestInput::scroll(surface, {surface.size().width / 2, surface.size().height / 2}, event);
+}
+
+TEST_F(WindowTest, WheelWithoutScrollbackSendsArrowsOnlyOnTheAlternateScreen)
+{
+    const std::string primary = m_directory.path() + "/primary";
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(recorder(m_directory.path(), primary));
+    TerminalPage* page = window->currentPage();
+    ASSERT_TRUE(waitFor([&] { return page->session().emulation()->programBracketedPasteMode(); }));
+    scrollUp(window);
+    page->session().sendText("x");
+    EXPECT_TRUE(waitFor([&] { return contents(primary) == "x"; })) << contents(primary);
+
+    const std::string alternate = m_directory.path() + "/alternate";
+    window->openTab(m_directory.path(), recorder(m_directory.path(), alternate, "\\033[?1049h").command);
+    page = window->currentPage();
+    ASSERT_TRUE(waitFor([&] { return page->session().emulation()->usesAlternateScreen(); }));
+    scrollUp(window);
+    page->session().sendText("x");
+    EXPECT_TRUE(waitFor([&] { return contents(alternate) == "\033[A\033[A\033[Ax"; })) << contents(alternate);
 }
 
 namespace {
