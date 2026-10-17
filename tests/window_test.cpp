@@ -226,6 +226,20 @@ TEST_F(WindowTest, PasteCannotEndTheBracketEarly)
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }
 
+TEST_F(WindowTest, DroppedFilesArriveAsAPaste)
+{
+    const std::string path = m_directory.path() + "/received";
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(recorder(m_directory.path(), path));
+    TerminalPage* page = window->currentPage();
+    ASSERT_TRUE(waitFor([&] { return page->session().emulation()->programBracketedPasteMode(); }));
+
+    // Ctrl+U in a name would erase the opening quote at a prompt.
+    page->dropUrls({"file:///tmp/a%15b%20c"});
+    const std::string expected = "\033[200~'/tmp/a\x15" "b c' \033[201~";
+    EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
+}
+
 namespace {
 
 class Canvas : public ui::View

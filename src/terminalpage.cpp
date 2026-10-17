@@ -180,7 +180,9 @@ void TerminalPage::dropUrls(const std::vector<std::string>& urls)
                 : url;
         words.push_back(shellQuote(text));
     }
-    m_session->sendText(strings::join(words, " ") + " ");
+    // As a paste: bracketed for a shell that asks, so control characters in
+    // a name are inserted rather than run as editing keys.
+    m_terminal->pasteText(strings::join(words, " ") + " ");
 }
 
 static bool hasUrls(const DropOffer& offer)
