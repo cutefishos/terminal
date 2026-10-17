@@ -105,7 +105,7 @@ public:
     ValueLabel()
         : m_label(addChild<Label>())
     {
-        m_label->setColor(Theme::current().disabledText);
+        m_label->setColor(ColorId::DisabledText);
         m_label->setFontFeatures({{"tnum", 1}});
     }
 
