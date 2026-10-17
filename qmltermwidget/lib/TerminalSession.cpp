@@ -325,6 +325,17 @@ void TerminalSession::setUserTitle(int what, const std::string& caption)
         updateTitle();
 }
 
+// The cwd link, which only a process's own user can read.
+static std::optional<std::string> workingDirectory(int pid)
+{
+    char path[PATH_MAX + 1];
+    const ssize_t length = readlink(("/proc/" + std::to_string(pid) + "/cwd").c_str(), path, PATH_MAX);
+    if (length < 0)
+        return std::nullopt;
+    path[length] = '\0';
+    return strings::sanitizedUtf8(path);
+}
+
 void TerminalSession::updateForegroundProcessInfo()
 {
     const int foregroundPid = _shellProcess->foregroundProcessGroup();
@@ -370,11 +381,8 @@ void TerminalSession::updateForegroundProcessInfo()
         return;
     _foregroundValid = true;
 
-    char path[PATH_MAX + 1];
-    const ssize_t length = readlink((base + "/cwd").c_str(), path, PATH_MAX);
-    if (length >= 0) {
-        path[length] = '\0';
-        _foregroundDir = strings::sanitizedUtf8(path);
+    if (std::optional<std::string> dir = workingDirectory(foregroundPid)) {
+        _foregroundDir = *dir;
         _foregroundHasDir = true;
     }
 }
@@ -388,7 +396,13 @@ std::string TerminalSession::foregroundProcessName()
 std::string TerminalSession::currentDir()
 {
     updateForegroundProcessInfo();
-    return _foregroundValid && _foregroundHasDir ? _foregroundDir : std::string();
+    if (_foregroundValid && _foregroundHasDir)
+        return _foregroundDir;
+    // A program in front that runs as another user, such as su, hides its
+    // directory; the shell's stands in for it.
+    if (processId() > 0 && processId() != _foregroundPid)
+        return workingDirectory(processId()).value_or(std::string());
+    return std::string();
 }
 
 bool TerminalSession::hasActiveProcess() const

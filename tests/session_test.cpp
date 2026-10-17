@@ -12,6 +12,7 @@
 
 #include "base/event_loop.h"
 #include "base/file.h"
+#include "base/paths.h"
 #include "base/timer.h"
 
 #include "TerminalSession.h"
@@ -111,4 +112,30 @@ TEST(SessionTest, ChildSeesTheTerminalEnvironment)
     }));
     ASSERT_TRUE(contents);
     EXPECT_TRUE(contents->starts_with("xterm-256color|truecolor|15;0|/dev/pts/")) << *contents;
+}
+
+TEST(SessionTest, CurrentDirBehindAProgramOfAnotherUser)
+{
+    set_kb_layout_dir(KB_LAYOUTS_DIR);
+    // Set-group-ID, so its working directory is not ours to read.
+    const std::string agent = cutefish::base::paths::findExecutable("ssh-agent");
+    if (agent.empty())
+        GTEST_SKIP() << "no ssh-agent";
+    cutefish::base::EventLoop loop;
+    cutefish::base::file::TemporaryDirectory directory("/tmp", "session-cwd");
+    ASSERT_TRUE(directory.isValid());
+
+    TerminalSession session;
+    session.setShellProgram("/bin/sh");
+    session.setInitialWorkingDirectory(directory.path());
+    session.startShellProgram();
+    ASSERT_TRUE(waitFor(loop, [&] { return session.currentDir() == directory.path(); }));
+
+    // Looked at only once the agent runs: its socket is there.
+    const std::string socket = directory.path() + "/agent";
+    session.sendText(agent + " -D -a " + socket + "\r");
+    ASSERT_TRUE(waitFor(loop, [&] { return std::filesystem::exists(socket); }));
+    ASSERT_EQ(session.foregroundProcessName(), "ssh-agent");
+    EXPECT_EQ(session.currentDir(), directory.path());
+    session.sendText("\x03");
 }
