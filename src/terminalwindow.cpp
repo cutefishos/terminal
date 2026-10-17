@@ -666,6 +666,10 @@ void TerminalWindow::closeOtherTabs(int index)
             others.push_back(page);
     }
     confirmClose(others, [this, keep, others] {
+        // The kept tab's shell may have ended while the dialog was open; the
+        // other tabs then stay rather than leave the window empty.
+        if (indexOfPage(keep) < 0)
+            return;
         for (TerminalPage* page : others)
             closeTab(indexOfPage(page));
         showPage(indexOfPage(keep));

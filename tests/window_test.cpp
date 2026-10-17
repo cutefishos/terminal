@@ -11,12 +11,16 @@
 #include "base/event_loop.h"
 #include "base/file.h"
 #include "base/timer.h"
+#include "ui/application.h"
 #include "ui/glyph_run.h"
+#include "ui/keys.h"
 #include "ui/painter.h"
+#include "ui/test_input.h"
 #include "ui/view.h"
 #include "ui/window.h"
 
 #include "TerminalFont.h"
+#include "TerminalSession.h"
 #include "tools.h"
 
 #include "terminalpage.h"
@@ -102,6 +106,51 @@ TEST_F(WindowTest, ShellExitClosesItsTab)
     TerminalWindow* window = windows.create(shell());
     window->openTab(m_directory.path(), {"/bin/sh", "-c", "exit 0"});
     EXPECT_TRUE(waitFor([&] { return window->tabCount() == 1; }));
+}
+
+// The confirmation the window shows last, as a key press answers it.
+static void confirmLastDialog(TerminalWindow* window)
+{
+    ui::Window* dialog = ui::Application::instance()->windows().back();
+    ASSERT_NE(dialog, &window->window());
+    dialog->grab();
+    ui::TestInput::setKeyboardFocus(*dialog, true);
+    ui::TestInput::typeKey(*dialog, ui::key::Return);
+}
+
+TEST_F(WindowTest, CloseOtherTabsKeepsTheChosenTab)
+{
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(shell());
+    TerminalPage* busy = window->currentPage();
+    window->openTab(m_directory.path(), {"/bin/sh"});
+    ASSERT_EQ(window->tabCount(), 2);
+    busy->session().sendText("sleep 30\n");
+    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+
+    window->closeOtherTabs(1);
+    confirmLastDialog(window);
+    ASSERT_EQ(window->tabCount(), 1);
+    ASSERT_NE(window->currentPage(), nullptr);
+    EXPECT_TRUE(window->currentPage()->isVisible());
+}
+
+TEST_F(WindowTest, CloseOtherTabsAfterTheKeptTabEnded)
+{
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(shell());
+    TerminalPage* busy = window->currentPage();
+    window->openTab(m_directory.path(), {"/bin/sh", "-c", "sleep 1"});
+    ASSERT_EQ(window->tabCount(), 2);
+    busy->session().sendText("sleep 30\n");
+    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+
+    window->closeOtherTabs(1);
+    ASSERT_TRUE(waitFor([&] { return window->tabCount() == 1; }));
+    confirmLastDialog(window);
+    ASSERT_EQ(window->tabCount(), 1);
+    EXPECT_EQ(window->currentPage(), busy);
+    EXPECT_TRUE(busy->isVisible());
 }
 
 namespace {
