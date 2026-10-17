@@ -1300,6 +1300,10 @@ char32_t TerminalView::charClass(const Character& ch) const
 
 bool TerminalView::scroll(const ui::ScrollEvent& event)
 {
+    // A tab moved to another window brings its view along; the scroller ticks on the window's frames.
+    if (_scroller && _scroller->window() != window())
+        _scroller = window() ? std::make_unique<ui::Scroller>(window(), this) : nullptr;
+
     // A touchpad drags the scrollback by the pixel, coasts and stretches at the ends.
     if (_mouseMarks && event.precise && _scrollMaximum > 0 && _scroller) {
         _scroller->handleScroll(event);
