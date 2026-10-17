@@ -100,6 +100,7 @@ public:
 
     void setTerminalFont(const std::string& family, double pointSize);
     void setBlinkingCursor(bool blink);
+    bool isCursorBlinking() const { return _blinkCursorTimer.isActive(); }
     void setTerminalCursorShape(int shape);
     void setBellMode(int mode) { _bellMode = mode; }
     void setConfirmMultilinePaste(bool confirm) { _confirmMultilinePaste = confirm; }
@@ -229,6 +230,8 @@ private:
     int drawnLines() const;
     void blinkEvent();
     void blinkCursorEvent();
+    void blinkCursorTimeout();
+    bool hasKeyboard() const;
     void restartCursorBlink();
     void bell();
     void swapColorTable();

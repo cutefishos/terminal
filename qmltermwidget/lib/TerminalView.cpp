@@ -80,7 +80,7 @@ TerminalView::TerminalView()
     updatePointerCursor();
 
     _blinkTimer.onTimeout = [this] { blinkEvent(); };
-    _blinkCursorTimer.onTimeout = [this] { blinkCursorEvent(); };
+    _blinkCursorTimer.onTimeout = [this] { blinkCursorTimeout(); };
     _tripleClickTimer.setSingleShot(true);
     _tripleClickTimer.onTimeout = [this] { _possibleTripleClick = false; };
     _bellTimer.setSingleShot(true);
@@ -270,7 +270,7 @@ void TerminalView::setBlinkingCursor(bool blink)
 {
     _hasBlinkingCursor = blink;
 
-    if (blink && !_blinkCursorTimer.isActive() && hasFocus())
+    if (blink && !_blinkCursorTimer.isActive() && hasKeyboard())
         _blinkCursorTimer.start(std::chrono::milliseconds(CURSOR_BLINK_INTERVAL));
 
     if (!blink && _blinkCursorTimer.isActive()) {
@@ -306,9 +306,28 @@ void TerminalView::blinkCursorEvent()
     requestPaint();
 }
 
+void TerminalView::blinkCursorTimeout()
+{
+    // Without the keyboard the cursor shows in its unfocused state; the next
+    // paint with it starts blinking again.
+    if (!hasKeyboard()) {
+        _blinkCursorTimer.stop();
+        if (_cursorBlinking)
+            blinkCursorEvent();
+        return;
+    }
+    blinkCursorEvent();
+}
+
+bool TerminalView::hasKeyboard() const
+{
+    const ui::Window* window = this->window();
+    return hasFocus() && window->hasKeyboardFocus();
+}
+
 void TerminalView::focusIn(ui::FocusReason)
 {
-    if (_hasBlinkingCursor)
+    if (_hasBlinkingCursor && hasKeyboard())
         _blinkCursorTimer.start(std::chrono::milliseconds(CURSOR_BLINK_INTERVAL));
     requestPaint();
 
@@ -2087,6 +2106,15 @@ static void addOtherLineChar(FramePainter& frame, double left, double top, int w
 // Mirrors TerminalGpuNode::build(), which mirrored TerminalDisplay::paint().
 void TerminalView::paint(ui::Painter& painter)
 {
+    // The window repaints its focus view when the keyboard comes or goes.
+    if (hasKeyboard()) {
+        if (_hasBlinkingCursor && !_blinkCursorTimer.isActive())
+            _blinkCursorTimer.start(std::chrono::milliseconds(CURSOR_BLINK_INTERVAL));
+    } else if (_blinkCursorTimer.isActive()) {
+        _blinkCursorTimer.stop();
+        _cursorBlinking = false;
+    }
+
     if (_image.empty() || geometry().width <= 0 || geometry().height <= 0)
         return;
 

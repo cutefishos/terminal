@@ -21,6 +21,7 @@
 
 #include "TerminalFont.h"
 #include "TerminalSession.h"
+#include "TerminalView.h"
 #include "tools.h"
 
 #include "terminalpage.h"
@@ -151,6 +152,48 @@ TEST_F(WindowTest, CloseOtherTabsAfterTheKeptTabEnded)
     ASSERT_EQ(window->tabCount(), 1);
     EXPECT_EQ(window->currentPage(), busy);
     EXPECT_TRUE(busy->isVisible());
+}
+
+TEST_F(WindowTest, CursorBlinksOnlyWithTheKeyboard)
+{
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(shell());
+    ui::Window& surface = window->window();
+    Konsole::TerminalView* terminal = window->currentPage()->terminal();
+    ASSERT_TRUE(terminal->hasFocus());
+
+    ui::TestInput::setKeyboardFocus(surface, true);
+    surface.grab();
+    EXPECT_TRUE(terminal->isCursorBlinking());
+
+    ui::TestInput::setKeyboardFocus(surface, false);
+    surface.grab();
+    EXPECT_FALSE(terminal->isCursorBlinking());
+
+    ui::TestInput::setKeyboardFocus(surface, true);
+    surface.grab();
+    EXPECT_TRUE(terminal->isCursorBlinking());
+
+    // Without a frame drawn, the next blink stops the timer.
+    ui::TestInput::setKeyboardFocus(surface, false);
+    EXPECT_TRUE(waitFor([&] { return !terminal->isCursorBlinking(); }));
+}
+
+TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
+{
+    m_settings.setBlinkingCursor(false);
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(shell());
+    ui::Window& surface = window->window();
+    Konsole::TerminalView* terminal = window->currentPage()->terminal();
+
+    ui::TestInput::setKeyboardFocus(surface, true);
+    surface.grab();
+    EXPECT_FALSE(terminal->isCursorBlinking());
+
+    ui::TestInput::setKeyboardFocus(surface, false);
+    surface.grab();
+    EXPECT_FALSE(terminal->isCursorBlinking());
 }
 
 namespace {
