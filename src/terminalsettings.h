@@ -31,7 +31,6 @@ public:
     int scrollbackLines() const { return m_scrollbackLines; }
     bool visualBell() const { return m_visualBell; }
     bool confirmMultilinePaste() const { return m_confirmMultilinePaste; }
-    bool gpuRendering() const { return m_gpuRendering; }
     // A bundled colour scheme, by file name; an empty one from before themes
     // existed reads as TokyoNight.
     const std::string& colorScheme() const { return m_colorScheme; }
@@ -45,7 +44,6 @@ public:
     void setScrollbackLines(int lines);
     void setVisualBell(bool visual);
     void setConfirmMultilinePaste(bool confirm);
-    void setGpuRendering(bool gpu);
     void setColorScheme(const std::string& scheme);
     void setOpacity(double opacity);
     void setBlur(bool blur);
@@ -64,7 +62,6 @@ private:
     int m_scrollbackLines = 10000;
     bool m_visualBell = false;
     bool m_confirmMultilinePaste = true;
-    bool m_gpuRendering = true;
     std::string m_colorScheme = "TokyoNight";
     double m_opacity = 0.85;
     bool m_blur = true;

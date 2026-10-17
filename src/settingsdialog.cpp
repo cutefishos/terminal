@@ -320,10 +320,6 @@ public:
         visualBell->onToggled = [&settings](bool checked) { settings.setVisualBell(checked); };
         confirmPaste = behaviour->addRow("Warn Before Pasting Multiple Lines", true)->addControl<Switch>();
         confirmPaste->onToggled = [&settings](bool checked) { settings.setConfirmMultilinePaste(checked); };
-
-        Card* rendering = addCard();
-        gpu = rendering->addRow("GPU Rendering", true)->addControl<Switch>();
-        gpu->onToggled = [&settings](bool checked) { settings.setGpuRendering(checked); };
     }
 
     // The settings as they are now.
@@ -355,7 +351,6 @@ public:
         scrollback->setCurrentIndex(lines == kScrollbackLines.end() ? 0 : int(lines - kScrollbackLines.begin()));
         visualBell->setChecked(settings.visualBell());
         confirmPaste->setChecked(settings.confirmMultilinePaste());
-        gpu->setChecked(settings.gpuRendering());
         requestLayout();
     }
 
@@ -380,7 +375,6 @@ public:
     ComboBox* scrollback;
     Switch* visualBell;
     Switch* confirmPaste;
-    Switch* gpu;
 
 protected:
     // A column, large spacing between, at whole logical pixels.

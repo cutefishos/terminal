@@ -16,7 +16,6 @@ TerminalSettings::TerminalSettings(const std::string& path)
     m_scrollbackLines = int(m_settings->intValue("scrollbackLines", m_scrollbackLines));
     m_visualBell = m_settings->boolValue("visualBell", m_visualBell);
     m_confirmMultilinePaste = m_settings->boolValue("confirmMultilinePaste", m_confirmMultilinePaste);
-    m_gpuRendering = m_settings->boolValue("gpuRendering", m_gpuRendering);
     m_colorScheme = m_settings->stringValue("colorScheme", m_colorScheme);
     if (m_colorScheme.empty())
         m_colorScheme = "TokyoNight";
@@ -47,8 +46,6 @@ void TerminalSettings::save(const std::string& key)
         m_settings->setValue(key, m_visualBell);
     else if (key == "confirmMultilinePaste")
         m_settings->setValue(key, m_confirmMultilinePaste);
-    else if (key == "gpuRendering")
-        m_settings->setValue(key, m_gpuRendering);
     else if (key == "colorScheme")
         m_settings->setValue(key, m_colorScheme);
     else if (key == "opacity")
@@ -113,14 +110,6 @@ void TerminalSettings::setConfirmMultilinePaste(bool confirm)
         return;
     m_confirmMultilinePaste = confirm;
     save("confirmMultilinePaste");
-}
-
-void TerminalSettings::setGpuRendering(bool gpu)
-{
-    if (gpu == m_gpuRendering)
-        return;
-    m_gpuRendering = gpu;
-    save("gpuRendering");
 }
 
 void TerminalSettings::setColorScheme(const std::string& scheme)
