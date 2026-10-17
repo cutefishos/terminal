@@ -358,6 +358,7 @@ TerminalWindow::TerminalWindow(Windows& windows, TerminalSettings& settings, Opt
 TerminalWindow::~TerminalWindow()
 {
     m_connections.clear();
+    m_pageConnections.clear();
     *m_alive = false;
     // The shells end with the window.
     while (!m_pages.empty()) {
@@ -458,7 +459,8 @@ void TerminalWindow::attach(TerminalPage* page)
     page->setTerminalWindow(this);
     // Looked up when the shell exits: closing other tabs shifts the index,
     // and a tab dragged into another window closes there.
-    m_connections.push_back(page->terminalClosed.connect([this, page] {
+    std::vector<cutefish::base::Subscription>& connections = m_pageConnections[page];
+    connections.push_back(page->terminalClosed.connect([this, page] {
         const int index = indexOfPage(page);
         if (index >= 0)
             cutefish::base::EventLoop::current()->post([alive = std::weak_ptr<bool>(m_alive), this, page] {
@@ -466,7 +468,7 @@ void TerminalWindow::attach(TerminalPage* page)
                     closeTab(indexOfPage(page));
             });
     }));
-    m_connections.push_back(page->titleChanged.connect([this] { updateTitle(); }));
+    connections.push_back(page->titleChanged.connect([this] { updateTitle(); }));
 }
 
 void TerminalWindow::showPage(int index)
@@ -513,6 +515,7 @@ std::unique_ptr<TerminalPage> TerminalWindow::takeTab(int index)
         return nullptr;
     TerminalPage* page = m_pages[size_t(index)];
     m_pages.erase(m_pages.begin() + index);
+    m_pageConnections.erase(page);
     m_headerContent->tabBar->removeTab(index);
     std::unique_ptr<View> view = m_content->pages->takeChild(page);
     if (tabCount() > 0)

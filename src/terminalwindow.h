@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -146,5 +147,7 @@ private:
     int m_tabMenuIndex = -1;
 
     std::vector<cutefish::base::Subscription> m_connections;
+    // Dropped when the tab leaves this window, closed or moved to another.
+    std::map<const TerminalPage*, std::vector<cutefish::base::Subscription>> m_pageConnections;
     std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };
