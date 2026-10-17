@@ -240,6 +240,19 @@ TEST_F(WindowTest, DroppedFilesArriveAsAPaste)
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }
 
+TEST_F(WindowTest, DroppedFileUrlsWithAHostBecomePaths)
+{
+    const std::string path = m_directory.path() + "/received";
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(recorder(m_directory.path(), path));
+    TerminalPage* page = window->currentPage();
+    ASSERT_TRUE(waitFor([&] { return page->session().emulation()->programBracketedPasteMode(); }));
+
+    page->dropUrls({"file://localhost/tmp/a%23b", "file://elsewhere/tmp/c", "https://example.com/d"});
+    const std::string expected = "\033[200~'/tmp/a#b' file://elsewhere/tmp/c https://example.com/d \033[201~";
+    EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
+}
+
 namespace {
 
 class Canvas : public ui::View

@@ -174,11 +174,8 @@ void TerminalPage::dropUrls(const std::vector<std::string>& urls)
 {
     std::vector<std::string> words;
     for (const std::string& url : urls) {
-        // decodeURIComponent() of what follows file://.
-        const std::string text = url.starts_with("file://")
-                ? cutefish::base::url::percentDecoded(url.substr(7))
-                : url;
-        words.push_back(shellQuote(text));
+        // A local file as its path, "file://localhost/" too; other links as they are.
+        words.push_back(shellQuote(cutefish::base::url::toLocalFile(url).value_or(url)));
     }
     // As a paste: bracketed for a shell that asks, so control characters in
     // a name are inserted rather than run as editing keys.
