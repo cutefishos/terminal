@@ -100,6 +100,7 @@ private:
     class Overlay;
 
     void applySettings();
+    void updateBackground();
     void updateTitle();
     void confirmClose(const std::vector<TerminalPage*>& pages, std::function<void()> action);
     void closeProtection(int index);

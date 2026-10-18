@@ -67,6 +67,7 @@ protected:
         pages->setGeometry({0, kHeaderHeight, width, std::max(0.0, height - kHeaderHeight)});
         for (const auto& page : pages->children())
             page->setGeometry(pages->localRect());
+        m_owner->updateBackground();
     }
 
 private:
@@ -402,12 +403,7 @@ void TerminalWindow::applySettings()
                     + 0.0722 * m_terminalBackground.b) / 255.0 < 0.5;
 
     m_window->setHeaderDarkMode(m_chromeDark);
-    m_window->setBackgroundColor(m_terminalBackground.withAlpha(m_settings.opacity()));
-    const SizeF size = m_window->size();
-    if (m_settings.blur())
-        m_window->setBackgroundBlur({0, 0, size.width, size.height}, Theme::current().windowRadius);
-    else
-        m_window->setBackgroundBlur({}, 0);
+    updateBackground();
 
     m_headerContent->title->setFontFamily(m_settings.fontName());
     m_headerContent->tabBar->setDarkMode(m_chromeDark);
@@ -415,6 +411,16 @@ void TerminalWindow::applySettings()
     for (TerminalPage* page : m_pages)
         page->applySettings();
     updateTitle();
+}
+
+void TerminalWindow::updateBackground()
+{
+    m_window->setBackgroundColor(m_terminalBackground.withAlpha(m_settings.opacity()));
+    const SizeF size = m_window->size();
+    if (m_settings.blur())
+        m_window->setBackgroundBlur({0, 0, size.width, size.height}, Theme::current().windowRadius);
+    else
+        m_window->setBackgroundBlur({}, 0);
 }
 
 void TerminalWindow::updateTitle()
