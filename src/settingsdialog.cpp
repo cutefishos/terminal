@@ -8,6 +8,7 @@
 #include <map>
 
 #include "base/event_loop.h"
+#include "base/i18n.h"
 #include "ui/combo_box.h"
 #include "ui/dialog_window.h"
 #include "ui/label.h"
@@ -25,6 +26,8 @@
 #include "terminalwindow.h"
 
 using namespace cutefish::ui;
+using cutefish::i18n::format;
+using cutefish::i18n::tr;
 
 // Bundled schemes, by file name, and their labels.
 static const std::vector<std::string> kThemeNames = {
@@ -269,11 +272,11 @@ public:
         TerminalSettings& settings = window->settings();
 
         Card* appearance = addCard();
-        theme = appearance->addRow("Theme")->addControl<ComboBox>(kThemeLabels);
+        theme = appearance->addRow(tr("Theme"))->addControl<ComboBox>(kThemeLabels);
         setWidth(theme, 200);
         theme->onActivated = [&settings](int index) { settings.setColorScheme(kThemeNames[size_t(index)]); };
 
-        SettingRow* fontRow = appearance->addRow("Font");
+        SettingRow* fontRow = appearance->addRow(tr("Font"));
         font = fontRow->addControl<ComboBox>();
         setWidth(font, 200);
         font->onActivated = [this, &settings](int index) {
@@ -281,7 +284,7 @@ public:
                 settings.setFontName(m_families[size_t(index)]);
         };
 
-        SettingRow* sizeRow = appearance->addRow("Font Size");
+        SettingRow* sizeRow = appearance->addRow(tr("Font Size"));
         fontSize = sizeRow->addControl<Slider>();
         sizeRow->setControlWidth(fontSize, 160);
         fontSize->setRange(5, 30);
@@ -289,11 +292,11 @@ public:
         fontSize->onMoved = [&settings](double value) { settings.setFontPointSize(int(std::lround(value))); };
         fontSizeValue = addValueLabel(sizeRow);
 
-        blinking = appearance->addRow("Blinking Cursor", true)->addControl<Switch>();
+        blinking = appearance->addRow(tr("Blinking Cursor"), true)->addControl<Switch>();
         blinking->onToggled = [&settings](bool checked) { settings.setBlinkingCursor(checked); };
 
         Card* window2 = addCard();
-        SettingRow* opacityRow = window2->addRow("Opacity");
+        SettingRow* opacityRow = window2->addRow(tr("Opacity"));
         opacity = opacityRow->addControl<Slider>();
         opacityRow->setControlWidth(opacity, 160);
         opacity->setRange(0.1, 1.0);
@@ -301,24 +304,25 @@ public:
         opacity->onMoved = [&settings](double value) { settings.setOpacity(value); };
         opacityValue = addValueLabel(opacityRow);
 
-        blur = window2->addRow("Window Blur", true)->addControl<Switch>();
+        blur = window2->addRow(tr("Window Blur"), true)->addControl<Switch>();
         blur->onToggled = [&settings](bool checked) { settings.setBlur(checked); };
 
         Card* behaviour = addCard();
         // In the order of the cursorShape values.
-        cursorShape = behaviour->addRow("Cursor Shape")->addControl<ComboBox>(std::vector<std::string>{
-            "Block", "Underline", "I-Beam"});
+        cursorShape = behaviour->addRow(tr("Cursor Shape"))->addControl<ComboBox>(std::vector<std::string>{
+            // TRANSLATORS: the shapes of the text cursor.
+            tr("Block"), tr("Underline"), tr("I-Beam")});
         setWidth(cursorShape, 160);
         cursorShape->onActivated = [&settings](int index) { settings.setCursorShape(index); };
 
-        scrollback = behaviour->addRow("Scrollback")->addControl<ComboBox>(std::vector<std::string>{
-            "1,000 lines", "10,000 lines", "100,000 lines", "Unlimited"});
+        scrollback = behaviour->addRow(tr("Scrollback"))->addControl<ComboBox>(std::vector<std::string>{
+            tr("1,000 lines"), tr("10,000 lines"), tr("100,000 lines"), tr("Unlimited")});
         setWidth(scrollback, 160);
         scrollback->onActivated = [&settings](int index) { settings.setScrollbackLines(kScrollbackLines[size_t(index)]); };
 
-        visualBell = behaviour->addRow("Flash on Bell")->addControl<Switch>();
+        visualBell = behaviour->addRow(tr("Flash on Bell"))->addControl<Switch>();
         visualBell->onToggled = [&settings](bool checked) { settings.setVisualBell(checked); };
-        confirmPaste = behaviour->addRow("Warn Before Pasting Multiple Lines", true)->addControl<Switch>();
+        confirmPaste = behaviour->addRow(tr("Warn Before Pasting Multiple Lines"), true)->addControl<Switch>();
         confirmPaste->onToggled = [&settings](bool checked) { settings.setConfirmMultilinePaste(checked); };
     }
 
@@ -341,10 +345,13 @@ public:
         font->setCurrentIndex(family == m_families.end() ? 0 : int(family - m_families.begin()));
 
         fontSize->setValue(settings.fontPointSize());
-        fontSizeValue->setText(std::to_string(settings.fontPointSize()) + " pt");
+        // TRANSLATORS: a font size in points.
+        fontSizeValue->setText(format(tr("{size} pt"), {{"size", std::to_string(settings.fontPointSize())}}));
         blinking->setChecked(settings.blinkingCursor());
         opacity->setValue(settings.opacity());
-        opacityValue->setText(std::to_string(int(std::lround(settings.opacity() * 100))) + "%");
+        // TRANSLATORS: a percentage, such as "80%".
+        opacityValue->setText(format(tr("{percent}%"),
+                                     {{"percent", std::to_string(int(std::lround(settings.opacity() * 100)))}}));
         blur->setChecked(settings.blur());
         cursorShape->setCurrentIndex(settings.cursorShape());
         const auto lines = std::find(kScrollbackLines.begin(), kScrollbackLines.end(), settings.scrollbackLines());
@@ -434,7 +441,7 @@ void SettingsDialog::update()
 void SettingsDialog::show()
 {
     if (!m_dialog) {
-        m_dialog = std::make_unique<DialogWindow>(&m_window->window(), "Settings", kDialogWidth);
+        m_dialog = std::make_unique<DialogWindow>(&m_window->window(), tr("Settings"), kDialogWidth);
         m_content = m_dialog->setContent<SettingsContent>(m_window);
         m_dialog->onClosed = [this] {
             m_content = nullptr;

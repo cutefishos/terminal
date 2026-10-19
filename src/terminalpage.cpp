@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "base/i18n.h"
 #include "base/strings.h"
 #include "base/url.h"
 #include "ui/clipboard.h"
@@ -26,6 +27,8 @@
 #include "terminalwindow.h"
 
 using namespace cutefish::ui;
+using cutefish::i18n::format;
+using cutefish::i18n::tr;
 namespace strings = cutefish::base::strings;
 
 // The terminal's margins inside the page; the top is the header's line.
@@ -400,34 +403,34 @@ void TerminalPage::openMenu(double x, double y)
         m_menu->clear();
 
         if (!m_menuLink.empty()) {
-            m_menu->addItem("Open Link", [this] { m_window->openLink(m_menuLink); });
-            m_menu->addItem("Copy Link", [this] { Clipboard::setText(m_menuLink); });
+            m_menu->addItem(tr("Open Link"), [this] { m_window->openLink(m_menuLink); });
+            m_menu->addItem(tr("Copy Link"), [this] { Clipboard::setText(m_menuLink); });
             m_menu->addSeparator();
         }
         if (!m_menuPath.empty()) {
             const std::string name = m_menuPath.substr(m_menuPath.rfind('/') + 1);
-            m_menu->addItem("Open \xe2\x80\x9c" + elided(name.empty() ? m_menuPath : name, 30) + "\xe2\x80\x9d",
+            m_menu->addItem(format(tr("Open “{name}”"), {{"name", elided(name.empty() ? m_menuPath : name, 30)}}),
                             [this] { ProcessHelper::openUrl(m_menuPath); });
-            m_menu->addItem("Show in File Manager", [this] { ProcessHelper::showInFileManager(m_menuPath); });
+            m_menu->addItem(tr("Show in File Manager"), [this] { ProcessHelper::showInFileManager(m_menuPath); });
             m_menu->addSeparator();
         }
         if (m_terminal->hasSelection())
-            m_menu->addItem("Copy", [this] { m_terminal->copyClipboard(); });
+            m_menu->addItem(tr("Copy"), [this] { m_terminal->copyClipboard(); });
         if (m_menuCanPaste)
-            m_menu->addItem("Paste", [this] { m_terminal->pasteClipboard(); });
-        m_menu->addItem("Select All", [this] { m_terminal->selectAll(); });
-        m_menu->addItem("Find\xe2\x80\xa6", [this] { openFind(); });
+            m_menu->addItem(tr("Paste"), [this] { m_terminal->pasteClipboard(); });
+        m_menu->addItem(tr("Select All"), [this] { m_terminal->selectAll(); });
+        m_menu->addItem(tr("Find…"), [this] { openFind(); });
         if (m_terminal->scrollbarMaximum() > 0)
-            m_menu->addItem("Clear Scrollback", [this] { m_session->clearScrollback(); });
-        m_menu->addItem("Reset Terminal", [this] { m_session->resetTerminal(); });
+            m_menu->addItem(tr("Clear Scrollback"), [this] { m_session->clearScrollback(); });
+        m_menu->addItem(tr("Reset Terminal"), [this] { m_session->resetTerminal(); });
         m_menu->addSeparator();
-        m_menu->addItem("New Tab", [this] { m_window->openNewTab(); });
-        m_menu->addItem("New Window", [this] { m_window->newWindow(); });
-        m_menu->addItem("Open File Manager", [this] { ProcessHelper::openFileManager(m_session->currentDir()); });
+        m_menu->addItem(tr("New Tab"), [this] { m_window->openNewTab(); });
+        m_menu->addItem(tr("New Window"), [this] { m_window->newWindow(); });
+        m_menu->addItem(tr("Open File Manager"), [this] { ProcessHelper::openFileManager(m_session->currentDir()); });
         m_menu->addSeparator();
-        m_menu->addItem(m_window->isFullScreen() ? "Exit full screen" : "Full screen",
+        m_menu->addItem(m_window->isFullScreen() ? tr("Exit full screen") : tr("Full screen"),
                         [this] { m_window->toggleFullScreen(); });
-        m_menu->addItem("Settings", [this] { m_window->showSettings(); });
+        m_menu->addItem(tr("Settings"), [this] { m_window->showSettings(); });
 
         if (Window* window = this->window())
             m_menu->popup(window, position);

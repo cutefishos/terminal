@@ -5,6 +5,7 @@
 
 #include <algorithm>
 
+#include "base/i18n.h"
 #include "base/strings.h"
 #include "ui/header_button.h"
 #include "ui/keys.h"
@@ -16,6 +17,7 @@
 #include "TerminalView.h"
 
 using namespace cutefish::ui;
+using cutefish::i18n::tr;
 
 // The field's keys: Enter searches, Shift+Enter searches the other way, Escape closes.
 class FindField : public TextField
@@ -58,7 +60,7 @@ FindBar::FindBar(Konsole::TerminalView* terminal)
     setVisible(false);
 
     m_field->setFrameVisible(false);
-    m_field->setPlaceholder("Find");
+    m_field->setPlaceholder(tr("Find"));
     m_field->setTextMargins(0, 0);
     m_previous->setGlyph("chevron-up", 16);
     m_next->setGlyph("chevron-down", 16);

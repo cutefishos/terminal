@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "base/event_loop.h"
+#include "base/i18n.h"
 #include "base/strings.h"
 #include "ui/animation.h"
 #include "ui/dialog_window.h"
@@ -32,6 +33,9 @@
 #include "windows.h"
 
 using namespace cutefish::ui;
+using cutefish::i18n::format;
+using cutefish::i18n::tr;
+using cutefish::i18n::trn;
 namespace strings = cutefish::base::strings;
 
 static constexpr double kHeaderHeight = 40;
@@ -205,7 +209,7 @@ public:
     // Shows the size briefly while zooming.
     void showZoom(int pointSize)
     {
-        m_zoomLabel->setText(std::to_string(pointSize) + " pt");
+        m_zoomLabel->setText(format(tr("{size} pt"), {{"size", std::to_string(pointSize)}}));
         if (m_zoomFade)
             m_zoomFade->stop();
         m_zoomOpacity = 1;
@@ -602,11 +606,11 @@ void TerminalWindow::openTabMenu(int index, PointF position)
     if (!m_tabMenu)
         m_tabMenu = std::make_unique<Menu>();
     m_tabMenu->clear();
-    m_tabMenu->addItem("Rename Tab\xe2\x80\xa6", [this] { m_headerContent->tabBar->startRename(m_tabMenuIndex); });
+    m_tabMenu->addItem(tr("Rename Tab…"), [this] { m_headerContent->tabBar->startRename(m_tabMenuIndex); });
     m_tabMenu->addSeparator();
-    m_tabMenu->addItem("Close Tab", [this] { closeProtection(m_tabMenuIndex); });
+    m_tabMenu->addItem(tr("Close Tab"), [this] { closeProtection(m_tabMenuIndex); });
     if (tabCount() > 1)
-        m_tabMenu->addItem("Close Other Tabs", [this] { closeOtherTabs(m_tabMenuIndex); });
+        m_tabMenu->addItem(tr("Close Other Tabs"), [this] { closeOtherTabs(m_tabMenuIndex); });
     m_tabMenu->popup(m_window.get(), position);
 }
 
@@ -634,9 +638,9 @@ void TerminalWindow::confirmClose(const std::vector<TerminalPage*>& pages, std::
     }
 
     if (!m_exitPrompt) {
-        m_exitPrompt = std::make_unique<ConfirmDialog>(m_window.get(), "Process is running, are you sure you want to quit?");
-        m_exitPrompt->setCancelText("Cancel");
-        m_exitPrompt->setConfirmText("OK");
+        m_exitPrompt = std::make_unique<ConfirmDialog>(m_window.get(), tr("Process is running, are you sure you want to quit?"));
+        m_exitPrompt->setCancelText(tr("Cancel"));
+        m_exitPrompt->setConfirmText(tr("OK"));
         m_exitPrompt->setDestructive(true);
         m_exitPrompt->onAccepted = [this] {
             if (auto pending = std::exchange(m_pendingAction, nullptr))
@@ -782,8 +786,8 @@ void TerminalWindow::openLink(const std::string& url)
     }
 
     if (!m_linkConfirm) {
-        m_linkConfirm = std::make_unique<ConfirmDialog>(m_window.get(), "Open this link?");
-        m_linkConfirm->setConfirmText("Open");
+        m_linkConfirm = std::make_unique<ConfirmDialog>(m_window.get(), tr("Open this link?"));
+        m_linkConfirm->setConfirmText(tr("Open"));
         m_linkConfirm->onAccepted = [this] { ProcessHelper::openUrl(m_pendingLink); };
     }
     m_pendingLink = url;
@@ -810,7 +814,7 @@ void TerminalWindow::confirmPaste(const std::string& text, std::function<void()>
 
     if (!m_pasteConfirm) {
         m_pasteConfirm = std::make_unique<ConfirmDialog>(m_window.get(), std::string());
-        m_pasteConfirm->setConfirmText("Paste");
+        m_pasteConfirm->setConfirmText(tr("Paste"));
         m_pasteConfirm->onAccepted = [this] {
             if (auto pending = std::exchange(m_pendingPaste, nullptr))
                 pending();
@@ -819,8 +823,8 @@ void TerminalWindow::confirmPaste(const std::string& text, std::function<void()>
     }
 
     const size_t count = lines.size();
-    m_pasteConfirm->setTitle(count > 1 ? "Paste " + std::to_string(count) + " lines?"
-                                       : "Paste this line and press Enter?");
+    m_pasteConfirm->setTitle(count > 1 ? trn("Paste {n} line?", "Paste {n} lines?", count)
+                                       : std::string(tr("Paste this line and press Enter?")));
     m_pasteConfirm->setText(strings::join(shown, "\n"));
     m_pendingPaste = std::move(action);
     m_pasteConfirm->show();
