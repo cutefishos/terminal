@@ -269,6 +269,7 @@ public:
         : m_window(window)
         , preview(addChild<Preview>(window))
     {
+        setName("settingsContent");
         TerminalSettings& settings = window->settings();
 
         Card* appearance = addCard();
@@ -452,6 +453,15 @@ void SettingsDialog::show()
     m_dialog->show();
     if (m_dialog->window())
         m_dialog->window()->activate();
+}
+
+void SettingsDialog::retranslate()
+{
+    if (!m_dialog || !m_content)
+        return;
+    m_dialog->setTitle(tr("Settings"));
+    m_content = m_dialog->setContent<SettingsContent>(m_window);
+    update();
 }
 
 void SettingsDialog::close()

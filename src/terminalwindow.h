@@ -100,9 +100,13 @@ private:
     class Overlay;
 
     void applySettings();
+    void retranslate();
     void updateBackground();
     void updateTitle();
     void confirmClose(const std::vector<TerminalPage*>& pages, std::function<void()> action);
+    void showExitPrompt();
+    void showLinkConfirm();
+    void showPasteConfirm();
     void closeProtection(int index);
     void detachTab(int index, cutefish::ui::PointF position);
     void openTabMenu(int index, cutefish::ui::PointF position);
@@ -137,6 +141,8 @@ private:
     std::function<void()> m_pendingAction;
     std::function<void()> m_pendingPaste;
     std::string m_pendingLink;
+    size_t m_pasteLineCount = 0;
+    std::string m_pastePreview;
 
     // Set once the close has been confirmed, so closing does not ask again.
     bool m_quitting = false;

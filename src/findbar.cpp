@@ -59,8 +59,8 @@ FindBar::FindBar(Konsole::TerminalView* terminal)
     setName("findBar");
     setVisible(false);
 
+    m_field->setName("findField");
     m_field->setFrameVisible(false);
-    m_field->setPlaceholder(tr("Find"));
     m_field->setTextMargins(0, 0);
     m_previous->setGlyph("chevron-up", 16);
     m_next->setGlyph("chevron-down", 16);
@@ -76,6 +76,7 @@ FindBar::FindBar(Konsole::TerminalView* terminal)
         m_notFound = !found;
         updateColors();
     });
+    retranslate();
     updateColors();
 }
 
@@ -124,6 +125,11 @@ void FindBar::close()
     m_terminal->clearFind();
     if (onClosed)
         onClosed();
+}
+
+void FindBar::retranslate()
+{
+    m_field->setPlaceholder(tr("Find"));
 }
 
 void FindBar::search(bool forwards, bool fromSelection)

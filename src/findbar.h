@@ -34,6 +34,7 @@ public:
 
     void open(const std::string& text);
     void close();
+    void retranslate();
 
     std::function<void()> onClosed;
 

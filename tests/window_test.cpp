@@ -16,6 +16,7 @@
 #include "ui/keys.h"
 #include "ui/painter.h"
 #include "ui/test_input.h"
+#include "ui/text_field.h"
 #include "ui/view.h"
 #include "ui/window.h"
 
@@ -153,6 +154,61 @@ TEST_F(WindowTest, CloseOtherTabsAfterTheKeptTabEnded)
     ASSERT_EQ(window->tabCount(), 1);
     EXPECT_EQ(window->currentPage(), busy);
     EXPECT_TRUE(busy->isVisible());
+}
+
+static ui::View* findView(ui::View* view, const std::string& name)
+{
+    if (!view || view->name() == name)
+        return view;
+    for (const auto& child : view->children()) {
+        if (ui::View* found = findView(child.get(), name))
+            return found;
+    }
+    return nullptr;
+}
+
+TEST_F(WindowTest, LanguageChangeKeepsTheShellsAndTheSearch)
+{
+    Windows windows(m_settings);
+    TerminalWindow* window = windows.create(shell());
+    TerminalPage* busy = window->currentPage();
+    window->openTab(m_directory.path(), {"/bin/sh"});
+    ASSERT_EQ(window->tabCount(), 2);
+    TerminalPage* page = window->currentPage();
+    Konsole::TerminalSession* session = &page->session();
+    Konsole::TerminalView* terminal = page->terminal();
+    page->setCustomTitle("Build");
+    page->openFind();
+    auto* field = static_cast<ui::TextField*>(findView(page, "findField"));
+    ASSERT_NE(field, nullptr);
+    field->setText("needle");
+
+    window->showSettings();
+    ui::Window* settings = ui::Application::instance()->windows().back();
+    ASSERT_NE(settings, &window->window());
+    const ui::View* settingsContent = findView(settings->contentView(), "settingsContent");
+    ASSERT_NE(settingsContent, nullptr);
+
+    busy->session().sendText("sleep 30\n");
+    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+    window->closeOtherTabs(1);
+
+    ui::Application::instance()->languageChanged.emit();
+    ASSERT_EQ(window->tabCount(), 2);
+    EXPECT_EQ(window->currentPage(), page);
+    EXPECT_EQ(&page->session(), session);
+    EXPECT_EQ(page->terminal(), terminal);
+    EXPECT_EQ(page->title(), "Build");
+    EXPECT_TRUE(busy->session().hasActiveProcess());
+    EXPECT_EQ(static_cast<ui::TextField*>(findView(page, "findField"))->text(), "needle");
+    const ui::View* rebuilt = findView(settings->contentView(), "settingsContent");
+    ASSERT_NE(rebuilt, nullptr);
+    EXPECT_NE(rebuilt, settingsContent);
+
+    // The close question is asked again and still closes the other tab.
+    confirmLastDialog(window);
+    ASSERT_EQ(window->tabCount(), 1);
+    EXPECT_EQ(window->currentPage(), page);
 }
 
 TEST_F(WindowTest, CursorBlinksOnlyWithTheKeyboard)

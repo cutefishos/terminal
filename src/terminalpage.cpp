@@ -126,6 +126,15 @@ void TerminalPage::applySettings()
                              m_window->schemeColor(1, accent::red), m_window->schemeColor(4, Theme::current().highlight));
 }
 
+void TerminalPage::retranslate()
+{
+    if (m_menu)
+        m_menu->close();
+    m_menu.reset();
+    if (m_findBar)
+        m_findBar->retranslate();
+}
+
 void TerminalPage::startShell()
 {
     m_session->startShellProgram();

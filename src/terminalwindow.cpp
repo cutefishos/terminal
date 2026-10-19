@@ -10,6 +10,7 @@
 #include "base/i18n.h"
 #include "base/strings.h"
 #include "ui/animation.h"
+#include "ui/application.h"
 #include "ui/dialog_window.h"
 #include "ui/drag.h"
 #include "ui/header_button.h"
@@ -345,6 +346,7 @@ TerminalWindow::TerminalWindow(Windows& windows, TerminalSettings& settings, Opt
     m_window->onStatesChanged = [this] { applySettings(); };
 
     m_connections.push_back(m_settings.changed.connect([this] { applySettings(); }));
+    m_connections.push_back(Application::instance()->languageChanged.connect([this] { retranslate(); }));
     applySettings();
 
     if (options.detachedPage) {
@@ -415,6 +417,32 @@ void TerminalWindow::applySettings()
     for (TerminalPage* page : m_pages)
         page->applySettings();
     updateTitle();
+}
+
+// The shells, their output and the tabs stay; menus close, and the dialogs are
+// made again, an open one shown again with what it was asking about.
+void TerminalWindow::retranslate()
+{
+    if (m_tabMenu)
+        m_tabMenu->close();
+    m_tabMenu.reset();
+    for (TerminalPage* page : m_pages)
+        page->retranslate();
+    if (m_settingsDialog)
+        m_settingsDialog->retranslate();
+
+    const bool exitShown = m_exitPrompt && m_exitPrompt->window();
+    const bool linkShown = m_linkConfirm && m_linkConfirm->window();
+    const bool pasteShown = m_pasteConfirm && m_pasteConfirm->window();
+    m_exitPrompt.reset();
+    m_linkConfirm.reset();
+    m_pasteConfirm.reset();
+    if (exitShown)
+        showExitPrompt();
+    if (linkShown)
+        showLinkConfirm();
+    if (pasteShown)
+        showPasteConfirm();
 }
 
 void TerminalWindow::updateBackground()
@@ -637,6 +665,12 @@ void TerminalWindow::confirmClose(const std::vector<TerminalPage*>& pages, std::
         return;
     }
 
+    m_pendingAction = std::move(action);
+    showExitPrompt();
+}
+
+void TerminalWindow::showExitPrompt()
+{
     if (!m_exitPrompt) {
         m_exitPrompt = std::make_unique<ConfirmDialog>(m_window.get(), tr("Process is running, are you sure you want to quit?"));
         m_exitPrompt->setCancelText(tr("Cancel"));
@@ -648,7 +682,6 @@ void TerminalWindow::confirmClose(const std::vector<TerminalPage*>& pages, std::
         };
         m_exitPrompt->onRejected = [this] { m_pendingAction = nullptr; };
     }
-    m_pendingAction = std::move(action);
     m_exitPrompt->show();
 }
 
@@ -785,14 +818,20 @@ void TerminalWindow::openLink(const std::string& url)
         return;
     }
 
+    m_pendingLink = url;
+    showLinkConfirm();
+}
+
+void TerminalWindow::showLinkConfirm()
+{
     if (!m_linkConfirm) {
         m_linkConfirm = std::make_unique<ConfirmDialog>(m_window.get(), tr("Open this link?"));
         m_linkConfirm->setConfirmText(tr("Open"));
         m_linkConfirm->onAccepted = [this] { ProcessHelper::openUrl(m_pendingLink); };
     }
-    m_pendingLink = url;
-    const std::u16string utf16 = strings::utf8ToUtf16(url);
-    m_linkConfirm->setText(utf16.size() > 300 ? strings::utf16ToUtf8(utf16.substr(0, 299)) + "\xe2\x80\xa6" : url);
+    const std::u16string utf16 = strings::utf8ToUtf16(m_pendingLink);
+    m_linkConfirm->setText(utf16.size() > 300 ? strings::utf16ToUtf8(utf16.substr(0, 299)) + "\xe2\x80\xa6"
+                                              : m_pendingLink);
     m_linkConfirm->show();
 }
 
@@ -812,6 +851,14 @@ void TerminalWindow::confirmPaste(const std::string& text, std::function<void()>
     if (lines.size() > 4)
         shown.push_back("\xe2\x80\xa6");
 
+    m_pasteLineCount = lines.size();
+    m_pastePreview = strings::join(shown, "\n");
+    m_pendingPaste = std::move(action);
+    showPasteConfirm();
+}
+
+void TerminalWindow::showPasteConfirm()
+{
     if (!m_pasteConfirm) {
         m_pasteConfirm = std::make_unique<ConfirmDialog>(m_window.get(), std::string());
         m_pasteConfirm->setConfirmText(tr("Paste"));
@@ -822,10 +869,8 @@ void TerminalWindow::confirmPaste(const std::string& text, std::function<void()>
         m_pasteConfirm->onRejected = [this] { m_pendingPaste = nullptr; };
     }
 
-    const size_t count = lines.size();
-    m_pasteConfirm->setTitle(count > 1 ? trn("Paste {n} line?", "Paste {n} lines?", count)
-                                       : std::string(tr("Paste this line and press Enter?")));
-    m_pasteConfirm->setText(strings::join(shown, "\n"));
-    m_pendingPaste = std::move(action);
+    m_pasteConfirm->setTitle(m_pasteLineCount > 1 ? trn("Paste {n} line?", "Paste {n} lines?", m_pasteLineCount)
+                                                  : std::string(tr("Paste this line and press Enter?")));
+    m_pasteConfirm->setText(m_pastePreview);
     m_pasteConfirm->show();
 }

@@ -47,6 +47,9 @@ public:
 
     // The settings and the window's zoom and colours, applied again.
     void applySettings();
+    // The menu closes and the find bar takes the new language, keeping its
+    // search; the shell and its output stay as they are.
+    void retranslate();
 
     void startShell();
     void openFind();

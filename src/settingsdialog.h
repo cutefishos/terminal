@@ -29,6 +29,8 @@ public:
 
     void show();
     void close();
+    // An open dialog takes the new language in place, keeping its window.
+    void retranslate();
 
 private:
     void update();
