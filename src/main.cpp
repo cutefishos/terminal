@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "base/i18n.h"
-#include "base/locale.h"
 #include "ui/application.h"
 
 #include "terminalsettings.h"
@@ -98,8 +97,6 @@ int main(int argc, char** argv)
     ui::Application app(argc, argv);
     app.setApplicationId("cutefish-terminal");
     i18n::setDomain("cutefish-terminal");
-    // Character widths follow the locale.
-    base::Locale::setProcessLocale();
 
     TerminalSettings settings(TerminalSettings::defaultPath());
     Windows windows(settings);
