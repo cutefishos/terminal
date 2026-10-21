@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <algorithm>
-#include <clocale>
 #include <cstdio>
 #include <filesystem>
 #include <pwd.h>
@@ -11,6 +10,7 @@
 #include <vector>
 
 #include "base/i18n.h"
+#include "base/locale.h"
 #include "ui/application.h"
 
 #include "terminalsettings.h"
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     app.setApplicationId("cutefish-terminal");
     i18n::setDomain("cutefish-terminal");
     // Character widths follow the locale.
-    std::setlocale(LC_ALL, "");
+    base::Locale::setProcessLocale();
 
     TerminalSettings settings(TerminalSettings::defaultPath());
     Windows windows(settings);
