@@ -8,6 +8,12 @@ The emulator core comes from Konsole by way of
 [qmltermwidget](https://github.com/Swordfish90/qmltermwidget).
 
 ## Dependencies
+Install dependencies
+```sh
+cd terminal
+sudo apt build-dep .
+```
+Or alternatively
 
 Terminal is built on [cutefish-toolkit](https://github.com/cutefishos/cutefish-toolkit);
 install it first.
