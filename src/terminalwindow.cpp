@@ -198,7 +198,7 @@ protected:
 
         // The window buttons' width, mirrored on both sides so the title is
         // centred on the window rather than on this item.
-        const double reservedWidth = std::max(geometry().x, windowWidth - geometry().x - width);
+        const double reservedWidth = geometry().x;
         const SizeF titleSize = title->sizeHint();
         const double titleWidth = std::max(0.0, std::min(titleSize.width, windowWidth - reservedWidth * 2));
         title->setGeometry({(windowWidth - titleWidth) / 2 - geometry().x,
