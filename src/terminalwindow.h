@@ -30,7 +30,7 @@ class SettingsDialog;
 class TerminalSettings;
 class Windows;
 
-// A terminal window: its tabs in the title bar, each a shell.
+// A terminal window: its tabs in a row under the title bar, each a shell.
 class TerminalWindow
 {
 public:

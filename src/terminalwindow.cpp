@@ -40,12 +40,18 @@ using cutefish::i18n::trn;
 namespace strings = cutefish::base::strings;
 
 static constexpr double kHeaderHeight = 40;
+// The tab bar's row under the header, shown with more than one tab.
+static constexpr double kTabBarHeight = 38;
 // What a tab dragged between windows of this process carries.
 static constexpr const char* kTabMimeType = "application/x-cutefish-terminal-tab";
-// The "+" button, between the tabs and the window buttons.
-static constexpr double kNewTabButtonSize = 32;
+// The "+" button at the tab bar's end.
+static constexpr double kNewTabButtonSize = 28;
+// From the track's end and from the window's edge to the button.
+static constexpr double kNewTabStartGap = 2;
+static constexpr double kNewTabEndMargin = 10;
 
-// The tabs' pages, the current one shown under the header.
+// The header, the tab bar's row under it with more than one tab, and the
+// tabs' pages, the current one shown under both.
 class TerminalWindow::Content : public View
 {
 public:
@@ -53,15 +59,31 @@ public:
         : m_owner(owner)
     {
         setName("content");
+        pages = addChild<View>();
+        pages->setName("pages");
+        tabBar = addChild<WindowTabBar>();
+        tabBar->setName("tabBar");
+        tabBar->setTabWidthRange(140, 0);
+        const double spacing = Theme::current().smallSpacing;
+        tabBar->setTrackInsets({spacing, 4, kNewTabStartGap + kNewTabButtonSize + kNewTabEndMargin, 4});
+        tabBar->setPressedFeedback(true);
+        tabBar->setVisible(false);
+        newTab = addChild<HeaderButton>("add", kNewTabButtonSize);
+        newTab->setName("newTab");
+        newTab->setPlateAlphas({0.05, 0.10}, {0.05, 0.10});
+        newTab->setVisible(false);
         header = addChild<WindowHeader>(kHeaderHeight);
         header->setButtonMargin(4);
         header->setButtonsCentered(true);
-        pages = addChild<View>();
-        pages->setName("pages");
     }
 
     WindowHeader* header;
+    WindowTabBar* tabBar;
+    HeaderButton* newTab;
     View* pages;
+    bool tabsShown = false;
+
+    double barsHeight() const { return kHeaderHeight + (tabsShown ? kTabBarHeight : 0); }
 
 protected:
     void layout() override
@@ -69,70 +91,23 @@ protected:
         const double width = geometry().width;
         const double height = geometry().height;
         header->setGeometry({0, 0, width, kHeaderHeight});
-        pages->setGeometry({0, kHeaderHeight, width, std::max(0.0, height - kHeaderHeight)});
+        tabBar->setVisible(tabsShown);
+        const double tabBarHeight = tabsShown ? kTabBarHeight : 0;
+        tabBar->setGeometry({0, kHeaderHeight, width, tabBarHeight});
+        newTab->setVisible(tabsShown);
+        newTab->setGeometry({width - kNewTabEndMargin - kNewTabButtonSize,
+                             kHeaderHeight + rounding::centeredStart(tabBarHeight, kNewTabButtonSize),
+                             kNewTabButtonSize, kNewTabButtonSize});
+        const double top = barsHeight();
+        pages->setGeometry({0, top, width, std::max(0.0, height - top)});
         for (const auto& page : pages->children())
             page->setGeometry(pages->localRect());
         m_owner->updateBackground();
     }
 
-private:
-    TerminalWindow* m_owner;
-};
-
-// The title with one tab, the tab bar with more, and the "+" button.
-class TerminalWindow::HeaderContent : public View
-{
-public:
-    explicit HeaderContent(TerminalWindow* owner)
-        : m_owner(owner)
-        , title(addChild<Label>())
-        , tabBar(addChild<WindowTabBar>())
-        , newTab(addChild<HeaderButton>("add", kNewTabButtonSize))
-    {
-        setName("headerContent");
-        title->setName("title");
-        title->setFontSize(13);
-        title->setWeight(500);
-        title->setElide(Label::Elide::Middle);
-        tabBar->setName("tabBar");
-        newTab->setName("newTab");
-    }
-
-    Label* title;
-    WindowTabBar* tabBar;
-    HeaderButton* newTab;
-
-protected:
-    void layout() override
-    {
-        const double width = geometry().width;
-        const double height = geometry().height;
-        const Window* window = this->window();
-        const double windowWidth = window ? window->size().width : width;
-
-        // Right next to the window buttons, with the window button spacing between.
-        const double newTabX = width - kNewTabButtonSize;
-        newTab->setGeometry({newTabX, rounding::centeredStart(height, kNewTabButtonSize), kNewTabButtonSize,
-                             kNewTabButtonSize});
-
-        // Width taken by the window buttons, mirrored on the left so the
-        // title is centred on the window rather than on this item.
-        const double reservedWidth = windowWidth - width + kNewTabButtonSize;
-        const SizeF titleSize = title->sizeHint();
-        const double titleWidth = std::max(0.0, std::min(titleSize.width, windowWidth - reservedWidth * 2));
-        title->setGeometry({(windowWidth - titleWidth) / 2, rounding::centeredStart(height, titleSize.height),
-                            titleWidth, titleSize.height});
-
-        const double tabLeft = Theme::current().smallSpacing;
-        const double tabRight = newTabX - 4;
-        const double tabHeight = tabBar->sizeHint().height;
-        tabBar->setGeometry({tabLeft, rounding::centeredStart(height, tabHeight), std::max(0.0, tabRight - tabLeft),
-                             tabHeight});
-    }
-
-    // Takes a tab dragged out of another window of this process; one from
-    // another terminal process cannot bring its shell along. While it is over
-    // the title bar the tab bar shows it where it would drop.
+    // Takes a tab dragged out of another window of this process over the
+    // header or the tabs; one from another terminal process cannot bring its
+    // shell along. While it is there the tab bar shows it where it would drop.
     bool canDrop(const DropOffer& offer) const override
     {
         return sourceOf(offer) != nullptr;
@@ -140,21 +115,31 @@ protected:
 
     void dragEnter(const DragEvent& event) override
     {
-        TerminalWindow* source = sourceOf(*event.offer);
-        TerminalPage* page = source ? source->currentPage() : nullptr;
-        m_owner->m_incoming = true;
-        m_owner->updateTitle();
-        tabBar->beginIncoming(page ? page->title() : std::string(), event.position.x - tabBar->geometry().x);
+        dragUpdate(event);
     }
 
     uint32_t dragUpdate(const DragEvent& event) override
     {
-        tabBar->setIncomingX(event.position.x - tabBar->geometry().x);
-        return MoveAction;
+        const bool over = event.position.y < barsHeight();
+        const double x = event.position.x - tabBar->geometry().x;
+        if (over && !m_owner->m_incoming) {
+            TerminalWindow* source = sourceOf(*event.offer);
+            TerminalPage* page = source ? source->currentPage() : nullptr;
+            m_owner->m_incoming = true;
+            m_owner->updateTitle();
+            tabBar->beginIncoming(page ? page->title() : std::string(), x);
+        } else if (over) {
+            tabBar->setIncomingX(x);
+        } else if (m_owner->m_incoming) {
+            dragLeave();
+        }
+        return over ? MoveAction : NoAction;
     }
 
     void dragLeave() override
     {
+        if (!m_owner->m_incoming)
+            return;
         tabBar->endIncoming(false);
         m_owner->m_incoming = false;
         m_owner->updateTitle();
@@ -163,13 +148,13 @@ protected:
     uint32_t drop(const DragEvent& event) override
     {
         TerminalWindow* source = sourceOf(*event.offer);
+        if (!source || !m_owner->m_incoming) {
+            dragLeave();
+            return NoAction;
+        }
         const int index = tabBar->incomingIndex();
         tabBar->endIncoming(true);
         m_owner->m_incoming = false;
-        if (!source) {
-            m_owner->updateTitle();
-            return NoAction;
-        }
         m_owner->insertTab(source->takePage(), index);
         m_owner->window().activate();
         return MoveAction;
@@ -185,6 +170,40 @@ private:
     }
 
     TerminalWindow* m_owner;
+};
+
+// The title, centred on the window.
+class TerminalWindow::HeaderContent : public View
+{
+public:
+    HeaderContent()
+        : title(addChild<Label>())
+    {
+        setName("headerContent");
+        title->setName("title");
+        title->setFontSize(13);
+        title->setWeight(500);
+        title->setElide(Label::Elide::Middle);
+    }
+
+    Label* title;
+
+protected:
+    void layout() override
+    {
+        const double width = geometry().width;
+        const double height = geometry().height;
+        const Window* window = this->window();
+        const double windowWidth = window ? window->size().width : width;
+
+        // The window buttons' width, mirrored on both sides so the title is
+        // centred on the window rather than on this item.
+        const double reservedWidth = std::max(geometry().x, windowWidth - geometry().x - width);
+        const SizeF titleSize = title->sizeHint();
+        const double titleWidth = std::max(0.0, std::min(titleSize.width, windowWidth - reservedWidth * 2));
+        title->setGeometry({(windowWidth - titleWidth) / 2 - geometry().x,
+                            rounding::centeredStart(height, titleSize.height), titleWidth, titleSize.height});
+    }
 };
 
 // Over the content: the zoom indicator and the visual bell.
@@ -248,10 +267,12 @@ protected:
         const SizeF labelSize = m_zoomLabel->sizeHint();
         const double width = labelSize.width + theme.largeSpacing * 2;
         const double height = 36;
-        // Centred on the window's content, below the header; the bell covers the header too.
-        const double contentHeight = std::max(0.0, geometry().height - kHeaderHeight);
+        // Centred on the window's content, below the header and the tabs; the
+        // bell covers them too.
+        const double top = m_owner->m_content->barsHeight();
+        const double contentHeight = std::max(0.0, geometry().height - top);
         m_zoomRect = {rounding::centeredStart(geometry().width, width),
-                      kHeaderHeight + rounding::centeredStart(contentHeight, height), width, height};
+                      top + rounding::centeredStart(contentHeight, height), width, height};
         m_zoomLabel->setGeometry({m_zoomRect.x + rounding::centeredStart(width, labelSize.width),
                                   m_zoomRect.y + rounding::centeredStart(height, labelSize.height), labelSize.width,
                                   labelSize.height});
@@ -314,12 +335,12 @@ TerminalWindow::TerminalWindow(Windows& windows, TerminalSettings& settings, Opt
     auto content = std::make_unique<Content>(this);
     m_content = content.get();
     m_header = m_content->header;
-    m_headerContent = m_header->setContent<HeaderContent>(this);
+    m_headerContent = m_header->setContent<HeaderContent>();
     m_window->setContentView(std::move(content));
     m_overlay = m_window->overlay()->addChild<Overlay>(this);
 
-    m_headerContent->newTab->onClicked = [this] { openNewTab(); };
-    WindowTabBar* tabBar = m_headerContent->tabBar;
+    m_content->newTab->onClicked = [this] { openNewTab(); };
+    WindowTabBar* tabBar = m_content->tabBar;
     tabBar->onCurrentChanged = [this](int index) { selectTab(index); };
     tabBar->onCloseRequested = [this](int index) { closeProtection(index); };
     tabBar->onMoveRequested = [this](int from, int to) { moveTab(from, to); };
@@ -412,8 +433,8 @@ void TerminalWindow::applySettings()
     updateBackground();
 
     m_headerContent->title->setFontFamily(m_settings.fontName());
-    m_headerContent->tabBar->setDarkMode(m_chromeDark);
-    m_headerContent->tabBar->setTextColor(m_chromeForeground);
+    m_content->tabBar->setDarkMode(m_chromeDark);
+    m_content->tabBar->setTextColor(m_chromeForeground);
     for (TerminalPage* page : m_pages)
         page->applySettings();
     updateTitle();
@@ -465,10 +486,13 @@ void TerminalWindow::updateTitle()
 
     // A tab being dragged out or in keeps the bar up even with one tab, so
     // it can be dragged back.
-    WindowTabBar* tabBar = m_headerContent->tabBar;
+    WindowTabBar* tabBar = m_content->tabBar;
     const bool showTabs = tabCount() > 1 || m_incoming || m_detaching;
-    tabBar->setVisible(showTabs);
-    m_headerContent->title->setVisible(!showTabs);
+    if (m_content->tabsShown != showTabs) {
+        m_content->tabsShown = showTabs;
+        m_content->requestLayout();
+        m_overlay->requestLayout();
+    }
     for (int i = 0; i < tabCount() && i < tabBar->count(); ++i) {
         const std::string tabTitle = m_pages[size_t(i)]->title();
         if (tabBar->tabTitle(i) != tabTitle)
@@ -541,7 +565,7 @@ void TerminalWindow::insertTab(std::unique_ptr<TerminalPage> page, int index)
     index = std::clamp(index, 0, tabCount());
     m_content->pages->addChild(std::move(page));
     m_pages.insert(m_pages.begin() + index, raw);
-    m_headerContent->tabBar->insertTab(index, raw->title());
+    m_content->tabBar->insertTab(index, raw->title());
     attach(raw);
     m_content->requestLayout();
     showPage(index);
@@ -554,7 +578,7 @@ std::unique_ptr<TerminalPage> TerminalWindow::takeTab(int index)
     TerminalPage* page = m_pages[size_t(index)];
     m_pages.erase(m_pages.begin() + index);
     m_pageConnections.erase(page);
-    m_headerContent->tabBar->removeTab(index);
+    m_content->tabBar->removeTab(index);
     std::unique_ptr<View> view = m_content->pages->takeChild(page);
     if (tabCount() > 0)
         showPage(std::min(index, tabCount() - 1));
@@ -577,7 +601,7 @@ std::unique_ptr<TerminalPage> TerminalWindow::takePage()
 void TerminalWindow::detachTab(int index, PointF position)
 {
     if (index < 0 || index >= tabCount() || tabCount() < 2) {
-        m_headerContent->tabBar->cancelDetach();
+        m_content->tabBar->cancelDetach();
         return;
     }
 
@@ -617,7 +641,7 @@ void TerminalWindow::detachTab(int index, PointF position)
             detached->window().activate();
     };
 
-    if (!m_headerContent->tabBar->startDrag(std::move(source))) {
+    if (!m_content->tabBar->startDrag(std::move(source))) {
         m_detaching = false;
         insertTab(detached->takePage(), index);
         m_windows.release(detached);
@@ -634,7 +658,7 @@ void TerminalWindow::openTabMenu(int index, PointF position)
     if (!m_tabMenu)
         m_tabMenu = std::make_unique<Menu>();
     m_tabMenu->clear();
-    m_tabMenu->addItem(tr("Rename Tab…"), [this] { m_headerContent->tabBar->startRename(m_tabMenuIndex); });
+    m_tabMenu->addItem(tr("Rename Tab…"), [this] { m_content->tabBar->startRename(m_tabMenuIndex); });
     m_tabMenu->addSeparator();
     m_tabMenu->addItem(tr("Close Tab"), [this] { closeProtection(m_tabMenuIndex); });
     if (tabCount() > 1)
@@ -747,7 +771,7 @@ void TerminalWindow::moveTab(int from, int to)
     TerminalPage* page = m_pages[size_t(from)];
     m_pages.erase(m_pages.begin() + from);
     m_pages.insert(m_pages.begin() + to, page);
-    m_headerContent->tabBar->moveTab(from, to);
+    m_content->tabBar->moveTab(from, to);
     showPage(indexOfPage(page));
 }
 
