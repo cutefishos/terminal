@@ -9,11 +9,13 @@
 #include "base/event_loop.h"
 #include "base/i18n.h"
 #include "base/strings.h"
+#include "ui/about_dialog.h"
 #include "ui/animation.h"
 #include "ui/application.h"
 #include "ui/dialog_window.h"
 #include "ui/drag.h"
 #include "ui/header_button.h"
+#include "ui/keys.h"
 #include "ui/label.h"
 #include "ui/menu.h"
 #include "ui/painter.h"
@@ -369,6 +371,7 @@ TerminalWindow::TerminalWindow(Windows& windows, TerminalSettings& settings, Opt
     m_connections.push_back(m_settings.changed.connect([this] { applySettings(); }));
     m_connections.push_back(Application::instance()->languageChanged.connect([this] { retranslate(); }));
     applySettings();
+    buildMainMenu();
 
     if (options.detachedPage) {
         insertTab(std::move(options.detachedPage), 0);
@@ -447,10 +450,15 @@ void TerminalWindow::retranslate()
     if (m_tabMenu)
         m_tabMenu->close();
     m_tabMenu.reset();
+    buildMainMenu();
     for (TerminalPage* page : m_pages)
         page->retranslate();
     if (m_settingsDialog)
         m_settingsDialog->retranslate();
+    if (m_aboutDialog) {
+        m_aboutDialog.reset();
+        showAbout();
+    }
 
     const bool exitShown = m_exitPrompt && m_exitPrompt->window();
     const bool linkShown = m_linkConfirm && m_linkConfirm->window();
@@ -807,6 +815,8 @@ void TerminalWindow::finishClose()
         takeTab(tabCount() - 1).reset();
     if (m_settingsDialog)
         m_settingsDialog->close();
+    if (m_aboutDialog)
+        m_aboutDialog->close();
     m_windows.release(this);
 }
 
@@ -830,6 +840,25 @@ void TerminalWindow::showSettings()
     if (!m_settingsDialog)
         m_settingsDialog = std::make_unique<SettingsDialog>(this);
     m_settingsDialog->show();
+}
+
+void TerminalWindow::showAbout()
+{
+    if (m_aboutDialog) {
+        m_aboutDialog->show();
+        return;
+    }
+
+    m_aboutDialog = std::make_unique<AboutDialog>(m_window.get());
+    m_aboutDialog->setName(tr("Terminal"));
+    m_aboutDialog->setDescription(tr("Runs a shell and the programs started in it."));
+    m_aboutDialog->setIconSource("utilities-terminal");
+    m_aboutDialog->setLink("https://github.com/cutefishos/terminal");
+    m_aboutDialog->onClosed = [this] {
+        std::shared_ptr<AboutDialog> doomed(std::move(m_aboutDialog));
+        cutefish::base::EventLoop::current()->post([doomed] {});
+    };
+    m_aboutDialog->show();
 }
 
 // A link in the output can name any scheme, and opening one starts whatever
@@ -897,4 +926,132 @@ void TerminalWindow::showPasteConfirm()
                                                   : std::string(tr("Paste this line and press Enter?")));
     m_pasteConfirm->setText(m_pastePreview);
     m_pasteConfirm->show();
+}
+
+void TerminalWindow::quitApplication()
+{
+    std::vector<TerminalWindow*> windows;
+    for (const std::unique_ptr<TerminalWindow>& window : m_windows.windows())
+        windows.push_back(window.get());
+    for (TerminalWindow* window : windows)
+        window->close();
+}
+
+void TerminalWindow::buildMainMenu()
+{
+    m_window->setMainMenu(nullptr);
+    m_mainMenu = std::make_unique<Menu>();
+    const uint32_t ctrlShift = cutefish::ui::ControlModifier | cutefish::ui::ShiftModifier;
+
+    Menu* application = m_mainMenu->addSubmenu(tr("Terminal"));
+    application->setRole(MenuRole::Application);
+    application->addItem(tr("About Terminal"), [this] { showAbout(); });
+    application->addSeparator();
+    application->addItem(tr("Settings…"), [this] { showSettings(); });
+    application->addSeparator();
+    application->addItem(tr("Hide Terminal"), [this] { m_window->hideApplication(); });
+    application->addSeparator();
+    application->addItem(tr("Quit Terminal"), [this] { quitApplication(); });
+
+    Menu* shell = m_mainMenu->addSubmenu(tr("Shell"));
+    const size_t newWindow = shell->addItem(tr("New Window"), [this] { this->newWindow(); });
+    shell->setItemKeyEquivalent(newWindow, "n", ctrlShift);
+    const size_t newTab = shell->addItem(tr("New Tab"), [this] { openNewTab(); });
+    shell->setItemKeyEquivalent(newTab, "t", ctrlShift);
+    shell->addSeparator();
+    shell->addItem(tr("Open File Manager"), [this] {
+        if (TerminalPage* page = currentPage())
+            ProcessHelper::openFileManager(page->session().currentDir());
+    });
+    shell->addSeparator();
+    const size_t rename = shell->addItem(tr("Rename Tab…"), [this] {
+        if (m_content->tabsShown)
+            m_content->tabBar->startRename(m_currentIndex);
+    });
+    shell->addSeparator();
+    const size_t closeTab = shell->addItem(tr("Close Tab"), [this] { closeCurrentTab(); });
+    shell->setItemKeyEquivalent(closeTab, "w", ctrlShift);
+    const size_t closeOthers = shell->addItem(tr("Close Other Tabs"), [this] { closeOtherTabs(m_currentIndex); });
+    const size_t closeWindow = shell->addItem(tr("Close Window"), [this] { close(); });
+    shell->setItemKeyEquivalent(closeWindow, "q", ctrlShift);
+    shell->onAboutToShow = [this, shell, rename, closeOthers] {
+        shell->setItemEnabled(rename, m_content->tabsShown);
+        shell->setItemEnabled(closeOthers, tabCount() > 1);
+    };
+
+    Menu* edit = m_mainMenu->addSubmenu(tr("Edit"));
+    const size_t copy = edit->addItem(tr("Copy"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->terminal()->copyClipboard();
+    });
+    edit->setItemKeyEquivalent(copy, "c", ctrlShift);
+    const size_t paste = edit->addItem(tr("Paste"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->terminal()->pasteClipboard();
+    });
+    edit->setItemKeyEquivalent(paste, "v", ctrlShift);
+    const size_t selectAll = edit->addItem(tr("Select All"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->terminal()->selectAll();
+    });
+    edit->setItemKeyEquivalent(selectAll, "a", ctrlShift);
+    edit->addSeparator();
+    const size_t find = edit->addItem(tr("Find…"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->openFind();
+    });
+    edit->setItemKeyEquivalent(find, "f", ctrlShift);
+    edit->addSeparator();
+    const size_t clearAll = edit->addItem(tr("Clear Screen and Scrollback"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->session().clearScreenAndScrollback();
+    });
+    edit->setItemKeyEquivalent(clearAll, "k", ctrlShift);
+    const size_t clearScrollback = edit->addItem(tr("Clear Scrollback"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->session().clearScrollback();
+    });
+    edit->addItem(tr("Reset Terminal"), [this] {
+        if (TerminalPage* page = currentPage())
+            page->session().resetTerminal();
+    });
+    edit->onAboutToShow = [this, edit, copy, clearScrollback] {
+        TerminalPage* page = currentPage();
+        edit->setItemEnabled(copy, page && page->terminal()->hasSelection());
+        edit->setItemEnabled(clearScrollback, page && page->terminal()->scrollbarMaximum() > 0);
+    };
+
+    Menu* view = m_mainMenu->addSubmenu(tr("View"));
+    const size_t bigger = view->addItem(tr("Bigger"), [this] { zoom(1); });
+    view->setItemKeyEquivalent(bigger, "=", cutefish::ui::ControlModifier);
+    const size_t smaller = view->addItem(tr("Smaller"), [this] { zoom(-1); });
+    view->setItemKeyEquivalent(smaller, "-", cutefish::ui::ControlModifier);
+    const size_t actualSize = view->addItem(tr("Actual Size"), [this] { zoom(0); });
+    view->setItemKeyEquivalent(actualSize, "0", cutefish::ui::ControlModifier);
+    view->addSeparator();
+    const size_t fullScreen = view->addItem(tr("Enter Full Screen"), [this] { toggleFullScreen(); });
+    view->setItemKeyEquivalent(fullScreen, "F11", 0);
+    view->onAboutToShow = [this, view, fullScreen] {
+        view->setItemText(fullScreen, isFullScreen() ? tr("Exit Full Screen") : tr("Enter Full Screen"));
+    };
+
+    Menu* windowMenu = m_mainMenu->addSubmenu(tr("Window"));
+    windowMenu->setRole(MenuRole::Windows);
+    windowMenu->addItem(tr("Minimize"), [this] { m_window->minimize(); });
+    windowMenu->addItem(tr("Zoom"), [this] { m_window->setMaximized(!m_window->states().maximized); });
+    windowMenu->addSeparator();
+    const size_t previousTab = windowMenu->addItem(tr("Show Previous Tab"), [this] { cycleTab(-1); });
+    windowMenu->setItemKeyEquivalent(previousTab, "Tab", ctrlShift);
+    const size_t nextTab = windowMenu->addItem(tr("Show Next Tab"), [this] { cycleTab(1); });
+    windowMenu->setItemKeyEquivalent(nextTab, "Tab", cutefish::ui::ControlModifier);
+    const size_t moveLeft = windowMenu->addItem(tr("Move Tab Left"), [this] { moveCurrentTab(-1); });
+    const size_t moveRight = windowMenu->addItem(tr("Move Tab Right"), [this] { moveCurrentTab(1); });
+    windowMenu->onAboutToShow = [this, windowMenu, previousTab, nextTab, moveLeft, moveRight] {
+        windowMenu->setItemEnabled(previousTab, tabCount() > 1);
+        windowMenu->setItemEnabled(nextTab, tabCount() > 1);
+        windowMenu->setItemEnabled(moveLeft, m_currentIndex > 0);
+        windowMenu->setItemEnabled(moveRight, m_currentIndex >= 0 && m_currentIndex < tabCount() - 1);
+    };
+
+    m_window->setMainMenu(m_mainMenu.get());
 }

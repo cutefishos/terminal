@@ -14,6 +14,7 @@
 #include "ui/application.h"
 #include "ui/glyph_run.h"
 #include "ui/keys.h"
+#include "ui/menu.h"
 #include "ui/painter.h"
 #include "ui/test_input.h"
 #include "ui/text_field.h"
@@ -90,6 +91,29 @@ TEST_F(WindowTest, TabLeavingAWindowIsNoLongerHeard)
     EXPECT_FALSE(moved->titleChanged.isEmpty());
     EXPECT_FALSE(moved->terminalClosed.isEmpty());
     EXPECT_EQ(second->tabCount(), 2);
+}
+
+TEST_F(WindowTest, EachWindowShowsItsMenusInTheStatusBar)
+{
+    Windows windows(m_settings);
+    TerminalWindow* first = windows.create(shell());
+    TerminalWindow* second = windows.create(shell());
+    for (TerminalWindow* window : {first, second}) {
+        ui::Menu* menu = window->window().mainMenu();
+        ASSERT_TRUE(menu);
+        const std::vector<ui::MenuRole> roles{ui::MenuRole::Application, ui::MenuRole::None, ui::MenuRole::None,
+                                              ui::MenuRole::None, ui::MenuRole::Windows};
+        for (size_t i = 0; i < roles.size(); ++i) {
+            ASSERT_TRUE(menu->submenu(i)) << i;
+            EXPECT_EQ(menu->submenu(i)->role(), roles[i]) << i;
+        }
+        EXPECT_FALSE(menu->submenu(roles.size()));
+    }
+    EXPECT_NE(first->window().mainMenu(), second->window().mainMenu());
+
+    ui::Application::instance()->languageChanged.emit();
+    ASSERT_TRUE(first->window().mainMenu());
+    EXPECT_EQ(first->window().mainMenu()->submenu(0)->role(), ui::MenuRole::Application);
 }
 
 TEST_F(WindowTest, ManyTabsOpenAndClose)

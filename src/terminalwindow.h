@@ -14,6 +14,7 @@
 #include "ui/geometry.h"
 
 namespace cutefish::ui {
+class AboutDialog;
 class Animation;
 class ConfirmDialog;
 class HeaderButton;
@@ -87,6 +88,7 @@ public:
     bool isFullScreen() const;
     void flashBell();
     void showSettings();
+    void showAbout();
     void openLink(const std::string& url);
     void confirmPaste(const std::string& text, std::function<void()> action);
 
@@ -101,6 +103,10 @@ private:
 
     void applySettings();
     void retranslate();
+    // The menus the status bar shows while the window is active.
+    void buildMainMenu();
+    // Every window of this process, each asking first about running programs.
+    void quitApplication();
     void updateBackground();
     void updateTitle();
     void confirmClose(const std::vector<TerminalPage*>& pages, std::function<void()> action);
@@ -117,6 +123,8 @@ private:
 
     Windows& m_windows;
     TerminalSettings& m_settings;
+    // The window shows it until the window goes, so it outlives the window.
+    std::unique_ptr<cutefish::ui::Menu> m_mainMenu;
     std::unique_ptr<cutefish::ui::Window> m_window;
     cutefish::ui::WindowHeader* m_header = nullptr;
     HeaderContent* m_headerContent = nullptr;
@@ -138,6 +146,7 @@ private:
     std::unique_ptr<cutefish::ui::ConfirmDialog> m_pasteConfirm;
     std::unique_ptr<cutefish::ui::ConfirmDialog> m_linkConfirm;
     std::unique_ptr<SettingsDialog> m_settingsDialog;
+    std::unique_ptr<cutefish::ui::AboutDialog> m_aboutDialog;
     std::function<void()> m_pendingAction;
     std::function<void()> m_pendingPaste;
     std::string m_pendingLink;

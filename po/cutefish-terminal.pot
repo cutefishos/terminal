@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cutefish-terminal\n"
 "Report-Msgid-Bugs-To: https://github.com/cutefishos\n"
-"POT-Creation-Date: 2026-10-19 22:34+0800\n"
+"POT-Creation-Date: 2026-10-31 16:05+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -119,7 +119,7 @@ msgstr ""
 msgid "Show in File Manager"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Copy"
 msgstr ""
 
@@ -127,31 +127,31 @@ msgstr ""
 msgid "Paste"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Select All"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Find…"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Clear Scrollback"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Reset Terminal"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "New Tab"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "New Window"
 msgstr ""
 
-#: src/terminalpage.cpp
+#: src/terminalpage.cpp src/terminalwindow.cpp
 msgid "Open File Manager"
 msgstr ""
 
@@ -187,6 +187,14 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
+#: src/terminalwindow.cpp cutefish-terminal.desktop
+msgid "Terminal"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Runs a shell and the programs started in it."
+msgstr ""
+
 #: src/terminalwindow.cpp
 msgid "Open this link?"
 msgstr ""
@@ -206,6 +214,86 @@ msgstr[1] ""
 msgid "Paste this line and press Enter?"
 msgstr ""
 
-#: cutefish-terminal.desktop
-msgid "Terminal"
+#: src/terminalwindow.cpp
+msgid "About Terminal"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Settings…"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Hide Terminal"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Quit Terminal"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Shell"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Close Window"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Edit"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Clear Screen and Scrollback"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "View"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Bigger"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Smaller"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Actual Size"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Enter Full Screen"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Exit Full Screen"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Window"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Minimize"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Zoom"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Show Previous Tab"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Show Next Tab"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Left"
+msgstr ""
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Right"
 msgstr ""
