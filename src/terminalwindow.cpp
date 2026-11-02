@@ -853,7 +853,6 @@ void TerminalWindow::showAbout()
     m_aboutDialog->setName(tr("Terminal"));
     m_aboutDialog->setDescription(tr("Runs a shell and the programs started in it."));
     m_aboutDialog->setIconSource("utilities-terminal");
-    m_aboutDialog->setLink("https://github.com/cutefishos/terminal");
     m_aboutDialog->onClosed = [this] {
         std::shared_ptr<AboutDialog> doomed(std::move(m_aboutDialog));
         cutefish::base::EventLoop::current()->post([doomed] {});
