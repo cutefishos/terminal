@@ -230,6 +230,7 @@ private:
     int drawnLines() const;
     void blinkEvent();
     void blinkCursorEvent();
+    cutefish::ui::RectF cursorRowRect() const;
     void blinkCursorTimeout();
     bool hasKeyboard() const;
     void restartCursorBlink();

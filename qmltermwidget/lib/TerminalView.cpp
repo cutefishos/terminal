@@ -303,7 +303,17 @@ void TerminalView::blinkEvent()
 void TerminalView::blinkCursorEvent()
 {
     _cursorBlinking = !_cursorBlinking;
-    requestPaint();
+    requestPaint(cursorRowRect());
+}
+
+// The whole row, as an inverted glyph can reach past its cell.
+ui::RectF TerminalView::cursorRowRect() const
+{
+    const int y = _screenWindow ? _screenWindow->cursorPosition().y() : 0;
+    const LineProperty property = y < int(_lineProperties.size()) ? _lineProperties[size_t(y)] : LineProperty(0);
+    const int scaleY = (property & LINE_DOUBLEHEIGHT) ? 2 : 1;
+    const double top = _topMargin + y * _metrics.height;
+    return {0, top - 1, geometry().width, double(_metrics.height * scaleY) + 2};
 }
 
 void TerminalView::blinkCursorTimeout()
