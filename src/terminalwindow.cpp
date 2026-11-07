@@ -20,6 +20,7 @@
 #include "ui/menu.h"
 #include "ui/painter.h"
 #include "ui/cell_layout.h"
+#include "ui/popup_glass.h"
 #include "ui/theme.h"
 #include "ui/view.h"
 #include "ui/window.h"
@@ -369,6 +370,8 @@ TerminalWindow::TerminalWindow(Windows& windows, TerminalSettings& settings, Opt
     m_window->onStatesChanged = [this] { applySettings(); };
 
     m_connections.push_back(m_settings.changed.connect([this] { applySettings(); }));
+    // The shell's Blur intensity (Settings > Appearance) blurs the glass.
+    m_connections.push_back(shellGlassTintChanged().connect([this] { updateBackground(); }));
     m_connections.push_back(Application::instance()->languageChanged.connect([this] { retranslate(); }));
     applySettings();
     buildMainMenu();
@@ -476,12 +479,25 @@ void TerminalWindow::retranslate()
 
 void TerminalWindow::updateBackground()
 {
-    m_window->setBackgroundColor(m_terminalBackground.withAlpha(m_settings.opacity()));
     const SizeF size = m_window->size();
+    // With the compositor's glass, the terminal's theme background at its own
+    // opacity is the tint of the glass, 0 leaving the lens clear; the shell's
+    // Blur intensity blurs it, its Glass effect tint is not used. Without the
+    // glass (another compositor, or the blur switched off) the background is
+    // painted as before.
+    const bool glass = m_settings.blur() && m_window->backgroundGlassAvailable();
+    m_window->setBackgroundColor(m_terminalBackground.withAlpha(glass ? 0.0 : m_settings.opacity()));
+    // Over the glass the text sits on transparent pixels, where one alpha
+    // per pixel cannot carry subpixel coverage.
+    m_window->setTranslucentSubpixelText(!glass);
     if (m_settings.blur())
         m_window->setBackgroundBlur({0, 0, size.width, size.height}, Theme::current().windowRadius);
     else
         m_window->setBackgroundBlur({}, 0);
+    if (glass)
+        m_window->setBackgroundGlass(windowGlass(m_terminalBackground, m_settings.opacity()));
+    else
+        m_window->setBackgroundGlass(std::nullopt);
 }
 
 void TerminalWindow::updateTitle()
