@@ -482,10 +482,10 @@ void TerminalWindow::updateBackground()
     const SizeF size = m_window->size();
     // With the compositor's glass, the terminal's theme background at its own
     // opacity is the tint of the glass, 0 leaving the lens clear; the shell's
-    // Blur intensity blurs it, its Glass effect tint is not used. Without the
-    // glass (another compositor, or the blur switched off) the background is
-    // painted as before.
-    const bool glass = m_settings.blur() && m_window->backgroundGlassAvailable();
+    // tint shapes the lens and its blur slider blurs it. Without the glass
+    // (another compositor, the blur switched off, or the shell's glass
+    // frosted) the background is painted as before.
+    const bool glass = m_settings.blur() && m_window->backgroundGlassAvailable() && !shellGlassFrosted();
     m_window->setBackgroundColor(m_terminalBackground.withAlpha(glass ? 0.0 : m_settings.opacity()));
     // Over the glass the text sits on transparent pixels, where one alpha
     // per pixel cannot carry subpixel coverage.
