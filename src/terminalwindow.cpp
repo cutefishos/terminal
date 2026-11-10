@@ -41,7 +41,7 @@ using cutefish::i18n::tr;
 using cutefish::i18n::trn;
 namespace strings = cutefish::base::strings;
 
-static constexpr double kHeaderHeight = 40;
+static constexpr double kHeaderHeight = 32;
 // The tab bar's row under the header, shown with more than one tab.
 static constexpr double kTabBarHeight = 38;
 // What a tab dragged between windows of this process carries.
@@ -75,7 +75,7 @@ public:
         newTab->setPlateAlphas({0.05, 0.10}, {0.05, 0.10});
         newTab->setVisible(false);
         header = addChild<WindowHeader>(kHeaderHeight);
-        header->setButtonMargin(4);
+        header->setButtonMargin(0);
         header->setButtonsCentered(true);
     }
 
@@ -183,7 +183,7 @@ public:
     {
         setName("headerContent");
         title->setName("title");
-        title->setFontSize(13);
+        title->setFontSize(12);
         title->setWeight(500);
         title->setElide(Label::Elide::Middle);
     }
