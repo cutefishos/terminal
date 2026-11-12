@@ -2,6 +2,8 @@
 
 A terminal emulator for Cutefish.
 
+<img src="screenshots/terminal.png" alt="Terminal" width="815">
+
 ### Third Party Code
 
 The emulator core comes from Konsole by way of
