@@ -1,0 +1,297 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cutefish-terminal\n"
+"Report-Msgid-Bugs-To: https://github.com/cutefishos\n"
+"POT-Creation-Date: 2026-10-31 16:05+0800\n"
+"PO-Revision-Date: 2026-10-31 16:05+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/findbar.cpp
+msgid "Find"
+msgstr "尋找"
+
+#: src/settingsdialog.cpp
+msgid "Theme"
+msgstr "主題"
+
+#: src/settingsdialog.cpp
+msgid "Font"
+msgstr "字體"
+
+#: src/settingsdialog.cpp
+msgid "Font Size"
+msgstr "字體大小"
+
+#: src/settingsdialog.cpp
+msgid "Blinking Cursor"
+msgstr "游標閃爍"
+
+#: src/settingsdialog.cpp
+msgid "Opacity"
+msgstr "不透明度"
+
+#: src/settingsdialog.cpp
+msgid "Window Blur"
+msgstr "視窗模糊"
+
+#: src/settingsdialog.cpp
+msgid "Cursor Shape"
+msgstr "游標形狀"
+
+#. TRANSLATORS: the shapes of the text cursor.
+#: src/settingsdialog.cpp
+msgid "Block"
+msgstr "方塊"
+
+#: src/settingsdialog.cpp
+msgid "Underline"
+msgstr "底線"
+
+#: src/settingsdialog.cpp
+msgid "I-Beam"
+msgstr "I 形"
+
+#: src/settingsdialog.cpp
+msgid "Scrollback"
+msgstr "回捲"
+
+#: src/settingsdialog.cpp
+msgid "1,000 lines"
+msgstr "1,000 行"
+
+#: src/settingsdialog.cpp
+msgid "10,000 lines"
+msgstr "10,000 行"
+
+#: src/settingsdialog.cpp
+msgid "100,000 lines"
+msgstr "100,000 行"
+
+#: src/settingsdialog.cpp
+msgid "Unlimited"
+msgstr "無限制"
+
+#: src/settingsdialog.cpp
+msgid "Flash on Bell"
+msgstr "響鈴時閃爍"
+
+#: src/settingsdialog.cpp
+msgid "Warn Before Pasting Multiple Lines"
+msgstr "貼上多行前先警告"
+
+#. TRANSLATORS: a font size in points.
+#: src/settingsdialog.cpp src/terminalwindow.cpp
+#, python-brace-format
+msgid "{size} pt"
+msgstr "{size} pt"
+
+#. TRANSLATORS: a percentage, such as "80%".
+#: src/settingsdialog.cpp
+#, python-brace-format
+msgid "{percent}%"
+msgstr "{percent}%"
+
+#: src/settingsdialog.cpp src/terminalpage.cpp
+msgid "Settings"
+msgstr "設定"
+
+#: src/terminalpage.cpp
+msgid "Open Link"
+msgstr "開啟連結"
+
+#: src/terminalpage.cpp
+msgid "Copy Link"
+msgstr "複製連結"
+
+#: src/terminalpage.cpp
+#, python-brace-format
+msgid "Open “{name}”"
+msgstr "開啟「{name}」"
+
+#: src/terminalpage.cpp
+msgid "Show in File Manager"
+msgstr "在檔案管理器中顯示"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Copy"
+msgstr "複製"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Paste"
+msgstr "貼上"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Select All"
+msgstr "全選"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Find…"
+msgstr "尋找…"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Clear Scrollback"
+msgstr "清除回捲內容"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Reset Terminal"
+msgstr "重置終端機"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Tab"
+msgstr "新增標籤頁"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Window"
+msgstr "新增視窗"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Open File Manager"
+msgstr "開啟檔案管理器"
+
+#: src/terminalpage.cpp
+msgid "Exit full screen"
+msgstr "結束全螢幕"
+
+#: src/terminalpage.cpp
+msgid "Full screen"
+msgstr "全螢幕"
+
+#: src/terminalwindow.cpp
+msgid "Rename Tab…"
+msgstr "重新命名標籤頁…"
+
+#: src/terminalwindow.cpp
+msgid "Close Tab"
+msgstr "關閉標籤頁"
+
+#: src/terminalwindow.cpp
+msgid "Close Other Tabs"
+msgstr "關閉其他標籤頁"
+
+#: src/terminalwindow.cpp
+msgid "Process is running, are you sure you want to quit?"
+msgstr "有程序正在執行，確定要結束嗎？"
+
+#: src/terminalwindow.cpp
+msgid "Cancel"
+msgstr "取消"
+
+#: src/terminalwindow.cpp
+msgid "OK"
+msgstr "好"
+
+#: src/terminalwindow.cpp cutefish-terminal.desktop
+msgid "Terminal"
+msgstr "終端機"
+
+#: src/terminalwindow.cpp
+msgid "Runs a shell and the programs started in it."
+msgstr "執行 Shell 及在其中啟動的程式。"
+
+#: src/terminalwindow.cpp
+msgid "Open this link?"
+msgstr "要開啟此連結嗎？"
+
+#: src/terminalwindow.cpp
+msgid "Open"
+msgstr "開啟"
+
+#: src/terminalwindow.cpp
+#, python-brace-format
+msgid "Paste {n} line?"
+msgid_plural "Paste {n} lines?"
+msgstr[0] "要貼上 {n} 行嗎？"
+
+#: src/terminalwindow.cpp
+msgid "Paste this line and press Enter?"
+msgstr "要貼上此行並按下 Enter 嗎？"
+
+#: src/terminalwindow.cpp
+msgid "About Terminal"
+msgstr "關於終端機"
+
+#: src/terminalwindow.cpp
+msgid "Settings…"
+msgstr "設定…"
+
+#: src/terminalwindow.cpp
+msgid "Hide Terminal"
+msgstr "隱藏終端機"
+
+#: src/terminalwindow.cpp
+msgid "Quit Terminal"
+msgstr "結束終端機"
+
+#: src/terminalwindow.cpp
+msgid "Shell"
+msgstr "Shell"
+
+#: src/terminalwindow.cpp
+msgid "Close Window"
+msgstr "關閉視窗"
+
+#: src/terminalwindow.cpp
+msgid "Edit"
+msgstr "編輯"
+
+#: src/terminalwindow.cpp
+msgid "Clear Screen and Scrollback"
+msgstr "清除螢幕與回捲內容"
+
+#: src/terminalwindow.cpp
+msgid "View"
+msgstr "檢視"
+
+#: src/terminalwindow.cpp
+msgid "Bigger"
+msgstr "放大"
+
+#: src/terminalwindow.cpp
+msgid "Smaller"
+msgstr "縮小"
+
+#: src/terminalwindow.cpp
+msgid "Actual Size"
+msgstr "實際大小"
+
+#: src/terminalwindow.cpp
+msgid "Enter Full Screen"
+msgstr "進入全螢幕"
+
+#: src/terminalwindow.cpp
+msgid "Exit Full Screen"
+msgstr "結束全螢幕"
+
+#: src/terminalwindow.cpp
+msgid "Window"
+msgstr "視窗"
+
+#: src/terminalwindow.cpp
+msgid "Minimize"
+msgstr "最小化"
+
+#: src/terminalwindow.cpp
+msgid "Zoom"
+msgstr "縮放"
+
+#: src/terminalwindow.cpp
+msgid "Show Previous Tab"
+msgstr "顯示上一個標籤頁"
+
+#: src/terminalwindow.cpp
+msgid "Show Next Tab"
+msgstr "顯示下一個標籤頁"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Left"
+msgstr "將標籤頁左移"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Right"
+msgstr "將標籤頁右移"

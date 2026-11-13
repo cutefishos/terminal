@@ -1,0 +1,299 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cutefish-terminal\n"
+"Report-Msgid-Bugs-To: https://github.com/cutefishos\n"
+"POT-Creation-Date: 2026-10-31 16:05+0800\n"
+"PO-Revision-Date: 2026-11-13 12:00+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: src/findbar.cpp
+msgid "Find"
+msgstr "Найти"
+
+#: src/settingsdialog.cpp
+msgid "Theme"
+msgstr "Тема"
+
+#: src/settingsdialog.cpp
+msgid "Font"
+msgstr "Шрифт"
+
+#: src/settingsdialog.cpp
+msgid "Font Size"
+msgstr "Размер шрифта"
+
+#: src/settingsdialog.cpp
+msgid "Blinking Cursor"
+msgstr "Мигающий курсор"
+
+#: src/settingsdialog.cpp
+msgid "Opacity"
+msgstr "Непрозрачность"
+
+#: src/settingsdialog.cpp
+msgid "Window Blur"
+msgstr "Размытие окна"
+
+#: src/settingsdialog.cpp
+msgid "Cursor Shape"
+msgstr "Форма курсора"
+
+#. TRANSLATORS: the shapes of the text cursor.
+#: src/settingsdialog.cpp
+msgid "Block"
+msgstr "Блок"
+
+#: src/settingsdialog.cpp
+msgid "Underline"
+msgstr "Подчеркивание"
+
+#: src/settingsdialog.cpp
+msgid "I-Beam"
+msgstr "Вертикальная черта"
+
+#: src/settingsdialog.cpp
+msgid "Scrollback"
+msgstr "Буфер прокрутки"
+
+#: src/settingsdialog.cpp
+msgid "1,000 lines"
+msgstr "1000 строк"
+
+#: src/settingsdialog.cpp
+msgid "10,000 lines"
+msgstr "10 000 строк"
+
+#: src/settingsdialog.cpp
+msgid "100,000 lines"
+msgstr "100 000 строк"
+
+#: src/settingsdialog.cpp
+msgid "Unlimited"
+msgstr "Без ограничений"
+
+#: src/settingsdialog.cpp
+msgid "Flash on Bell"
+msgstr "Вспышка при звонке"
+
+#: src/settingsdialog.cpp
+msgid "Warn Before Pasting Multiple Lines"
+msgstr "Предупреждать перед вставкой нескольких строк"
+
+#. TRANSLATORS: a font size in points.
+#: src/settingsdialog.cpp src/terminalwindow.cpp
+#, python-brace-format
+msgid "{size} pt"
+msgstr "{size} пт"
+
+#. TRANSLATORS: a percentage, such as "80%".
+#: src/settingsdialog.cpp
+#, python-brace-format
+msgid "{percent}%"
+msgstr "{percent}%"
+
+#: src/settingsdialog.cpp src/terminalpage.cpp
+msgid "Settings"
+msgstr "Настройки"
+
+#: src/terminalpage.cpp
+msgid "Open Link"
+msgstr "Открыть ссылку"
+
+#: src/terminalpage.cpp
+msgid "Copy Link"
+msgstr "Копировать ссылку"
+
+#: src/terminalpage.cpp
+#, python-brace-format
+msgid "Open “{name}”"
+msgstr "Открыть «{name}»"
+
+#: src/terminalpage.cpp
+msgid "Show in File Manager"
+msgstr "Показать в файловом менеджере"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Copy"
+msgstr "Копировать"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Paste"
+msgstr "Вставить"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Select All"
+msgstr "Выбрать все"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Find…"
+msgstr "Найти…"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Clear Scrollback"
+msgstr "Очистить буфер прокрутки"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Reset Terminal"
+msgstr "Сбросить терминал"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Tab"
+msgstr "Новая вкладка"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Window"
+msgstr "Новое окно"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Open File Manager"
+msgstr "Открыть файловый менеджер"
+
+#: src/terminalpage.cpp
+msgid "Exit full screen"
+msgstr "Выйти из полноэкранного режима"
+
+#: src/terminalpage.cpp
+msgid "Full screen"
+msgstr "Полноэкранный режим"
+
+#: src/terminalwindow.cpp
+msgid "Rename Tab…"
+msgstr "Переименовать вкладку…"
+
+#: src/terminalwindow.cpp
+msgid "Close Tab"
+msgstr "Закрыть вкладку"
+
+#: src/terminalwindow.cpp
+msgid "Close Other Tabs"
+msgstr "Закрыть другие вкладки"
+
+#: src/terminalwindow.cpp
+msgid "Process is running, are you sure you want to quit?"
+msgstr "Процесс еще выполняется. Действительно завершить?"
+
+#: src/terminalwindow.cpp
+msgid "Cancel"
+msgstr "Отмена"
+
+#: src/terminalwindow.cpp
+msgid "OK"
+msgstr "ОК"
+
+#: src/terminalwindow.cpp cutefish-terminal.desktop
+msgid "Terminal"
+msgstr "Терминал"
+
+#: src/terminalwindow.cpp
+msgid "Runs a shell and the programs started in it."
+msgstr "Запускает командную оболочку и программы в ней."
+
+#: src/terminalwindow.cpp
+msgid "Open this link?"
+msgstr "Открыть эту ссылку?"
+
+#: src/terminalwindow.cpp
+msgid "Open"
+msgstr "Открыть"
+
+#: src/terminalwindow.cpp
+#, python-brace-format
+msgid "Paste {n} line?"
+msgid_plural "Paste {n} lines?"
+msgstr[0] "Вставить {n} строку?"
+msgstr[1] "Вставить {n} строки?"
+msgstr[2] "Вставить {n} строк?"
+
+#: src/terminalwindow.cpp
+msgid "Paste this line and press Enter?"
+msgstr "Вставить эту строку и нажать Enter?"
+
+#: src/terminalwindow.cpp
+msgid "About Terminal"
+msgstr "О программе «Терминал»"
+
+#: src/terminalwindow.cpp
+msgid "Settings…"
+msgstr "Настройки…"
+
+#: src/terminalwindow.cpp
+msgid "Hide Terminal"
+msgstr "Скрыть «Терминал»"
+
+#: src/terminalwindow.cpp
+msgid "Quit Terminal"
+msgstr "Завершить «Терминал»"
+
+#: src/terminalwindow.cpp
+msgid "Shell"
+msgstr "Оболочка"
+
+#: src/terminalwindow.cpp
+msgid "Close Window"
+msgstr "Закрыть окно"
+
+#: src/terminalwindow.cpp
+msgid "Edit"
+msgstr "Правка"
+
+#: src/terminalwindow.cpp
+msgid "Clear Screen and Scrollback"
+msgstr "Очистить экран и буфер прокрутки"
+
+#: src/terminalwindow.cpp
+msgid "View"
+msgstr "Вид"
+
+#: src/terminalwindow.cpp
+msgid "Bigger"
+msgstr "Крупнее"
+
+#: src/terminalwindow.cpp
+msgid "Smaller"
+msgstr "Мельче"
+
+#: src/terminalwindow.cpp
+msgid "Actual Size"
+msgstr "Фактический размер"
+
+#: src/terminalwindow.cpp
+msgid "Enter Full Screen"
+msgstr "Перейти в полноэкранный режим"
+
+#: src/terminalwindow.cpp
+msgid "Exit Full Screen"
+msgstr "Выйти из полноэкранного режима"
+
+#: src/terminalwindow.cpp
+msgid "Window"
+msgstr "Окно"
+
+#: src/terminalwindow.cpp
+msgid "Minimize"
+msgstr "Свернуть"
+
+#: src/terminalwindow.cpp
+msgid "Zoom"
+msgstr "Изменить масштаб"
+
+#: src/terminalwindow.cpp
+msgid "Show Previous Tab"
+msgstr "Показать предыдущую вкладку"
+
+#: src/terminalwindow.cpp
+msgid "Show Next Tab"
+msgstr "Показать следующую вкладку"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Left"
+msgstr "Переместить вкладку влево"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Right"
+msgstr "Переместить вкладку вправо"
