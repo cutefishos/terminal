@@ -93,7 +93,7 @@ TEST_F(WindowTest, TabLeavingAWindowIsNoLongerHeard)
     EXPECT_EQ(second->tabCount(), 2);
 }
 
-TEST_F(WindowTest, EachWindowShowsItsMenusInTheStatusBar)
+TEST_F(WindowTest, EachWindowShowsItsMenusInTheMenuBar)
 {
     Windows windows(m_settings);
     TerminalWindow* first = windows.create(shell());

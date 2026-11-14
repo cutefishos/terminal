@@ -103,7 +103,7 @@ private:
 
     void applySettings();
     void retranslate();
-    // The menus the status bar shows while the window is active.
+    // The menus the menu bar shows while the window is active.
     void buildMainMenu();
     // Every window of this process, each asking first about running programs.
     void quitApplication();
