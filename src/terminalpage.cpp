@@ -42,6 +42,8 @@ TerminalPage::TerminalPage(TerminalWindow* window, const std::string& path, cons
     , m_scrollBar(addChild<ScrollBar>(ScrollBar::Orientation::Vertical))
 {
     setName("terminalPage");
+    // The bar stops above the bottom margin, under the window's rounded corner.
+    m_scrollBar->setPadding(ScrollBar::inset, ScrollBar::cornerPadding(Theme::current().windowRadius) - kTerminalMargin);
     m_session->setInitialWorkingDirectory(path);
     if (!command.empty()) {
         m_session->setShellProgram(command.front());
