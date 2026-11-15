@@ -1,0 +1,299 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cutefish-terminal\n"
+"Report-Msgid-Bugs-To: https://github.com/cutefishos\n"
+"POT-Creation-Date: 2026-10-31 16:05+0800\n"
+"PO-Revision-Date: 2026-10-31 16:05+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: src/findbar.cpp
+msgid "Find"
+msgstr "Znajdź"
+
+#: src/settingsdialog.cpp
+msgid "Theme"
+msgstr "Motyw"
+
+#: src/settingsdialog.cpp
+msgid "Font"
+msgstr "Czcionka"
+
+#: src/settingsdialog.cpp
+msgid "Font Size"
+msgstr "Rozmiar czcionki"
+
+#: src/settingsdialog.cpp
+msgid "Blinking Cursor"
+msgstr "Migający kursor"
+
+#: src/settingsdialog.cpp
+msgid "Opacity"
+msgstr "Nieprzezroczystość"
+
+#: src/settingsdialog.cpp
+msgid "Window Blur"
+msgstr "Rozmycie okna"
+
+#: src/settingsdialog.cpp
+msgid "Cursor Shape"
+msgstr "Kształt kursora"
+
+#. TRANSLATORS: the shapes of the text cursor.
+#: src/settingsdialog.cpp
+msgid "Block"
+msgstr "Blok"
+
+#: src/settingsdialog.cpp
+msgid "Underline"
+msgstr "Podkreślenie"
+
+#: src/settingsdialog.cpp
+msgid "I-Beam"
+msgstr "Pionowa kreska"
+
+#: src/settingsdialog.cpp
+msgid "Scrollback"
+msgstr "Historia przewijania"
+
+#: src/settingsdialog.cpp
+msgid "1,000 lines"
+msgstr "1000 wierszy"
+
+#: src/settingsdialog.cpp
+msgid "10,000 lines"
+msgstr "10 000 wierszy"
+
+#: src/settingsdialog.cpp
+msgid "100,000 lines"
+msgstr "100 000 wierszy"
+
+#: src/settingsdialog.cpp
+msgid "Unlimited"
+msgstr "Bez ograniczeń"
+
+#: src/settingsdialog.cpp
+msgid "Flash on Bell"
+msgstr "Migaj przy dzwonku"
+
+#: src/settingsdialog.cpp
+msgid "Warn Before Pasting Multiple Lines"
+msgstr "Ostrzegaj przed wklejeniem wielu wierszy"
+
+#. TRANSLATORS: a font size in points.
+#: src/settingsdialog.cpp src/terminalwindow.cpp
+#, python-brace-format
+msgid "{size} pt"
+msgstr "{size} pt"
+
+#. TRANSLATORS: a percentage, such as "80%".
+#: src/settingsdialog.cpp
+#, python-brace-format
+msgid "{percent}%"
+msgstr "{percent}%"
+
+#: src/settingsdialog.cpp src/terminalpage.cpp
+msgid "Settings"
+msgstr "Ustawienia"
+
+#: src/terminalpage.cpp
+msgid "Open Link"
+msgstr "Otwórz odnośnik"
+
+#: src/terminalpage.cpp
+msgid "Copy Link"
+msgstr "Kopiuj odnośnik"
+
+#: src/terminalpage.cpp
+#, python-brace-format
+msgid "Open “{name}”"
+msgstr "Otwórz „{name}”"
+
+#: src/terminalpage.cpp
+msgid "Show in File Manager"
+msgstr "Pokaż w menedżerze plików"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Copy"
+msgstr "Kopiuj"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Paste"
+msgstr "Wklej"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Select All"
+msgstr "Zaznacz wszystko"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Find…"
+msgstr "Znajdź…"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Clear Scrollback"
+msgstr "Wyczyść historię przewijania"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Reset Terminal"
+msgstr "Zresetuj terminal"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Tab"
+msgstr "Nowa karta"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "New Window"
+msgstr "Nowe okno"
+
+#: src/terminalpage.cpp src/terminalwindow.cpp
+msgid "Open File Manager"
+msgstr "Otwórz menedżer plików"
+
+#: src/terminalpage.cpp
+msgid "Exit full screen"
+msgstr "Zakończ pełny ekran"
+
+#: src/terminalpage.cpp
+msgid "Full screen"
+msgstr "Pełny ekran"
+
+#: src/terminalwindow.cpp
+msgid "Rename Tab…"
+msgstr "Zmień nazwę karty…"
+
+#: src/terminalwindow.cpp
+msgid "Close Tab"
+msgstr "Zamknij kartę"
+
+#: src/terminalwindow.cpp
+msgid "Close Other Tabs"
+msgstr "Zamknij pozostałe karty"
+
+#: src/terminalwindow.cpp
+msgid "Process is running, are you sure you want to quit?"
+msgstr "Proces jest uruchomiony. Czy na pewno chcesz zakończyć?"
+
+#: src/terminalwindow.cpp
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: src/terminalwindow.cpp
+msgid "OK"
+msgstr "OK"
+
+#: src/terminalwindow.cpp cutefish-terminal.desktop
+msgid "Terminal"
+msgstr "Terminal"
+
+#: src/terminalwindow.cpp
+msgid "Runs a shell and the programs started in it."
+msgstr "Uruchamia powłokę i programy w niej uruchomione."
+
+#: src/terminalwindow.cpp
+msgid "Open this link?"
+msgstr "Otworzyć ten odnośnik?"
+
+#: src/terminalwindow.cpp
+msgid "Open"
+msgstr "Otwórz"
+
+#: src/terminalwindow.cpp
+#, python-brace-format
+msgid "Paste {n} line?"
+msgid_plural "Paste {n} lines?"
+msgstr[0] "Wkleić {n} wiersz?"
+msgstr[1] "Wkleić {n} wiersze?"
+msgstr[2] "Wkleić {n} wierszy?"
+
+#: src/terminalwindow.cpp
+msgid "Paste this line and press Enter?"
+msgstr "Wkleić ten wiersz i nacisnąć Enter?"
+
+#: src/terminalwindow.cpp
+msgid "About Terminal"
+msgstr "O programie Terminal"
+
+#: src/terminalwindow.cpp
+msgid "Settings…"
+msgstr "Ustawienia…"
+
+#: src/terminalwindow.cpp
+msgid "Hide Terminal"
+msgstr "Ukryj Terminal"
+
+#: src/terminalwindow.cpp
+msgid "Quit Terminal"
+msgstr "Zakończ Terminal"
+
+#: src/terminalwindow.cpp
+msgid "Shell"
+msgstr "Powłoka"
+
+#: src/terminalwindow.cpp
+msgid "Close Window"
+msgstr "Zamknij okno"
+
+#: src/terminalwindow.cpp
+msgid "Edit"
+msgstr "Edycja"
+
+#: src/terminalwindow.cpp
+msgid "Clear Screen and Scrollback"
+msgstr "Wyczyść ekran i historię przewijania"
+
+#: src/terminalwindow.cpp
+msgid "View"
+msgstr "Widok"
+
+#: src/terminalwindow.cpp
+msgid "Bigger"
+msgstr "Większy"
+
+#: src/terminalwindow.cpp
+msgid "Smaller"
+msgstr "Mniejszy"
+
+#: src/terminalwindow.cpp
+msgid "Actual Size"
+msgstr "Rzeczywisty rozmiar"
+
+#: src/terminalwindow.cpp
+msgid "Enter Full Screen"
+msgstr "Włącz pełny ekran"
+
+#: src/terminalwindow.cpp
+msgid "Exit Full Screen"
+msgstr "Zakończ pełny ekran"
+
+#: src/terminalwindow.cpp
+msgid "Window"
+msgstr "Okno"
+
+#: src/terminalwindow.cpp
+msgid "Minimize"
+msgstr "Minimalizuj"
+
+#: src/terminalwindow.cpp
+msgid "Zoom"
+msgstr "Powiększ okno"
+
+#: src/terminalwindow.cpp
+msgid "Show Previous Tab"
+msgstr "Pokaż poprzednią kartę"
+
+#: src/terminalwindow.cpp
+msgid "Show Next Tab"
+msgstr "Pokaż następną kartę"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Left"
+msgstr "Przesuń kartę w lewo"
+
+#: src/terminalwindow.cpp
+msgid "Move Tab Right"
+msgstr "Przesuń kartę w prawo"
