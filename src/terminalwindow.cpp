@@ -42,6 +42,7 @@ using cutefish::i18n::trn;
 namespace strings = cutefish::base::strings;
 
 static constexpr double kHeaderHeight = 32;
+static constexpr double kWindowControlSize = 16;
 // The tab bar's row under the header, shown with more than one tab: its
 // track as far under the window controls as they are from the top.
 static constexpr double kTabBarHeight = 34;
@@ -79,6 +80,7 @@ public:
         header = addChild<WindowHeader>(kHeaderHeight);
         header->setButtonMargin(0);
         header->setButtonsCentered(true);
+        header->setButtonSize(kWindowControlSize);
     }
 
     WindowHeader* header;
