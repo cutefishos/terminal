@@ -2,7 +2,7 @@
 
 A terminal emulator for Cutefish.
 
-<img src="screenshots/terminal.png" alt="Terminal" width="815">
+<img src="screenshots/terminal.png" alt="Terminal" width="897">
 
 ### Third Party Code
 
