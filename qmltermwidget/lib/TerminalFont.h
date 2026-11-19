@@ -12,7 +12,7 @@
 #include "ui/geometry.h"
 #include "ui/glyph_run.h"
 
-#include "CharacterColor.h"
+#include "TerminalColor.h"
 
 namespace cutefish::ui {
 class Painter;

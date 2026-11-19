@@ -162,7 +162,7 @@ void PlainTextDecoder::decodeLine(const Character* const characters, int count, 
 }
 
 // QColor::name(): #rrggbb in lower case.
-static std::string colorName(const Color& color)
+static std::string colorName(const Rgba& color)
 {
     char name[8];
     std::snprintf(name, sizeof(name), "#%02x%02x%02x", color.r, color.g, color.b);

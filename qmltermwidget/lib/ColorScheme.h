@@ -103,13 +103,13 @@ public:
      * this is the primary color used to draw the
      * text in this scheme.
      */
-    Color foregroundColor() const;
+    Rgba foregroundColor() const;
     /**
      * Convenience method.  Returns the background color for
      * this scheme, this is the primary color used to
      * draw the terminal background in this scheme.
      */
-    Color backgroundColor() const;
+    Rgba backgroundColor() const;
 
     /**
      * Returns true if this color scheme has a dark background.

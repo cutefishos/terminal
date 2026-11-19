@@ -34,10 +34,10 @@
 #include "ui/view.h"
 
 #include "Character.h"
-#include "CharacterColor.h"
 #include "Emulation.h"
 #include "Filter.h"
 #include "KeyCodes.h"
+#include "TerminalColor.h"
 
 namespace Konsole
 {

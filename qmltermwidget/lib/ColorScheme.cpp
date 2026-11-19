@@ -49,27 +49,27 @@ const ColorEntry ColorScheme::defaultTable[TABLE_COLORS] =
  // gamma correction for the dim colors to compensate for bright X screens.
  // It contains the 8 ansiterm/xterm colors in 2 intensities.
 {
-    ColorEntry( Color{0x00,0x00,0x00}, false), ColorEntry(
-Color{0xFF,0xFF,0xFF}, true), // Dfore, Dback
-    ColorEntry( Color{0x00,0x00,0x00}, false), ColorEntry(
-Color{0xB2,0x18,0x18}, false), // Black, Red
-    ColorEntry( Color{0x18,0xB2,0x18}, false), ColorEntry(
-Color{0xB2,0x68,0x18}, false), // Green, Yellow
-    ColorEntry( Color{0x18,0x18,0xB2}, false), ColorEntry(
-Color{0xB2,0x18,0xB2}, false), // Blue, Magenta
-    ColorEntry( Color{0x18,0xB2,0xB2}, false), ColorEntry(
-Color{0xB2,0xB2,0xB2}, false), // Cyan, White
+    ColorEntry( Rgba{0x00,0x00,0x00}, false), ColorEntry(
+Rgba{0xFF,0xFF,0xFF}, true), // Dfore, Dback
+    ColorEntry( Rgba{0x00,0x00,0x00}, false), ColorEntry(
+Rgba{0xB2,0x18,0x18}, false), // Black, Red
+    ColorEntry( Rgba{0x18,0xB2,0x18}, false), ColorEntry(
+Rgba{0xB2,0x68,0x18}, false), // Green, Yellow
+    ColorEntry( Rgba{0x18,0x18,0xB2}, false), ColorEntry(
+Rgba{0xB2,0x18,0xB2}, false), // Blue, Magenta
+    ColorEntry( Rgba{0x18,0xB2,0xB2}, false), ColorEntry(
+Rgba{0xB2,0xB2,0xB2}, false), // Cyan, White
     // intensive
-    ColorEntry( Color{0x00,0x00,0x00}, false), ColorEntry(
-Color{0xFF,0xFF,0xFF}, true),
-    ColorEntry( Color{0x68,0x68,0x68}, false), ColorEntry(
-Color{0xFF,0x54,0x54}, false),
-    ColorEntry( Color{0x54,0xFF,0x54}, false), ColorEntry(
-Color{0xFF,0xFF,0x54}, false),
-    ColorEntry( Color{0x54,0x54,0xFF}, false), ColorEntry(
-Color{0xFF,0x54,0xFF}, false),
-    ColorEntry( Color{0x54,0xFF,0xFF}, false), ColorEntry(
-Color{0xFF,0xFF,0xFF}, false)
+    ColorEntry( Rgba{0x00,0x00,0x00}, false), ColorEntry(
+Rgba{0xFF,0xFF,0xFF}, true),
+    ColorEntry( Rgba{0x68,0x68,0x68}, false), ColorEntry(
+Rgba{0xFF,0x54,0x54}, false),
+    ColorEntry( Rgba{0x54,0xFF,0x54}, false), ColorEntry(
+Rgba{0xFF,0xFF,0x54}, false),
+    ColorEntry( Rgba{0x54,0x54,0xFF}, false), ColorEntry(
+Rgba{0xFF,0x54,0xFF}, false),
+    ColorEntry( Rgba{0x54,0xFF,0xFF}, false), ColorEntry(
+Rgba{0xFF,0xFF,0xFF}, false)
 };
 
 const ColorEntry Konsole::base_color_table[TABLE_COLORS] =
@@ -79,17 +79,17 @@ const ColorEntry Konsole::base_color_table[TABLE_COLORS] =
 {
   // Fixme: could add faint colors here, also.
   // normal
-  ColorEntry(Color{0x00,0x00,0x00}, false), ColorEntry( Color{0xB2,0xB2,0xB2}, true), // Dfore, Dback
-  ColorEntry(Color{0x00,0x00,0x00}, false), ColorEntry( Color{0xB2,0x18,0x18}, false), // Black, Red
-  ColorEntry(Color{0x18,0xB2,0x18}, false), ColorEntry( Color{0xB2,0x68,0x18}, false), // Green, Yellow
-  ColorEntry(Color{0x18,0x18,0xB2}, false), ColorEntry( Color{0xB2,0x18,0xB2}, false), // Blue, Magenta
-  ColorEntry(Color{0x18,0xB2,0xB2}, false), ColorEntry( Color{0xB2,0xB2,0xB2}, false), // Cyan, White
+  ColorEntry(Rgba{0x00,0x00,0x00}, false), ColorEntry( Rgba{0xB2,0xB2,0xB2}, true), // Dfore, Dback
+  ColorEntry(Rgba{0x00,0x00,0x00}, false), ColorEntry( Rgba{0xB2,0x18,0x18}, false), // Black, Red
+  ColorEntry(Rgba{0x18,0xB2,0x18}, false), ColorEntry( Rgba{0xB2,0x68,0x18}, false), // Green, Yellow
+  ColorEntry(Rgba{0x18,0x18,0xB2}, false), ColorEntry( Rgba{0xB2,0x18,0xB2}, false), // Blue, Magenta
+  ColorEntry(Rgba{0x18,0xB2,0xB2}, false), ColorEntry( Rgba{0xB2,0xB2,0xB2}, false), // Cyan, White
   // intensiv
-  ColorEntry(Color{0x00,0x00,0x00}, false), ColorEntry( Color{0xFF,0xFF,0xFF}, true),
-  ColorEntry(Color{0x68,0x68,0x68}, false), ColorEntry( Color{0xFF,0x54,0x54}, false),
-  ColorEntry(Color{0x54,0xFF,0x54}, false), ColorEntry( Color{0xFF,0xFF,0x54}, false),
-  ColorEntry(Color{0x54,0x54,0xFF}, false), ColorEntry( Color{0xFF,0x54,0xFF}, false),
-  ColorEntry(Color{0x54,0xFF,0xFF}, false), ColorEntry( Color{0xFF,0xFF,0xFF}, false)
+  ColorEntry(Rgba{0x00,0x00,0x00}, false), ColorEntry( Rgba{0xFF,0xFF,0xFF}, true),
+  ColorEntry(Rgba{0x68,0x68,0x68}, false), ColorEntry( Rgba{0xFF,0x54,0x54}, false),
+  ColorEntry(Rgba{0x54,0xFF,0x54}, false), ColorEntry( Rgba{0xFF,0xFF,0x54}, false),
+  ColorEntry(Rgba{0x54,0x54,0xFF}, false), ColorEntry( Rgba{0xFF,0x54,0xFF}, false),
+  ColorEntry(Rgba{0x54,0xFF,0xFF}, false), ColorEntry( Rgba{0xFF,0xFF,0xFF}, false)
 };
 
 const char* const ColorScheme::colorNames[TABLE_COLORS] =
@@ -197,7 +197,7 @@ void ColorScheme::setColorTableEntry(int index , const ColorEntry& entry)
     _table[index] = entry;
 }
 // QColor's HSV, in whole numbers: hue 0-359 (-1 for grey), saturation and value 0-255.
-static void toHsv(const Color& color, int& hue, int& saturation, int& value)
+static void toHsv(const Rgba& color, int& hue, int& saturation, int& value)
 {
     const int r = color.r, g = color.g, b = color.b;
     const int max = std::max({r, g, b});
@@ -222,10 +222,10 @@ static void toHsv(const Color& color, int& hue, int& saturation, int& value)
     hue = int(std::lround(h)) % 360;
 }
 
-static Color fromHsv(int hue, int saturation, int value)
+static Rgba fromHsv(int hue, int saturation, int value)
 {
     if (saturation == 0 || hue < 0)
-        return Color{uint8_t(value), uint8_t(value), uint8_t(value)};
+        return Rgba{uint8_t(value), uint8_t(value), uint8_t(value)};
     const double h = (hue % 360) / 60.0;
     const double s = saturation / 255.0;
     const double v = value / 255.0;
@@ -243,7 +243,7 @@ static Color fromHsv(int hue, int saturation, int value)
     case 4: r = t; g = p; b = v; break;
     default: r = v; g = p; b = q; break;
     }
-    return Color{uint8_t(std::lround(r * 255)), uint8_t(std::lround(g * 255)), uint8_t(std::lround(b * 255))};
+    return Rgba{uint8_t(std::lround(r * 255)), uint8_t(std::lround(g * 255)), uint8_t(std::lround(b * 255))};
 }
 
 static int randomBounded(int highest)
@@ -268,7 +268,7 @@ ColorEntry ColorScheme::colorEntry(int index) const
         int saturationDifference = range.saturation ? randomBounded(range.saturation) - range.saturation/2 : 0;
         int valueDifference = range.value ? randomBounded(range.value) - range.value/2 : 0;
 
-        Color& color = entry.color;
+        Rgba& color = entry.color;
         int hue, saturation, value;
         toHsv(color, hue, saturation, value);
 
@@ -328,11 +328,11 @@ const ColorEntry* ColorScheme::colorTable() const
     else
         return defaultTable;
 }
-Color ColorScheme::foregroundColor() const
+Rgba ColorScheme::foregroundColor() const
 {
     return colorTable()[0].color;
 }
-Color ColorScheme::backgroundColor() const
+Rgba ColorScheme::backgroundColor() const
 {
     return colorTable()[1].color;
 }
@@ -451,7 +451,7 @@ void ColorScheme::readColorEntry(cutefish::base::Settings * s , int index)
         CF_WARNING(qtermwidgetLogger) << "Invalid color value" << colorStr << "for" << colorName << ". Fallback to black.";
         r = g = b = 0;
     }
-    entry.color = Color{uint8_t(r), uint8_t(g), uint8_t(b)};
+    entry.color = Rgba{uint8_t(r), uint8_t(g), uint8_t(b)};
 
     entry.transparent = s->boolValue(group + "Transparent",false);
 

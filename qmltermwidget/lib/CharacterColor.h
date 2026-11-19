@@ -26,8 +26,6 @@
 #include <cassert>
 #include <cstdint>
 
-#include "ui/geometry.h"
-
 //#include <kdemacros.h>
 #define KDE_NO_EXPORT
 
@@ -35,7 +33,15 @@ namespace Konsole
 {
 
 // An undefined colour paints opaque black.
-using Color = cutefish::ui::Color;
+struct Rgba
+{
+  uint8_t r = 0;
+  uint8_t g = 0;
+  uint8_t b = 0;
+  uint8_t a = 255;
+
+  bool operator==(const Rgba&) const = default;
+};
 
 /**
  * An entry in a terminal display's color palette.
@@ -74,7 +80,7 @@ public:
    * @param tr Specifies that the color should be transparent when used as a background color.
    * @param weight Specifies the font weight to use when drawing text with this color.
    */
-  ColorEntry(Color c, bool tr, FontWeight weight = UseCurrentFormat)
+  ColorEntry(Rgba c, bool tr, FontWeight weight = UseCurrentFormat)
           : color(c), transparent(tr), fontWeight(weight) {}
 
   /**
@@ -84,7 +90,7 @@ public:
   ColorEntry() : transparent(false), fontWeight(UseCurrentFormat) {}
 
   /** The color value of this entry for display. */
-  Color color;
+  Rgba color;
 
   /**
    * If true character backgrounds using this color should be transparent.
@@ -214,7 +220,7 @@ public:
    * The @p palette is only used if this color is one of the 16 system colors, otherwise
    * it is ignored.
    */
-  Color color(const ColorEntry* palette) const;
+  Rgba color(const ColorEntry* palette) const;
 
   /**
    * Compares two colors and returns true if they represent the same color value and
@@ -248,7 +254,7 @@ inline bool operator != (const CharacterColor& a, const CharacterColor& b)
     return !operator==(a,b);
 }
 
-inline const Color color256(uint8_t u, const ColorEntry* base)
+inline const Rgba color256(uint8_t u, const ColorEntry* base)
 {
   //   0.. 16: system colors
   if (u <   8) return base[u+2            ].color;
@@ -257,29 +263,29 @@ inline const Color color256(uint8_t u, const ColorEntry* base)
   u -= 8;
 
   //  16..231: 6x6x6 rgb color cube
-  if (u < 216) return Color{uint8_t(((u/36)%6) ? (40*((u/36)%6)+55) : 0),
+  if (u < 216) return Rgba{uint8_t(((u/36)%6) ? (40*((u/36)%6)+55) : 0),
                             uint8_t(((u/ 6)%6) ? (40*((u/ 6)%6)+55) : 0),
                             uint8_t(((u/ 1)%6) ? (40*((u/ 1)%6)+55) : 0)};
   u -= 216;
 
   // 232..255: gray, leaving out black and white
-  int gray = u*10+8; return Color{uint8_t(gray),uint8_t(gray),uint8_t(gray)};
+  int gray = u*10+8; return Rgba{uint8_t(gray),uint8_t(gray),uint8_t(gray)};
 }
 
-inline Color CharacterColor::color(const ColorEntry* base) const
+inline Rgba CharacterColor::color(const ColorEntry* base) const
 {
   switch (_colorSpace)
   {
     case COLOR_SPACE_DEFAULT: return base[_u+0+(_v?BASE_COLORS:0)].color;
     case COLOR_SPACE_SYSTEM: return base[_u+2+(_v?BASE_COLORS:0)].color;
     case COLOR_SPACE_256: return color256(_u,base);
-    case COLOR_SPACE_RGB: return Color{_u,_v,_w};
-    case COLOR_SPACE_UNDEFINED: return Color();
+    case COLOR_SPACE_RGB: return Rgba{_u,_v,_w};
+    case COLOR_SPACE_UNDEFINED: return Rgba();
   }
 
   assert(false); // invalid color space
 
-  return Color();
+  return Rgba();
 }
 
 inline void CharacterColor::setIntensive()

@@ -204,12 +204,12 @@ ColorSchemeInfo TerminalView::colorSchemeInfo(const std::string& name)
 
     info.valid = true;
     info.description = cs->description();
-    info.background = table[DEFAULT_BACK_COLOR].color;
-    info.foreground = table[DEFAULT_FORE_COLOR].color;
+    info.background = toColor(table[DEFAULT_BACK_COLOR].color);
+    info.foreground = toColor(table[DEFAULT_FORE_COLOR].color);
     for (int i = 0; i < 8; ++i)
-        info.colors[size_t(i)] = table[i + 2].color;
+        info.colors[size_t(i)] = toColor(table[i + 2].color);
     for (int i = 0; i < 8; ++i)
-        info.colors[size_t(i + 8)] = table[i + 2 + BASE_COLORS].color;
+        info.colors[size_t(i + 8)] = toColor(table[i + 2 + BASE_COLORS].color);
     return info;
 }
 
@@ -2142,7 +2142,7 @@ void TerminalView::paint(ui::Painter& painter)
     const double strikeOutPos = _metrics.strikeOutPos;
     const double overlinePos = _metrics.overlinePos;
     const int decorationThickness = std::max(1, kRound(_metrics.lineWidth * dpr));
-    const Color frameBackground = _colorTable[DEFAULT_BACK_COLOR].color;
+    const Color frameBackground = toColor(_colorTable[DEFAULT_BACK_COLOR].color);
 
     if (_opacity > 0) {
         frame.fill(rectFromCorners(frame.deviceX(0), frame.deviceY(0), frame.deviceX(geometry().width) - 1,
@@ -2237,8 +2237,8 @@ void TerminalView::paint(ui::Painter& painter)
             const double width = fw * scaleX * cells;
             const cutefish::base::Rect cell = rectFromCorners(frame.deviceX(left), rowTop,
                                                               frame.deviceX(left + width) - 1, rowBottom - 1);
-            const Color foreground = c.foregroundColor.color(_colorTable);
-            const Color background = c.backgroundColor.color(_colorTable);
+            const Color foreground = toColor(c.foregroundColor.color(_colorTable));
+            const Color background = toColor(c.backgroundColor.color(_colorTable));
 
             if (background != frameBackground)
                 frame.fill(cell, background);
@@ -2294,7 +2294,7 @@ void TerminalView::paint(ui::Painter& painter)
         const int rowTop = frame.deviceY(top);
         const Character& style = _image[size_t(cursorPos.y() * _columns + cursorPos.x())];
 
-        Color background = _colorTable[DEFAULT_BACK_COLOR].color;
+        Color background = toColor(_colorTable[DEFAULT_BACK_COLOR].color);
         background = background.withAlpha(_opacity);
         frame.fill(rectFromCorners(frame.deviceX(left), rowTop, frame.deviceX(left + fw * preeditCells) - 1,
                                    frame.deviceY(top + fh) - 1),
@@ -2302,9 +2302,9 @@ void TerminalView::paint(ui::Painter& painter)
 
         bool invert = false;
         if (!_cursorBlinking)
-            invert = addCursor(left, top, fw * preeditCells, 1, _colorTable[DEFAULT_FORE_COLOR].color);
+            invert = addCursor(left, top, fw * preeditCells, 1, toColor(_colorTable[DEFAULT_FORE_COLOR].color));
 
-        const Color color = (invert ? style.backgroundColor : style.foregroundColor).color(_colorTable);
+        const Color color = toColor((invert ? style.backgroundColor : style.foregroundColor).color(_colorTable));
         const int glyphStyle = styleOf(style);
         int column = 0;
         size_t i = 0;
