@@ -41,7 +41,7 @@ TerminalPage::TerminalPage(TerminalWindow* window, const std::string& path, cons
     , m_terminal(addChild<Konsole::TerminalView>())
     , m_scrollBar(addChild<ScrollBar>(ScrollBar::Orientation::Vertical))
 {
-    setName("terminalPage");
+    setName("tab:page");
     // The bar stops above the bottom margin, under the window's rounded corner.
     m_scrollBar->setPadding(ScrollBar::inset, ScrollBar::cornerPadding(Theme::current().windowRadius) - kTerminalMargin);
     m_session->setInitialWorkingDirectory(path);

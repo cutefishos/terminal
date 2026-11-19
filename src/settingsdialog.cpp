@@ -176,7 +176,7 @@ public:
     {
         // Large sizes stop at the inner margin rather than at the border.
         m_sampleClip->setClipsChildren(true);
-        m_sample->setName("sample");
+        m_sample->setName("settings:sample");
         m_sample->setElide(Label::Elide::None);
         // Unwrapped labels keep one line; the sample has two.
         m_sample->setWrap(true);
@@ -269,7 +269,7 @@ public:
         : m_window(window)
         , preview(addChild<Preview>(window))
     {
-        setName("settingsContent");
+        setName("settings:content");
         TerminalSettings& settings = window->settings();
 
         Card* appearance = addCard();

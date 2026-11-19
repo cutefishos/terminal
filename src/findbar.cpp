@@ -56,10 +56,10 @@ FindBar::FindBar(Konsole::TerminalView* terminal)
     , m_next(addChild<HeaderButton>(std::string(), 28))
     , m_close(addChild<HeaderButton>("close", 28))
 {
-    setName("findBar");
+    setName("find:bar");
     setVisible(false);
 
-    m_field->setName("findField");
+    m_field->setName("find:field");
     m_field->setFrameVisible(false);
     m_field->setTextMargins(0, 0);
     m_previous->setGlyph("chevron-up", 16);

@@ -63,18 +63,18 @@ public:
     explicit Content(TerminalWindow* owner)
         : m_owner(owner)
     {
-        setName("content");
+        setName("window:content");
         pages = addChild<View>();
-        pages->setName("pages");
+        pages->setName("window:pages");
         tabBar = addChild<WindowTabBar>();
-        tabBar->setName("tabBar");
+        tabBar->setName("tabs:bar");
         tabBar->setTabWidthRange(140, 0);
         const double spacing = Theme::current().smallSpacing;
         tabBar->setTrackInsets({spacing, 0, kNewTabStartGap + kNewTabButtonSize + kNewTabEndMargin, kTrackBottom});
         tabBar->setPressedFeedback(true);
         tabBar->setVisible(false);
         newTab = addChild<HeaderButton>("add", kNewTabButtonSize);
-        newTab->setName("newTab");
+        newTab->setName("tabs:new");
         newTab->setPlateAlphas({0.05, 0.10}, {0.05, 0.10});
         newTab->setVisible(false);
         header = addChild<WindowHeader>(kHeaderHeight);
@@ -185,8 +185,8 @@ public:
     HeaderContent()
         : title(addChild<Label>())
     {
-        setName("headerContent");
-        title->setName("title");
+        setName("header:content");
+        title->setName("header:title");
         title->setFontSize(12);
         title->setWeight(500);
         title->setElide(Label::Elide::Middle);
@@ -220,7 +220,7 @@ public:
         : m_owner(owner)
         , m_zoomLabel(addChild<Label>())
     {
-        setName("overlay");
+        setName("window:overlay");
         m_zoomLabel->setFontSize(13);
         m_zoomLabel->setWeight(500);
         m_zoomLabel->setVisible(false);
