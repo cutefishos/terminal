@@ -26,7 +26,7 @@ add_executable(${PROJECT_NAME}
     src/windows.cpp
 )
 target_include_directories(${PROJECT_NAME} PRIVATE src)
-target_link_libraries(${PROJECT_NAME} PRIVATE terminal-view)
+target_link_libraries(${PROJECT_NAME} PRIVATE terminal-display)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

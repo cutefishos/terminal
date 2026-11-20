@@ -11,8 +11,8 @@
 #include "base/timer.h"
 #include "ui/view.h"
 
-namespace Konsole {
-class TerminalSession;
+namespace term {
+class Session;
 class TerminalView;
 }
 
@@ -34,8 +34,8 @@ public:
     TerminalPage(TerminalWindow* window, const std::string& path, const std::vector<std::string>& command);
     ~TerminalPage() override;
 
-    Konsole::TerminalSession& session() const { return *m_session; }
-    Konsole::TerminalView* terminal() const { return m_terminal; }
+    term::Session& session() const { return *m_session; }
+    term::TerminalView* terminal() const { return m_terminal; }
 
     // The tab is in this window now, moved there with its shell.
     void setTerminalWindow(TerminalWindow* window);
@@ -75,8 +75,8 @@ private:
     TerminalWindow* m_window;
     std::string m_customTitle;
     std::vector<std::string> m_command;
-    std::unique_ptr<Konsole::TerminalSession> m_session;
-    Konsole::TerminalView* m_terminal;
+    std::unique_ptr<term::Session> m_session;
+    term::TerminalView* m_terminal;
     cutefish::ui::ScrollBar* m_scrollBar;
     FindBar* m_findBar = nullptr;
     std::unique_ptr<cutefish::ui::Menu> m_menu;

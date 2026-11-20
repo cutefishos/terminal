@@ -25,6 +25,9 @@ target_link_libraries(terminal-emulator
 add_library(terminal-display STATIC
     boxdrawing.cpp
     cellfont.cpp
+    terminalview.cpp
+    terminalviewinput.cpp
+    terminalviewpaint.cpp
 )
 target_link_libraries(terminal-display
     PUBLIC

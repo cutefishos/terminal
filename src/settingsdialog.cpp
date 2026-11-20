@@ -19,8 +19,8 @@
 #include "ui/theme.h"
 #include "ui/window.h"
 
-#include "TerminalFont.h"
-#include "TerminalView.h"
+#include "cellfont.h"
+#include "colorschemes.h"
 
 #include "terminalsettings.h"
 #include "terminalwindow.h"
@@ -29,13 +29,14 @@ using namespace cutefish::ui;
 using cutefish::i18n::format;
 using cutefish::i18n::tr;
 
-// Bundled schemes, by file name, and their labels.
-static const std::vector<std::string> kThemeNames = {
-    "Catppuccin-Latte", "Catppuccin-Mocha", "Dracula", "Gruvbox-Dark", "Gruvbox-Light", "Nord", "One-Dark",
-    "One-Light", "Solarized", "SolarizedLight", "TokyoNight", "TokyoNight-Day", "Tomorrow-Night"};
-static const std::vector<std::string> kThemeLabels = {
-    "Catppuccin Latte", "Catppuccin Mocha", "Dracula", "Gruvbox Dark", "Gruvbox Light", "Nord", "One Dark",
-    "One Light", "Solarized Dark", "Solarized Light", "Tokyo Night", "Tokyo Night Day", "Tomorrow Night"};
+static std::vector<std::string> themeLabels()
+{
+    std::vector<std::string> labels;
+    for (const term::ColorScheme& scheme : term::colorSchemes())
+        labels.emplace_back(scheme.label);
+    return labels;
+}
+
 static const std::vector<int> kScrollbackLines = {1000, 10000, 100000, -1};
 
 static constexpr double kDialogWidth = 440;
@@ -185,14 +186,14 @@ public:
     void update()
     {
         const TerminalSettings& settings = m_window->settings();
-        const Konsole::ColorSchemeInfo info = Konsole::TerminalView::colorSchemeInfo(settings.colorScheme());
+        const term::ColorScheme& scheme = term::colorScheme(settings.colorScheme());
         m_background = m_window->terminalBackground();
-        const Color text = info.valid ? info.foreground : Theme::current().text;
-        const Color green = info.valid ? info.colors[2] : Theme::current().text;
-        const Color blue = info.valid ? info.colors[4] : Theme::current().text;
+        const Color text = Color::rgb(scheme.foreground);
+        const Color green = Color::rgb(scheme.colors[2]);
+        const Color blue = Color::rgb(scheme.colors[4]);
         m_swatches.clear();
-        if (info.valid)
-            m_swatches.assign(info.colors.begin(), info.colors.begin() + 8);
+        for (size_t i = 0; i < 8; ++i)
+            m_swatches.push_back(Color::rgb(scheme.colors[i]));
 
         m_sample->setFontFamily(settings.fontName());
         // A point size on a 96 dpi screen.
@@ -273,9 +274,11 @@ public:
         TerminalSettings& settings = window->settings();
 
         Card* appearance = addCard();
-        theme = appearance->addRow(tr("Theme"))->addControl<ComboBox>(kThemeLabels);
+        theme = appearance->addRow(tr("Theme"))->addControl<ComboBox>(themeLabels());
         setWidth(theme, 200);
-        theme->onActivated = [&settings](int index) { settings.setColorScheme(kThemeNames[size_t(index)]); };
+        theme->onActivated = [&settings](int index) {
+            settings.setColorScheme(std::string(term::colorSchemes()[size_t(index)].name));
+        };
 
         SettingRow* fontRow = appearance->addRow(tr("Font"));
         font = fontRow->addControl<ComboBox>();
@@ -333,13 +336,16 @@ public:
         const TerminalSettings& settings = m_window->settings();
         preview->update();
 
-        const auto scheme = std::find(kThemeNames.begin(), kThemeNames.end(), m_window->colorScheme());
-        theme->setCurrentIndex(std::max(0, int(scheme - kThemeNames.begin()) % int(kThemeNames.size())));
+        const std::span<const term::ColorScheme> schemes = term::colorSchemes();
+        const std::string_view current = term::colorScheme(m_window->colorScheme()).name;
+        const auto scheme = std::find_if(schemes.begin(), schemes.end(),
+                                         [current](const term::ColorScheme& entry) { return entry.name == current; });
+        theme->setCurrentIndex(int(scheme - schemes.begin()));
 
         // Built on first use: checking every family for fixed pitch loads the
         // fonts, and only this dialog needs the list.
         if (m_families.empty()) {
-            m_families = Konsole::TerminalFont::fixedPitchFamilies();
+            m_families = term::CellFont::fixedPitchFamilies();
             font->setItems(m_families);
         }
         const auto family = std::find(m_families.begin(), m_families.end(), settings.fontName());

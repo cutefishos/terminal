@@ -9,7 +9,7 @@
 #include "base/signal.h"
 #include "ui/view.h"
 
-namespace Konsole {
+namespace term {
 class TerminalView;
 }
 
@@ -25,7 +25,7 @@ class FindField;
 class FindBar : public cutefish::ui::View
 {
 public:
-    explicit FindBar(Konsole::TerminalView* terminal);
+    explicit FindBar(term::TerminalView* terminal);
     ~FindBar() override;
 
     // The colour scheme's own colours.
@@ -49,7 +49,7 @@ private:
     void search(bool forwards, bool fromSelection);
     void updateColors();
 
-    Konsole::TerminalView* m_terminal;
+    term::TerminalView* m_terminal;
     FindField* m_field;
     cutefish::ui::HeaderButton* m_previous;
     cutefish::ui::HeaderButton* m_next;

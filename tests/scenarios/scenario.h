@@ -16,8 +16,6 @@
 #include "ui/test_driver.h"
 #include "ui/window.h"
 
-#include "tools.h"
-
 #include "terminalpage.h"
 #include "terminalsettings.h"
 #include "terminalwindow.h"
@@ -30,7 +28,6 @@ class Scenario
 public:
     Scenario()
     {
-        set_kb_layout_dir(KB_LAYOUTS_DIR);
         EXPECT_TRUE(m_directory.isValid());
     }
 

@@ -14,7 +14,7 @@
 #include "ui/text_field.h"
 #include "ui/theme.h"
 
-#include "TerminalView.h"
+#include "terminalview.h"
 
 using namespace cutefish::ui;
 using cutefish::i18n::tr;
@@ -49,7 +49,7 @@ static Color tint(Color base, Color overlay)
     return Color{channel(base.r, overlay.r), channel(base.g, overlay.g), channel(base.b, overlay.b), base.a};
 }
 
-FindBar::FindBar(Konsole::TerminalView* terminal)
+FindBar::FindBar(term::TerminalView* terminal)
     : m_terminal(terminal)
     , m_field(addChild<FindField>())
     , m_previous(addChild<HeaderButton>(std::string(), 28))

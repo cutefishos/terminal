@@ -17,9 +17,8 @@
 #include "ui/theme.h"
 #include "ui/window.h"
 
-#include "TerminalSession.h"
-#include "TerminalView.h"
-#include "Vt102Emulation.h"
+#include "session.h"
+#include "terminalview.h"
 
 #include "findbar.h"
 #include "processhelper.h"
@@ -37,20 +36,16 @@ static constexpr double kTerminalMargin = 6;
 TerminalPage::TerminalPage(TerminalWindow* window, const std::string& path, const std::vector<std::string>& command)
     : m_window(window)
     , m_command(command)
-    , m_session(std::make_unique<Konsole::TerminalSession>())
-    , m_terminal(addChild<Konsole::TerminalView>())
+    , m_session(std::make_unique<term::Session>())
+    , m_terminal(addChild<term::TerminalView>())
     , m_scrollBar(addChild<ScrollBar>(ScrollBar::Orientation::Vertical))
 {
     setName("tab:page");
     // The bar stops above the bottom margin, under the window's rounded corner.
     m_scrollBar->setPadding(ScrollBar::inset, ScrollBar::cornerPadding(Theme::current().windowRadius) - kTerminalMargin);
     m_session->setInitialWorkingDirectory(path);
-    if (!command.empty()) {
-        m_session->setShellProgram(command.front());
-        m_session->setShellProgramArguments(std::vector<std::string>(command.begin() + 1, command.end()));
-    }
+    m_session->setCommand(command);
 
-    m_terminal->setFullCursorHeight(true);
     m_terminal->setBackgroundOpacity(0);
     m_terminal->setSession(m_session.get());
 
@@ -116,13 +111,12 @@ void TerminalPage::applySettings()
     m_terminal->setColorScheme(m_window->colorScheme());
     m_terminal->setTerminalFont(settings.fontName(), m_window->fontPointSize());
     m_terminal->setBlinkingCursor(settings.blinkingCursor());
-    m_terminal->setTerminalCursorShape(settings.cursorShape());
-    // NotifyBell hands the bell to the window; NoBell ignores it.
-    m_terminal->setBellMode(settings.visualBell() ? Konsole::TerminalView::NotifyBell : Konsole::TerminalView::NoBell);
+    m_terminal->setCursorShape(settings.cursorShape());
+    m_terminal->setNotifiesBell(settings.visualBell());
     m_terminal->setConfirmMultilinePaste(settings.confirmMultilinePaste());
     m_terminal->setLinkColor(m_window->chromeForeground());
     m_scrollBar->setDarkMode(m_window->chromeDark());
-    m_session->setHistorySize(settings.scrollbackLines());
+    m_session->setScrollbackLines(settings.scrollbackLines());
     if (m_findBar)
         m_findBar->setColors(m_window->terminalBackground(), m_window->chromeForeground(), m_window->chromeDark(),
                              m_window->schemeColor(1, accent::red), m_window->schemeColor(4, Theme::current().highlight));
@@ -139,7 +133,7 @@ void TerminalPage::retranslate()
 
 void TerminalPage::startShell()
 {
-    m_session->startShellProgram();
+    m_session->start();
     m_terminal->setFocus();
 }
 

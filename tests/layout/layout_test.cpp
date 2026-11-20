@@ -5,6 +5,8 @@
 
 #include <chrono>
 #include <clocale>
+#include <cmath>
+#include <cstdio>
 #include <functional>
 #include <string>
 #include <vector>
@@ -13,15 +15,12 @@
 #include "base/file.h"
 #include "base/timer.h"
 #include "ui/application.h"
-#include "ui/glyph_run.h"
-#include "ui/painter.h"
 #include "ui/test_input.h"
 #include "ui/view.h"
 #include "ui/window.h"
 
-#include "TerminalFont.h"
-#include "TerminalView.h"
-#include "tools.h"
+#include "session.h"
+#include "terminalview.h"
 
 #include "terminalpage.h"
 #include "terminalsettings.h"
@@ -50,11 +49,7 @@ static bool waitFor(const std::function<bool()>& condition)
 class WindowTest : public testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        set_kb_layout_dir(KB_LAYOUTS_DIR);
-        ASSERT_TRUE(m_directory.isValid());
-    }
+    void SetUp() override { ASSERT_TRUE(m_directory.isValid()); }
 
     TerminalWindow::Options shell() const
     {
@@ -94,7 +89,7 @@ TEST_F(WindowTest, CursorBlinksOnlyWithTheKeyboard)
     Windows windows(m_settings);
     TerminalWindow* window = windows.create(shell());
     ui::Window& surface = window->window();
-    Konsole::TerminalView* terminal = window->currentPage()->terminal();
+    term::TerminalView* terminal = window->currentPage()->terminal();
     ASSERT_TRUE(terminal->hasFocus());
 
     ui::TestInput::setKeyboardFocus(surface, true);
@@ -120,7 +115,7 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     Windows windows(m_settings);
     TerminalWindow* window = windows.create(shell());
     ui::Window& surface = window->window();
-    Konsole::TerminalView* terminal = window->currentPage()->terminal();
+    term::TerminalView* terminal = window->currentPage()->terminal();
 
     ui::TestInput::setKeyboardFocus(surface, true);
     surface.grab();
@@ -131,52 +126,68 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     EXPECT_FALSE(terminal->isCursorBlinking());
 }
 
-namespace {
-
-class Canvas : public ui::View
+// What a TUI frame looks like: the lines of one cell run on into the next,
+// with no row of pixels between them, at a scale that is not whole.
+TEST_F(WindowTest, BoxLinesJoinAcrossCellsAtFractionalScale)
 {
-public:
-    explicit Canvas(std::function<void(ui::Painter&)> draw)
-        : m_draw(std::move(draw))
-    {
+    Windows windows(m_settings);
+    TerminalWindow::Options options = shell();
+    options.command = {"/bin/sleep", "30"};
+    TerminalWindow* window = windows.create(std::move(options));
+    TerminalPage* page = window->currentPage();
+    ASSERT_NE(page, nullptr);
+    page->session().terminal().write("\033[?25l\033[2J\033[H"
+                                     "\xe2\x94\x8c\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x90\r\n"
+                                     "\xe2\x94\x82   \xe2\x94\x82\r\n"
+                                     "\xe2\x94\x82   \xe2\x94\x82\r\n"
+                                     "\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x98");
+    window->window().setScale(1.75);
+    page->session().outputReceived();
+    window->window().grab();
+    base::EventLoop::current()->dispatch();
+    const ui::Image frame = window->window().grab();
+
+    // The scheme's foreground, which only the frame's lines are drawn in.
+    const ui::Color line = ui::Color::rgb(0xc0caf5);
+    term::TerminalView* view = page->terminal();
+    const ui::PointF origin = view->mapToWindow({0, 0});
+    const int x0 = int(std::lround(origin.x * 1.75));
+    const int y0 = int(std::lround(origin.y * 1.75));
+    const int x1 = std::min(frame.width(), int(std::lround((origin.x + view->geometry().width) * 1.75)));
+    const int y1 = std::min(frame.height(), int(std::lround((origin.y + view->geometry().height) * 1.75)));
+    int left = x1;
+    int right = -1;
+    int top = y1;
+    int bottom = -1;
+    for (int y = y0; y < y1; ++y) {
+        for (int x = x0; x < x1; ++x) {
+            if (frame.pixel(x, y) == line) {
+                left = std::min(left, x);
+                right = std::max(right, x);
+                top = std::min(top, y);
+                bottom = std::max(bottom, y);
+            }
+        }
+    }
+    ASSERT_LT(left, right);
+    ASSERT_LT(top, bottom);
+    // Each side of the frame is unbroken from corner to corner.
+    for (int y = top; y <= bottom; ++y) {
+        EXPECT_EQ(frame.pixel(left, y), line) << "left side, y " << y;
+        EXPECT_EQ(frame.pixel(right, y), line) << "right side, y " << y;
+    }
+    for (int x = left; x <= right; ++x) {
+        EXPECT_EQ(frame.pixel(x, top), line) << "top side, x " << x;
+        EXPECT_EQ(frame.pixel(x, bottom), line) << "bottom side, x " << x;
     }
 
-protected:
-    void paint(ui::Painter& painter) override { m_draw(painter); }
-
-private:
-    std::function<void(ui::Painter&)> m_draw;
-};
-
-}
-
-TEST(TerminalFontTest, ShapedClustersStayBounded)
-{
-    Konsole::TerminalFont font;
-    font.setFont("Monospace", 10);
-
-    // Distinct ideographs, a hundred a call, as output of every code point would draw them.
-    auto draw = [&font](ui::Painter& painter) {
-        char32_t character = 0x4E00;
-        std::vector<std::u32string> texts;
-        for (int call = 0; call < 200; ++call) {
-            texts.clear();
-            for (int i = 0; i < 100; ++i)
-                texts.emplace_back(1, character++);
-            std::vector<ui::GlyphCluster> clusters;
-            for (const std::u32string& text : texts)
-                clusters.push_back({text, 0});
-            font.draw(painter, Konsole::TerminalFont::Regular, ui::Color::rgb(0), 1, 12, clusters, {1, 1}, {});
-        }
-    };
-
-    ui::Window window;
-    window.resize({100, 60});
-    window.setContentView(std::make_unique<Canvas>(draw));
-    window.show();
-    window.grab();
-
-    EXPECT_LE(font.cachedClusters(), 8192u + 100u);
+    // Light lines are two device pixels at 1.75, the frame five cells by four.
+    const term::CellMetrics& cell = view->cellMetrics();
+    EXPECT_EQ(right - left + 1, 4 * cell.width + 2);
+    EXPECT_EQ(bottom - top + 1, 3 * cell.height + 2);
+    std::printf("view at device %d,%d; cell %dx%d, baseline %d; %d columns, %d lines; right gap %d, bottom gap %d px\n",
+                x0, y0, cell.width, cell.height, cell.baseline, view->columns(), view->lines(),
+                x1 - x0 - 2 * 2 - view->columns() * cell.width, y1 - y0 - 2 * 2 - view->lines() * cell.height);
 }
 
 int main(int argc, char** argv)

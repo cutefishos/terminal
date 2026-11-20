@@ -1,8 +1,6 @@
 find_package(GTest REQUIRED)
 include(GoogleTest)
 
-set(TERMINAL_KB_LAYOUTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qmltermwidget/lib/kb-layouts")
-
 # The emulator and the session alone: no toolkit view library, so no window can come in.
 add_executable(terminal-logic-tests
     logic/main.cpp
@@ -33,8 +31,7 @@ add_executable(terminal-scenario-tests
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-scenario-tests PRIVATE ../src)
-target_link_libraries(terminal-scenario-tests PRIVATE terminal-view GTest::gtest)
-target_compile_definitions(terminal-scenario-tests PRIVATE KB_LAYOUTS_DIR="${TERMINAL_KB_LAYOUTS_DIR}")
+target_link_libraries(terminal-scenario-tests PRIVATE terminal-display GTest::gtest)
 gtest_discover_tests(terminal-scenario-tests PROPERTIES LABELS scenario)
 
 add_executable(terminal-layout-tests
@@ -43,8 +40,7 @@ add_executable(terminal-layout-tests
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-layout-tests PRIVATE ../src)
-target_link_libraries(terminal-layout-tests PRIVATE terminal-view terminal-display GTest::gtest)
-target_compile_definitions(terminal-layout-tests PRIVATE KB_LAYOUTS_DIR="${TERMINAL_KB_LAYOUTS_DIR}")
+target_link_libraries(terminal-layout-tests PRIVATE terminal-display GTest::gtest)
 gtest_discover_tests(terminal-layout-tests PROPERTIES LABELS layout)
 
 # Emulator comparison and throughput, against the earlier builds' tools.

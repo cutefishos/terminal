@@ -8,8 +8,7 @@
 #include "ui/clipboard.h"
 #include "ui/event.h"
 
-#include "TerminalSession.h"
-#include "Vt102Emulation.h"
+#include "session.h"
 
 #include "scenario.h"
 
@@ -18,7 +17,7 @@ using namespace cutefish;
 static bool asksForBracketedPaste(ui::TestDriver& driver)
 {
     TerminalPage* page = shownTab(driver);
-    return page && page->session().emulation()->programBracketedPasteMode();
+    return page && page->session().terminal().bracketedPaste();
 }
 
 TEST(InputTest, PasteCannotEndTheBracketEarly)
@@ -30,7 +29,8 @@ TEST(InputTest, PasteCannotEndTheBracketEarly)
 
     ui::Clipboard::setText("echo \033[201~touch pwned");
     driver.chooseMenuItem("Edit", "Paste");
-    const std::string expected = "\033[200~echo touch pwned\033[201~";
+    // The ESC that would end the paste reaches the program as a space.
+    const std::string expected = "\033[200~echo  [201~touch pwned\033[201~";
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }
 
@@ -41,9 +41,9 @@ TEST(InputTest, DroppedFilesArriveAsAPaste)
     ui::TestDriver& driver = scenario.open(scenario.recorder(path));
     ASSERT_TRUE(waitFor([&] { return asksForBracketedPaste(driver); }));
 
-    // Ctrl+U in a name would erase the opening quote at a prompt.
+    // Ctrl+U in a name would erase the opening quote at a prompt; it arrives as a space.
     driver.drop("tab:page", {{"text/uri-list", "file:///tmp/a%15b%20c\r\n"}});
-    const std::string expected = "\033[200~'/tmp/a\x15" "b c' \033[201~";
+    const std::string expected = "\033[200~'/tmp/a b c' \033[201~";
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }
 
@@ -82,7 +82,7 @@ TEST(InputTest, WheelWithoutScrollbackSendsArrowsOnlyOnTheAlternateScreen)
     ui::TestDriver& other = scenario.open(scenario.recorder(alternate, "\\033[?1049h"));
     ASSERT_TRUE(waitFor([&] {
         TerminalPage* page = shownTab(other);
-        return page && page->session().emulation()->usesAlternateScreen();
+        return page && page->session().terminal().usesAlternateScreen();
     }));
     other.scroll("tab:page", wheelUp());
     other.typeText("x");

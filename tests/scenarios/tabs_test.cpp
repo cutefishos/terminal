@@ -7,7 +7,8 @@
 #include "ui/keys.h"
 #include "ui/view.h"
 
-#include "TerminalSession.h"
+#include "session.h"
+#include "terminalview.h"
 
 #include "scenario.h"
 
@@ -87,8 +88,8 @@ TEST(TabsTest, LanguageChangeKeepsTheShellsAndTheSearch)
     ASSERT_EQ(tabs(driver).size(), 2u);
     TerminalPage* page = shownTab(driver);
     ASSERT_NE(page, busy);
-    Konsole::TerminalSession* session = &page->session();
-    Konsole::TerminalView* terminal = page->terminal();
+    term::Session* session = &page->session();
+    term::TerminalView* terminal = page->terminal();
 
     driver.chooseMenuItem("Shell", "Rename Tab…");
     driver.typeText("Build");

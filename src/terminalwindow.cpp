@@ -26,8 +26,9 @@
 #include "ui/window_header.h"
 #include "ui/window_tab_bar.h"
 
-#include "TerminalSession.h"
-#include "TerminalView.h"
+#include "colorschemes.h"
+#include "session.h"
+#include "terminalview.h"
 
 #include "processhelper.h"
 #include "settingsdialog.h"
@@ -426,12 +427,12 @@ void TerminalWindow::zoom(int step)
 void TerminalWindow::applySettings()
 {
     m_colorScheme = m_settings.colorScheme();
-    const Konsole::ColorSchemeInfo info = Konsole::TerminalView::colorSchemeInfo(m_colorScheme);
-    m_terminalBackground = info.valid ? info.background : Color::rgb(0x1A1B26);
-    m_chromeForeground = info.valid ? info.foreground : Theme::current().text;
-    m_schemeColors.assign(info.colors.begin(), info.colors.end());
-    if (!info.valid)
-        m_schemeColors.clear();
+    const term::ColorScheme& scheme = term::colorScheme(m_colorScheme);
+    m_terminalBackground = Color::rgb(scheme.background);
+    m_chromeForeground = Color::rgb(scheme.foreground);
+    m_schemeColors.clear();
+    for (const uint32_t color : scheme.colors)
+        m_schemeColors.push_back(Color::rgb(color));
     // Dark when 0.2126 r + 0.7152 g + 0.0722 b < 0.5, channels from 0 to 1.
     m_chromeDark = (0.2126 * m_terminalBackground.r + 0.7152 * m_terminalBackground.g
                     + 0.0722 * m_terminalBackground.b) / 255.0 < 0.5;
