@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME}
     src/terminalpage.cpp
     src/terminalsettings.cpp
     src/terminalwindow.cpp
+    src/terminalwindowdialogs.cpp
     src/windows.cpp
 )
 target_include_directories(${PROJECT_NAME} PRIVATE src)

@@ -20,6 +20,7 @@ set(TERMINAL_WINDOW_SOURCES
     ../src/terminalpage.cpp
     ../src/terminalsettings.cpp
     ../src/terminalwindow.cpp
+    ../src/terminalwindowdialogs.cpp
     ../src/windows.cpp
 )
 
