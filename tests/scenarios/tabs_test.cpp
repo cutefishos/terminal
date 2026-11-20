@@ -14,6 +14,13 @@
 
 using namespace cutefish;
 
+// The program in front is the one the test started, not the shell still
+// coming up, which also counts as a program running.
+static bool runsSleep(TerminalPage* page)
+{
+    return page->session().foregroundProcessName() == "sleep";
+}
+
 TEST(TabsTest, ManyTabsOpenAndClose)
 {
     Scenario scenario;
@@ -44,7 +51,7 @@ TEST(TabsTest, CloseOtherTabsKeepsTheChosenTab)
     TerminalPage* busy = shownTab(driver);
     ASSERT_NE(busy, nullptr);
     run(driver, "sleep 30");
-    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+    ASSERT_TRUE(waitFor([&] { return runsSleep(busy); }));
     driver.chooseMenuItem("Shell", "New Tab");
     ASSERT_EQ(tabs(driver).size(), 2u);
 
@@ -63,7 +70,7 @@ TEST(TabsTest, CloseOtherTabsAfterTheKeptTabEnded)
     TerminalPage* busy = shownTab(driver);
     ASSERT_NE(busy, nullptr);
     run(driver, "sleep 30");
-    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+    ASSERT_TRUE(waitFor([&] { return runsSleep(busy); }));
     driver.chooseMenuItem("Shell", "New Tab");
     ASSERT_EQ(tabs(driver).size(), 2u);
     run(driver, "sleep 1; exit");
@@ -83,7 +90,7 @@ TEST(TabsTest, LanguageChangeKeepsTheShellsAndTheSearch)
     TerminalPage* busy = shownTab(driver);
     ASSERT_NE(busy, nullptr);
     run(driver, "sleep 30");
-    ASSERT_TRUE(waitFor([&] { return busy->session().hasActiveProcess(); }));
+    ASSERT_TRUE(waitFor([&] { return runsSleep(busy); }));
     driver.chooseMenuItem("Shell", "New Tab");
     ASSERT_EQ(tabs(driver).size(), 2u);
     TerminalPage* page = shownTab(driver);
