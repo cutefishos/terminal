@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "ui/image.h"
 #include "ui/painter.h"
 #include "ui/view.h"
 #include "ui/window.h"
@@ -175,4 +176,64 @@ TEST(CellFontTest, ShapedClustersStayBounded)
     window.grab();
 
     EXPECT_LE(font.cachedClusters(), 8192u + 100u);
+}
+
+// Ink of one row band of a frame: how much is drawn, and how far right the
+// top half's ink sits from the bottom half's, which a slant moves apart.
+struct Ink
+{
+    double amount = 0;
+    double shear = 0;
+};
+
+static Ink inkIn(const ui::Image& image, int top, int bottom)
+{
+    double total = 0;
+    double sums[2] = {0, 0};
+    double weights[2] = {0, 0};
+    const int middle = (top + bottom) / 2;
+    for (int y = top; y < bottom; ++y) {
+        for (int x = 0; x < image.width(); ++x) {
+            const double ink = 255 - image.pixel(x, y).r;
+            total += ink;
+            sums[y < middle] += ink * x;
+            weights[y < middle] += ink;
+        }
+    }
+    Ink result;
+    result.amount = total;
+    if (weights[0] > 0 && weights[1] > 0)
+        result.shear = sums[1] / weights[1] - sums[0] / weights[0];
+    return result;
+}
+
+// Noto Mono has no bold or italic face, so both are made from the regular one.
+TEST(CellFontTest, BoldAndItalicShowWithoutTheirFaces)
+{
+    CellFont font;
+    font.setFont("Noto Mono", 30);
+    const std::u32string text = U"MHMHMHMH";
+    const int band = 80;
+    auto draw = [&](ui::Painter& painter) {
+        painter.fillRect({0, 0, 400, 3.0 * band}, ui::Color::rgb(0xffffff));
+        for (int style : {CellFont::Regular, CellFont::Bold, CellFont::Italic}) {
+            const int row = style == CellFont::Regular ? 0 : style == CellFont::Bold ? 1 : 2;
+            std::vector<ui::GlyphCluster> clusters;
+            for (size_t i = 0; i < text.size(); ++i)
+                clusters.push_back({std::u32string_view(text).substr(i, 1), 10.0 + 44.0 * double(i)});
+            font.draw(painter, style, ui::Color::rgb(0), row * band + 58, clusters);
+        }
+    };
+    ui::Window window;
+    window.resize({400, 3.0 * band});
+    window.setContentView(std::make_unique<Canvas>(draw));
+    window.show();
+    const ui::Image frame = window.grab();
+
+    const Ink regular = inkIn(frame, 0, band);
+    const Ink bold = inkIn(frame, band, 2 * band);
+    const Ink italic = inkIn(frame, 2 * band, 3 * band);
+    ASSERT_GT(regular.amount, 0);
+    EXPECT_GT(bold.amount, regular.amount * 1.15) << bold.amount << " against " << regular.amount;
+    EXPECT_GT(italic.shear, regular.shear + 1.5) << italic.shear << " against " << regular.shear;
 }
