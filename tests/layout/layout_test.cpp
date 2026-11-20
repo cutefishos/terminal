@@ -126,6 +126,26 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     EXPECT_FALSE(terminal->isCursorBlinking());
 }
 
+TEST_F(WindowTest, ATinyViewLeavesTheTerminalAsItIs)
+{
+    Windows windows(m_settings);
+    TerminalWindow::Options options = shell();
+    options.command = {"/bin/sleep", "30"};
+    TerminalWindow* window = windows.create(std::move(options));
+    TerminalPage* page = window->currentPage();
+    window->window().grab();
+    term::Terminal& terminal = page->session().terminal();
+    const int columns = terminal.columns();
+    ASSERT_GT(columns, 20);
+
+    terminal.write("a line long enough to wrap in a narrow terminal");
+    const ui::RectF geometry = page->terminal()->geometry();
+    page->terminal()->setGeometry({geometry.x, geometry.y, 1, 1});
+    window->window().grab();
+    EXPECT_EQ(terminal.columns(), columns);
+    EXPECT_EQ(terminal.logicalLine(0).cells.back().first, 0);
+}
+
 // What a TUI frame looks like: the lines of one cell run on into the next,
 // with no row of pixels between them, at a scale that is not whole.
 TEST_F(WindowTest, BoxLinesJoinAcrossCellsAtFractionalScale)

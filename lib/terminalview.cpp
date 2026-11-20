@@ -239,6 +239,12 @@ void TerminalView::updateGeometry(double scale)
     const int height = int(std::floor(geometry().height * s)) - 2 * gridTop();
     const int columns = std::max(1, width / cell.width);
     const int lines = std::max(1, height / cell.height);
+    // A view not given its size yet, or folded away while its tab moves,
+    // would reflow the whole history into one column.
+    if (columns < 2 || lines < 2) {
+        scheduleUpdate();
+        return;
+    }
     if (m_session)
         m_session->resize(columns, lines, cell.width, cell.height);
     if (columns != m_columns || lines != m_lines) {
