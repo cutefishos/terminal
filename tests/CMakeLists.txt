@@ -38,11 +38,12 @@ target_compile_definitions(terminal-scenario-tests PRIVATE KB_LAYOUTS_DIR="${TER
 gtest_discover_tests(terminal-scenario-tests PROPERTIES LABELS scenario)
 
 add_executable(terminal-layout-tests
+    layout/display_test.cpp
     layout/layout_test.cpp
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-layout-tests PRIVATE ../src)
-target_link_libraries(terminal-layout-tests PRIVATE terminal-view GTest::gtest)
+target_link_libraries(terminal-layout-tests PRIVATE terminal-view terminal-display GTest::gtest)
 target_compile_definitions(terminal-layout-tests PRIVATE KB_LAYOUTS_DIR="${TERMINAL_KB_LAYOUTS_DIR}")
 gtest_discover_tests(terminal-layout-tests PROPERTIES LABELS layout)
 

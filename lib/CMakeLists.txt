@@ -20,3 +20,16 @@ target_link_libraries(terminal-emulator
     PRIVATE
         PkgConfig::XKBCOMMON
 )
+
+# The display, on the toolkit.
+add_library(terminal-display STATIC
+    boxdrawing.cpp
+    cellfont.cpp
+)
+target_link_libraries(terminal-display
+    PUBLIC
+        terminal-emulator
+        Cutefish::Toolkit
+    PRIVATE
+        PkgConfig::XKBCOMMON
+)
