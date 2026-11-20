@@ -102,6 +102,7 @@ private:
     bool m_closing = false;
     bool m_destroying = false;
     cutefish::base::Timer m_foregroundCheck;
+    cutefish::base::Timer m_titleLater;
     cutefish::base::Timer m_finishLater;
 };
 

@@ -64,10 +64,18 @@ Session::Session()
         m_pty.write(bytes);
         checkForegroundLater();
     };
-    m_terminal.onTitleChanged = [this] {
+    // The shell may hand the terminal to a program just after the program
+    // set its title, so whose title it is gets looked at a moment later.
+    m_titleLater.setSingleShot(true);
+    m_titleLater.setInterval(std::chrono::milliseconds(20));
+    m_titleLater.onTimeout = [this] {
         m_programTitle = m_terminal.title();
         m_programTitleGroup = foregroundProcessGroup();
         notifyTitle();
+    };
+    m_terminal.onTitleChanged = [this] {
+        if (!m_titleLater.isActive())
+            m_titleLater.start();
     };
     m_terminal.onBell = [this] { bell(); };
 
