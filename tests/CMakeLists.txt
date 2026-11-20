@@ -28,6 +28,7 @@ add_executable(terminal-scenario-tests
     scenarios/input_test.cpp
     scenarios/menu_test.cpp
     scenarios/tabs_test.cpp
+    scenarios/view_test.cpp
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-scenario-tests PRIVATE ../src)
