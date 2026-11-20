@@ -6,11 +6,12 @@ set(TERMINAL_KB_LAYOUTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../qmltermwidget/lib/kb
 # The emulator and the session alone: no toolkit view library, so no window can come in.
 add_executable(terminal-logic-tests
     logic/main.cpp
-    logic/emulation_test.cpp
+    logic/links_test.cpp
+    logic/proxy_test.cpp
     logic/session_test.cpp
+    logic/terminal_test.cpp
 )
-target_link_libraries(terminal-logic-tests PRIVATE terminal-core GTest::gtest)
-target_compile_definitions(terminal-logic-tests PRIVATE KB_LAYOUTS_DIR="${TERMINAL_KB_LAYOUTS_DIR}")
+target_link_libraries(terminal-logic-tests PRIVATE terminal-emulator GTest::gtest)
 gtest_discover_tests(terminal-logic-tests PROPERTIES LABELS logic)
 
 # The windows and tabs on the headless platform.
