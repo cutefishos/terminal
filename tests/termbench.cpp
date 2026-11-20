@@ -9,10 +9,8 @@
 #include <clocale>
 #include <cstdio>
 #include <filesystem>
-#include <malloc.h>
 #include <random>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "base/event_loop.h"
@@ -95,17 +93,12 @@ static std::string workload(const std::string& kind, size_t bytes)
     return out;
 }
 
-// Resident memory, since the terminal's pages are mapped rather than taken from the heap.
-static double residentMegabytes()
+// What the terminal's pages hold in memory, both screens.
+static double terminalMegabytes(const term::Terminal& terminal)
 {
-    long pages = 0;
-    long resident = 0;
-    if (FILE* statm = std::fopen("/proc/self/statm", "r")) {
-        if (std::fscanf(statm, "%ld %ld", &pages, &resident) != 2)
-            resident = 0;
-        std::fclose(statm);
-    }
-    return double(resident) * double(sysconf(_SC_PAGESIZE)) / 1048576.0;
+    GhosttyTerminalMemoryUsage usage = GHOSTTY_INIT_SIZED(GhosttyTerminalMemoryUsage);
+    ghostty_terminal_get(terminal.handle(), GHOSTTY_TERMINAL_DATA_MEMORY_USAGE, &usage);
+    return double(usage.primary_resident_bytes + usage.alternate_resident_bytes) / 1048576.0;
 }
 
 static double seconds(Clock::time_point start)
@@ -159,9 +152,8 @@ int main(int argc, char** argv)
             terminal.write(std::string_view(data).substr(offset, 4096));
         const double elapsed = seconds(start);
         const double megabytes = double(data.size()) / 1048576.0;
-        std::printf("%-6s %6.1f MB in %7.1f ms  %6.1f MB/s  heap in use %.1f MB, resident %.1f MB\n", kind.c_str(),
-                    megabytes, elapsed * 1000, megabytes / elapsed, double(mallinfo2().uordblks) / 1048576.0,
-                    residentMegabytes());
+        std::printf("%-6s %6.1f MB in %7.1f ms  %6.1f MB/s  terminal memory %.1f MB\n", kind.c_str(), megabytes,
+                    elapsed * 1000, megabytes / elapsed, terminalMegabytes(terminal));
         std::fflush(stdout);
     }
     return 0;
