@@ -10,9 +10,7 @@ include(CTest)
 
 find_package(CutefishToolkit REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(ICU REQUIRED IMPORTED_TARGET icu-uc)
 
-add_subdirectory(qmltermwidget)
 add_subdirectory(lib)
 
 add_executable(${PROJECT_NAME}

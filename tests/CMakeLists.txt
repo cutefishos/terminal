@@ -43,8 +43,6 @@ target_include_directories(terminal-layout-tests PRIVATE ../src)
 target_link_libraries(terminal-layout-tests PRIVATE terminal-display GTest::gtest)
 gtest_discover_tests(terminal-layout-tests PROPERTIES LABELS layout)
 
-# Emulator comparison and throughput, against the earlier builds' tools.
-add_executable(termdiff termdiff.cpp)
-target_link_libraries(termdiff PRIVATE terminal-core)
+# Throughput, measured as in the terminal's performance notes.
 add_executable(termbench termbench.cpp)
-target_link_libraries(termbench PRIVATE terminal-core)
+target_link_libraries(termbench PRIVATE terminal-emulator)

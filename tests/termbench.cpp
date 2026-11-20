@@ -1,25 +1,26 @@
 // SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 
-// Feeds program output into the terminal emulation in pty-sized chunks and
-// reports throughput; the display is not involved. The workloads are those of
-// the earlier build's benchmark.
+// Throughput of the terminal: program output fed in pty-sized chunks, as
+// the pty delivers it, with no display; or "pty FILE": the file through a
+// real pty and session, the render state taken after every read as the view
+// takes it.
 #include <chrono>
 #include <clocale>
 #include <cstdio>
+#include <filesystem>
 #include <malloc.h>
 #include <random>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
-#include "base/elapsed_timer.h"
 #include "base/event_loop.h"
 
-#include "History.h"
-#include "ScreenWindow.h"
-#include "Vt102Emulation.h"
+#include "session.h"
+#include "terminal.h"
 
-using namespace Konsole;
+using Clock = std::chrono::steady_clock;
 
 // A Mersenne twister on a seed_seq of one value: the same stream on every run.
 class Random
@@ -68,7 +69,7 @@ static std::string workload(const std::string& kind, size_t bytes)
             }
             out += "\r\n";
         } else if (kind == "utf8") {
-            // CJK, Japanese, accented Latin, a dash, a check mark and Hangul, as the original line.
+            // CJK, Japanese, accented Latin, a dash, a check mark and Hangul.
             out += "\xe7\xac\xac" + std::to_string(line)
                     + "\xe8\xa1\x8c \xe4\xb8\xad\xe6\x96\x87\xe8\xbe\x93\xe5\x87\xba "
                       "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xe3\x81\xae\xe3\x83\x86\xe3\x82\xad\xe3\x82\xb9\xe3\x83\x88 "
@@ -94,41 +95,73 @@ static std::string workload(const std::string& kind, size_t bytes)
     return out;
 }
 
+// Resident memory, since the terminal's pages are mapped rather than taken from the heap.
+static double residentMegabytes()
+{
+    long pages = 0;
+    long resident = 0;
+    if (FILE* statm = std::fopen("/proc/self/statm", "r")) {
+        if (std::fscanf(statm, "%ld %ld", &pages, &resident) != 2)
+            resident = 0;
+        std::fclose(statm);
+    }
+    return double(resident) * double(sysconf(_SC_PAGESIZE)) / 1048576.0;
+}
+
+static double seconds(Clock::time_point start)
+{
+    return std::chrono::duration<double>(Clock::now() - start).count();
+}
+
+static int throughPty(const std::string& file)
+{
+    cutefish::base::EventLoop loop;
+    term::Session session;
+    session.setScrollbackLines(10000);
+    session.resize(175, 52, 8, 16);
+    session.setCommand({"/bin/cat", file});
+    GhosttyRenderState state = nullptr;
+    ghostty_render_state_new(nullptr, &state);
+    auto output = session.outputReceived.connect([&] {
+        ghostty_render_state_update(state, session.terminal().handle());
+        ghostty_render_state_clean(state);
+    });
+    const Clock::time_point start = Clock::now();
+    auto finished = session.finished.connect([&] {
+        const double megabytes = double(std::filesystem::file_size(file)) / 1048576.0;
+        const double elapsed = seconds(start);
+        std::printf("cat %.1f MB through the pty: %.0f ms, %.1f MB/s\n", megabytes, elapsed * 1000,
+                    megabytes / elapsed);
+        loop.quit();
+    });
+    session.start();
+    const int result = loop.run();
+    ghostty_render_state_free(state);
+    return result;
+}
+
 int main(int argc, char** argv)
 {
     std::setlocale(LC_ALL, "");
-    cutefish::base::EventLoop loop;
-    std::vector<std::string> kinds;
-    for (int i = 1; i < argc; ++i)
-        kinds.push_back(argv[i]);
+    std::vector<std::string> kinds(argv + 1, argv + argc);
+    if (kinds.size() == 2 && kinds.front() == "pty")
+        return throughPty(kinds.back());
     if (kinds.empty())
         kinds = {"plain", "color", "utf8", "long", "short", "redraw"};
 
     for (const std::string& kind : kinds) {
         const std::string data = workload(kind, 32 * 1024 * 1024);
-        Vt102Emulation emulation;
-        emulation.createWindow();
-        emulation.setKeyBindings(std::string());
-        emulation.setHistory(HistoryTypeBuffer(10000));
-        emulation.setImageSize(52, 175);
+        term::Terminal terminal(175, 52);
+        terminal.setScrollbackLines(10000);
 
-        cutefish::base::ElapsedTimer timer, frame;
-        timer.start();
-        frame.start();
-        for (size_t offset = 0; offset < data.size(); offset += 4096) {
-            emulation.receiveData(data.data() + offset, int(std::min<size_t>(4096, data.size() - offset)));
-            // The pty and the display timers share one thread.
-            if (frame.elapsedMs() >= 16) {
-                loop.dispatch();
-                frame.restart();
-            }
-        }
-        loop.dispatch();
-        const double ms = double(timer.elapsed().count()) / 1e6;
-        const size_t heap = mallinfo2().uordblks;
-        std::printf("%-6s %6.1f MB in %7.1f ms  %6.1f MB/s  heap in use %.1f MB\n", kind.c_str(),
-                    double(data.size()) / 1048576.0, ms, double(data.size()) / 1048576.0 / (ms / 1000),
-                    double(heap) / 1048576.0);
+        const Clock::time_point start = Clock::now();
+        for (size_t offset = 0; offset < data.size(); offset += 4096)
+            terminal.write(std::string_view(data).substr(offset, 4096));
+        const double elapsed = seconds(start);
+        const double megabytes = double(data.size()) / 1048576.0;
+        std::printf("%-6s %6.1f MB in %7.1f ms  %6.1f MB/s  heap in use %.1f MB, resident %.1f MB\n", kind.c_str(),
+                    megabytes, elapsed * 1000, megabytes / elapsed, double(mallinfo2().uordblks) / 1048576.0,
+                    residentMegabytes());
         std::fflush(stdout);
     }
     return 0;
