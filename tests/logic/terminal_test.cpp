@@ -200,6 +200,14 @@ TEST(TerminalTest, RepliesToTheQueriesProgramsSend)
     EXPECT_EQ(pty.print("\033[?996n"), "\033[?997;1n");
 }
 
+TEST(TerminalTest, ImageQueriesGetNoAnswer)
+{
+    Pty pty;
+    EXPECT_EQ(pty.print("\033_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\033\\"), "");
+    EXPECT_EQ(pty.print("x"), "");
+    EXPECT_EQ(pty.line(0), "x");
+}
+
 TEST(TerminalTest, TitleAndBellArriveAfterTheWrite)
 {
     Pty pty;

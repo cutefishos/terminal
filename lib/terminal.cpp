@@ -83,6 +83,9 @@ Terminal::Terminal(int columns, int lines)
     const GhosttyString terminfo{reinterpret_cast<const uint8_t*>("xterm-256color"), 14};
     ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_TERMINFO_NAME, &terminfo);
     setScrollbackLines(10000);
+    // The view draws no images, so programs are not told that they show.
+    const uint64_t noImages = 0;
+    ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_KITTY_IMAGE_STORAGE_LIMIT, &noImages);
 
     ghostty_key_encoder_new(nullptr, &m_keyEncoder);
     ghostty_key_event_new(nullptr, &m_keyEvent);
