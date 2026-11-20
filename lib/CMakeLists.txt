@@ -1,4 +1,6 @@
-pkg_check_modules(GHOSTTY_VT REQUIRED IMPORTED_TARGET libghostty-vt)
+# libghostty-vt as a static library under a name of Cutefish's own, so it is
+# linked in whole and nothing of it is needed at run time.
+pkg_check_modules(GHOSTTY_VT REQUIRED IMPORTED_TARGET cutefish-ghostty-vt)
 pkg_check_modules(XKBCOMMON REQUIRED IMPORTED_TARGET xkbcommon)
 
 # The terminal itself: libghostty-vt's state, the pty, the session.

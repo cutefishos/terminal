@@ -12,8 +12,9 @@ repository's own.
 ## Dependencies
 
 Terminal is built on [cutefish-toolkit](https://github.com/cutefishos/cutefish-toolkit)
-and libghostty-vt 1.0; install both first. libghostty-vt builds with Zig, see
-its `PACKAGING-LIBGHOSTTY.md`.
+and libghostty-vt 1.0, linked statically; install both first. libghostty-vt
+is found as the pkg-config module `cutefish-ghostty-vt`, which the Cutefish
+package `cutefish-ghostty-vt-dev` provides.
 
 Debian/Ubuntu Dependencies:
 ```sh
