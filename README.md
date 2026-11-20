@@ -4,19 +4,20 @@ A terminal emulator for Cutefish.
 
 <img src="screenshots/terminal.png" alt="Terminal" width="897">
 
-### Third Party Code
-
-The emulator core comes from Konsole by way of
-[qmltermwidget](https://github.com/Swordfish90/qmltermwidget).
+The terminal's state, its parsing, scrollback, selection, search and input
+encoding come from [libghostty-vt](https://github.com/ghostty-org/ghostty)
+(MIT). The pty, the drawing on cutefish-toolkit and the windows are this
+repository's own.
 
 ## Dependencies
 
-Terminal is built on [cutefish-toolkit](https://github.com/cutefishos/cutefish-toolkit);
-install it first.
+Terminal is built on [cutefish-toolkit](https://github.com/cutefishos/cutefish-toolkit)
+and libghostty-vt 1.0; install both first. libghostty-vt builds with Zig, see
+its `PACKAGING-LIBGHOSTTY.md`.
 
 Debian/Ubuntu Dependencies:
 ```sh
-sudo apt install cmake pkg-config libicu-dev libpcre2-dev libxkbcommon-dev
+sudo apt install cmake pkg-config libxkbcommon-dev
 ```
 
 ## Build and install
@@ -28,6 +29,18 @@ make
 sudo make install
 ```
 
+## Open-source references
+
+`lib/colorschemes.cpp` holds the published palettes of these themes, their
+values taken over unchanged: [Catppuccin](https://github.com/catppuccin/catppuccin)
+(MIT), [Dracula](https://github.com/dracula/dracula-theme) (MIT),
+[Gruvbox](https://github.com/morhetz/gruvbox) (MIT), [Nord](https://github.com/nordtheme/nord)
+(MIT, copyright 2016-present Sven Greb), Atom One Dark and One Light as
+[iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) gives them (MIT),
+[Solarized](https://github.com/altercation/solarized) (MIT, copyright 2011 Ethan Schoonover),
+[Tokyo Night](https://github.com/folke/tokyonight.nvim) (Apache-2.0, copyright Folke Lemaitre)
+and [Tomorrow Night](https://github.com/chriskempson/tomorrow-theme) (MIT, copyright 2011 Chris Kempson).
+
 ## License
 
-This project has been licensed by GPLv3.
+MIT; see [LICENSE](LICENSE).
