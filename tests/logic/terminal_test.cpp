@@ -306,6 +306,23 @@ TEST(TerminalTest, SearchHonoursCaseWhenAsked)
     EXPECT_FALSE(pty.terminal().hasSelection());
 }
 
+static uint32_t background(Terminal& terminal)
+{
+    GhosttyColorRgb rgb{};
+    ghostty_terminal_get(terminal.handle(), GHOSTTY_TERMINAL_DATA_COLOR_BACKGROUND, &rgb);
+    return uint32_t(rgb.r) << 16 | uint32_t(rgb.g) << 8 | rgb.b;
+}
+
+TEST(TerminalTest, ResetsKeepTheColorScheme)
+{
+    Pty pty;
+    pty.terminal().setColorScheme(colorScheme("Dracula"));
+    pty.print("\033]11;#ff0000\033\\");
+    EXPECT_EQ(background(pty.terminal()), 0xff0000u);
+    pty.terminal().reset();
+    EXPECT_EQ(background(pty.terminal()), 0x21222cu);
+}
+
 TEST(TerminalTest, ColorSchemesFallBackToTheDefault)
 {
     EXPECT_EQ(colorScheme("Dracula").label, "Dracula");

@@ -113,7 +113,7 @@ public:
     // Bytes for the program as they are.
     void send(std::string_view bytes);
 
-    // A full reset, scrollback included.
+    // A full reset, scrollback and the colours programs set included.
     void reset();
     void clearScrollback();
     // Clears the screen and the scrollback, keeping the cursor's line at the top.

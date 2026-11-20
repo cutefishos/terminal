@@ -282,6 +282,8 @@ void Terminal::paste(std::string_view text, bool typed)
 void Terminal::reset()
 {
     ghostty_terminal_reset(m_terminal);
+    // Colours a program set outlive the reset; the scheme's come back.
+    write("\033]104\033\\\033]110\033\\\033]111\033\\\033]112\033\\");
 }
 
 // CAN first, so a sequence the program left unfinished cannot swallow these.
