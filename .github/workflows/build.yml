@@ -11,3 +11,4 @@ jobs:
     uses: cutefishos/.github/.github/workflows/build.yml@main
     with:
       dependencies: icons cutefish-toolkit
+      released: cutefish-ghostty-vt
