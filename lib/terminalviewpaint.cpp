@@ -39,6 +39,10 @@ void TerminalView::updateRenderState()
     if (!m_held)
         ghostty_render_state_update(m_state, terminal->handle());
     scrollChanged();
+    if (terminal->tracksMouse() != m_tracksMouse) {
+        m_tracksMouse = !m_tracksMouse;
+        updatePointerShape();
+    }
 
     GhosttyRenderStateDirty dirty = GHOSTTY_RENDER_STATE_DIRTY_FALSE;
     ghostty_render_state_get(m_state, GHOSTTY_RENDER_STATE_DATA_DIRTY, &dirty);

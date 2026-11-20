@@ -126,6 +126,24 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     EXPECT_FALSE(terminal->isCursorBlinking());
 }
 
+TEST_F(WindowTest, PointerShowsWhetherTheProgramTakesTheMouse)
+{
+    Windows windows(m_settings);
+    TerminalWindow::Options options = shell();
+    options.command = {"/bin/sleep", "30"};
+    TerminalWindow* window = windows.create(std::move(options));
+    TerminalPage* page = window->currentPage();
+    window->window().grab();
+    EXPECT_EQ(page->terminal()->cursorShape(), ui::CursorShape::Text);
+
+    page->session().terminal().write("\033[?1000h");
+    page->session().outputReceived();
+    EXPECT_TRUE(waitFor([&] { return page->terminal()->cursorShape() == ui::CursorShape::Default; }));
+    page->session().terminal().write("\033[?1000l");
+    page->session().outputReceived();
+    EXPECT_TRUE(waitFor([&] { return page->terminal()->cursorShape() == ui::CursorShape::Text; }));
+}
+
 TEST_F(WindowTest, ATinyViewLeavesTheTerminalAsItIs)
 {
     Windows windows(m_settings);

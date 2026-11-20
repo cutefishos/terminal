@@ -237,6 +237,7 @@ private:
     std::vector<Segment> m_linkSegments;
     cutefish::ui::Color m_linkColor;
     bool m_controlHeld = false;
+    bool m_tracksMouse = false;
     std::pair<int, int> m_hoverCell{-1, -1};
 
     std::unique_ptr<Search> m_search;
