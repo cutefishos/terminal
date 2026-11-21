@@ -401,6 +401,15 @@ void TerminalView::selectionChanged()
     requestPaint();
 }
 
+void TerminalView::clearSelection()
+{
+    Terminal* terminal = this->terminal();
+    if (!terminal || !terminal->hasSelection())
+        return;
+    terminal->clearSelection();
+    selectionChanged();
+}
+
 void TerminalView::selectAll()
 {
     if (Terminal* terminal = this->terminal()) {

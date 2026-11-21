@@ -76,6 +76,12 @@ bool TerminalView::handleScrollKey(const ui::KeyEvent& event)
     }
 }
 
+static bool isModifierKey(uint32_t key)
+{
+    return (key >= XKB_KEY_Shift_L && key <= XKB_KEY_Hyper_R) || key == XKB_KEY_ISO_Level3_Shift
+            || key == XKB_KEY_ISO_Level5_Shift;
+}
+
 bool TerminalView::keyPress(const ui::KeyEvent& event)
 {
     if (event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R) {
@@ -87,6 +93,10 @@ bool TerminalView::keyPress(const ui::KeyEvent& event)
     if (handleScrollKey(event))
         return true;
     if (sendKey(event)) {
+        // Typing lets the selection go, as anything but a modifier the
+        // program hears does.
+        if (!isModifierKey(event.key))
+            clearSelection();
         terminal()->scrollToBottom();
         setScrollOffset(0);
         scrollChanged();
@@ -130,6 +140,8 @@ ui::TextInputState TerminalView::textInputState() const
 
 void TerminalView::textInput(const ui::TextInputEvent& event)
 {
+    if (!event.commit.empty() || !event.preedit.empty() || !m_preedit.empty())
+        clearSelection();
     if (Terminal* terminal = this->terminal(); terminal && !event.commit.empty()) {
         terminal->send(event.commit);
         terminal->scrollToBottom();

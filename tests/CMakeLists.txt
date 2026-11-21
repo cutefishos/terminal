@@ -27,6 +27,7 @@ set(TERMINAL_WINDOW_SOURCES
 add_executable(terminal-scenario-tests
     scenarios/main.cpp
     scenarios/input_test.cpp
+    scenarios/interaction_test.cpp
     scenarios/menu_test.cpp
     scenarios/tabs_test.cpp
     scenarios/view_test.cpp

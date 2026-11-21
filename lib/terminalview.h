@@ -66,6 +66,7 @@ public:
     bool hasSelection() const;
     std::string selectedText() const;
     void selectAll();
+    void clearSelection();
     void copyClipboard();
     void pasteClipboard();
     void pasteSelection();
