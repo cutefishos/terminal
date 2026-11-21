@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2024 Mitchell Hashimoto, Ghostty contributors
 // SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
 // SPDX-License-Identifier: MIT
 
