@@ -182,8 +182,12 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
     // Shift keeps clicks for selecting, but the wheel always goes to a
     // program that takes the mouse.
     const bool program = terminal() && terminal()->tracksMouse();
+    // A full-screen program without the mouse that asked for alternate
+    // scrolling, such as less, gets Up and Down instead.
+    const bool arrows = !program && terminal() && terminal()->usesAlternateScreen()
+            && terminal()->mode(GHOSTTY_MODE_MOUSE_ALTERNATE_SCROLL);
     // A touchpad drags the history by the pixel, coasts and stretches at the ends.
-    if (!program && event.precise && scrollbarMaximum() > 0 && m_scroller) {
+    if (!program && !arrows && event.precise && scrollbarMaximum() > 0 && m_scroller) {
         m_scroller->handleScroll(event);
         return true;
     }
@@ -208,15 +212,14 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
         sendMouse(MouseInput::Press, lines > 0 ? 4 : 5, m_lastPointer, event.modifiers);
         return true;
     }
-    if (scrollbarMaximum() > 0) {
-        setScrollbarValue(scrollbarValue() - lines);
-    } else if (terminal() && terminal()->usesAlternateScreen()) {
-        // A full-screen program without the mouse, such as less, scrolls on
-        // Up and Down; at a prompt those would recall the shell's history.
+    if (arrows) {
+        clearSelection();
         ui::KeyEvent key;
         key.key = lines > 0 ? XKB_KEY_Up : XKB_KEY_Down;
         for (int i = 0; i < std::abs(lines); ++i)
             sendKey(key);
+    } else if (scrollbarMaximum() > 0) {
+        setScrollbarValue(scrollbarValue() - lines);
     }
     return true;
 }

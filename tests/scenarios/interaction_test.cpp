@@ -98,3 +98,20 @@ TEST(InteractionTest, AProgramTakingTheMouseGetsClicksAndShiftedWheelsAndClearsT
     ui::TestInput::scroll(driver.window(), word, wheel);
     EXPECT_TRUE(waitFor([&] { return contents(path).find("\033[<68;") != std::string::npos; })) << contents(path);
 }
+
+TEST(InteractionTest, WheelOnTheAlternateScreenSendsArrowsOnlyInAlternateScrollMode)
+{
+    Scenario scenario;
+    const std::string path = scenario.directory() + "/received";
+    ui::TestDriver& driver = scenario.open(scenario.recorder(path, "\\033[?1049h\\033[?1007l"));
+    ASSERT_TRUE(waitFor([&] {
+        TerminalPage* page = shownTab(driver);
+        return page && page->session().terminal().usesAlternateScreen()
+                && !page->session().terminal().mode(GHOSTTY_MODE_MOUSE_ALTERNATE_SCROLL);
+    }));
+    ui::ScrollEvent wheel;
+    wheel.value120Y = -120;
+    driver.scroll("tab:page", wheel);
+    driver.typeText("x");
+    EXPECT_TRUE(waitFor([&] { return contents(path) == "x"; })) << contents(path);
+}
