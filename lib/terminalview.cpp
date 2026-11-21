@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
+#include "base/paths.h"
 #include "ui/clipboard.h"
 #include "ui/window.h"
 
@@ -518,10 +520,34 @@ std::string TerminalView::linkAt(double x, double y) const
         return uri;
     const Terminal::LogicalLine text = terminal->logicalLine(line);
     for (size_t i = 0; i < text.cells.size(); ++i) {
-        if (text.cells[i] == std::pair<int, int>{line, column})
-            return term::linkAt(text.text, i).url;
+        if (text.cells[i] != std::pair<int, int>{line, column})
+            continue;
+        const Link link = term::linkAt(text.text, i);
+        return link.path ? resolvedPath(link.url) : link.url;
     }
     return {};
+}
+
+// A relative path that exists from the shell's directory, as the shell
+// reported it or else as the process has it, opens from there; any other
+// path opens as written.
+std::string TerminalView::resolvedPath(const std::string& path) const
+{
+    namespace fs = std::filesystem;
+    std::error_code error;
+    if (path.starts_with("~/")) {
+        const fs::path home = fs::path(cutefish::base::paths::home()) / path.substr(2);
+        return fs::exists(home, error) ? home.lexically_normal().string() : path;
+    }
+    if (fs::path(path).is_absolute())
+        return path;
+    std::string base = terminal()->reportedDirectory();
+    if (base.empty() && m_session)
+        base = m_session->currentDir();
+    if (base.empty())
+        return path;
+    const fs::path full = (fs::path(base) / path).lexically_normal();
+    return fs::exists(full, error) ? full.string() : path;
 }
 
 void TerminalView::find(const std::string& text, bool forwards, bool fromSelection, bool caseSensitive)

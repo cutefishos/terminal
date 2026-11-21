@@ -18,7 +18,7 @@ package `cutefish-ghostty-vt-dev` provides.
 
 Debian/Ubuntu Dependencies:
 ```sh
-sudo apt install cmake pkg-config libxkbcommon-dev
+sudo apt install cmake pkg-config libpcre2-dev libxkbcommon-dev
 ```
 
 ## Build and install
@@ -51,6 +51,11 @@ go, the wheel and alternate scroll mode under a program taking the mouse,
 links shown with Control, focus reports with the held key released on focus
 loss. The behaviour was reimplemented; the 600 ms cursor blink interval was
 taken over unchanged.
+
+`lib/links.cpp` matches links with Ghostty's default URL and path pattern
+(`src/config/url.zig`, v1.4.0, MIT), taken over with one lookbehind
+restructured for PCRE2; `tests/logic/links_test.cpp` runs that file's test
+cases unchanged.
 
 ## License
 

@@ -2,6 +2,7 @@
 # linked in whole and nothing of it is needed at run time.
 pkg_check_modules(GHOSTTY_VT REQUIRED IMPORTED_TARGET cutefish-ghostty-vt)
 pkg_check_modules(XKBCOMMON REQUIRED IMPORTED_TARGET xkbcommon)
+pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 
 # The terminal itself: libghostty-vt's state, the pty, the session.
 add_library(terminal-emulator STATIC
@@ -20,6 +21,7 @@ target_link_libraries(terminal-emulator
         Cutefish::ToolkitBase
         PkgConfig::GHOSTTY_VT
     PRIVATE
+        PkgConfig::PCRE2
         PkgConfig::XKBCOMMON
 )
 

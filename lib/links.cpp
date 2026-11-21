@@ -3,7 +3,11 @@
 
 #include "links.h"
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+
 #include <algorithm>
+#include <memory>
 
 #include "base/strings.h"
 
@@ -11,11 +15,83 @@ namespace strings = cutefish::base::strings;
 
 namespace term {
 
-// What ends a link: space, and the quotes and brackets text puts around one.
-static bool endsLink(char c)
+// URLs with a scheme, absolute and dot-relative paths, and bare relative
+// paths with a dot in them, matched as the reference terminal's default
+// link pattern does; see the README.
+static const std::string& linkPattern()
 {
-    return static_cast<unsigned char>(c) <= ' ' || c == '"' || c == '\'' || c == '<' || c == '>' || c == '`'
-            || c == 0x7f;
+    static const std::string pattern = [] {
+        const std::string schemes =
+                R"(https?://|mailto:|ftp://|file:|ssh:|git://|ssh://|tel:|magnet:|ipfs://|ipns://|gemini://|gopher://|news:)";
+        const std::string ipv6 = R"((?:\[[:0-9a-fA-F]+(?:[:0-9a-fA-F]*)+\](?::[0-9]+)?))";
+        const std::string schemeChars = R"([\w\-.~:/?#@!$&*+,;=%])";
+        const std::string pathChars = R"([\w\-.~:\/?#@!$&*+;=%])";
+        const std::string bracketedWordSuffix = R"((?:[\(\[]\w*[\)\]])?)";
+        const std::string noTrailingPunctuation = R"((?<![,.]))";
+        const std::string noTrailingColon = R"((?<!:))";
+        const std::string dottedPathLookahead = R"((?=[\w\-.~:\/?#@!$&*+;=%]*\.))";
+        const std::string nonDottedPathLookahead = R"((?![\w\-.~:\/?#@!$&*+;=%]*\.))";
+        const std::string dottedPathSpaceSegments =
+                R"((?:(?<!:) (?!\w+:\/\/)(?!\.{0,2}\/)(?!~\/)[\w\-.~:\/?#@!$&*+;=%]*[\/.])*)";
+        const std::string anyPathSpaceSegments =
+                R"((?:(?<!:) (?!\w+:\/\/)(?!\.{0,2}\/)(?!~\/)[\w\-.~:\/?#@!$&*+;=%]+)*)";
+
+        const std::string schemeUrl = "(?:" + schemes + ")(?:" + ipv6 + "|" + schemeChars + "+" + bracketedWordSuffix
+                + ")+" + noTrailingPunctuation;
+        const std::string rootedOrRelativePrefix =
+                R"((?:\.\.\/|\.\/|(?<!\w)~\/|(?:[\w][\w\-.]*\/)*(?<!\w)\$[A-Za-z_]\w*\/|\.[\w][\w\-.]*\/|(?<![\w~\/])\/(?!\/)))";
+        const std::string rootedOrRelativePath = rootedOrRelativePrefix + "(?:" + dottedPathLookahead + pathChars + "+"
+                + dottedPathSpaceSegments + noTrailingColon + "|" + nonDottedPathLookahead + pathChars + "+"
+                + anyPathSpaceSegments + noTrailingColon + ")";
+        // The reference's (?<!\$\d*) is unbounded, which PCRE2 cannot look
+        // behind for; after a digit (?<!\w) already fails, so only "$" itself is left.
+        const std::string bareRelativePrefix = R"((?<!\$)(?<!\w)[\w][\w\-.]*\/)";
+        const std::string bareRelativePath = dottedPathLookahead + bareRelativePrefix + pathChars + "+" + noTrailingColon;
+        return schemeUrl + "|" + rootedOrRelativePath + "|" + bareRelativePath;
+    }();
+    return pattern;
+}
+
+struct CodeDeleter
+{
+    void operator()(pcre2_code* code) const { pcre2_code_free(code); }
+};
+
+static const pcre2_code* linkRegex()
+{
+    static const std::unique_ptr<pcre2_code, CodeDeleter> code = [] {
+        int error = 0;
+        PCRE2_SIZE offset = 0;
+        const std::string& pattern = linkPattern();
+        // \w and the classes match letters of any script, as the pattern expects.
+        return std::unique_ptr<pcre2_code, CodeDeleter>(
+                pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(),
+                              PCRE2_UTF | PCRE2_UCP | PCRE2_MATCH_INVALID_UTF, &error, &offset, nullptr));
+    }();
+    return code.get();
+}
+
+std::vector<std::pair<size_t, size_t>> linkMatches(std::string_view text)
+{
+    std::vector<std::pair<size_t, size_t>> matches;
+    const pcre2_code* code = linkRegex();
+    if (!code)
+        return matches;
+    pcre2_match_data* data = pcre2_match_data_create_from_pattern(code, nullptr);
+    const auto subject = reinterpret_cast<PCRE2_SPTR>(text.data());
+    size_t start = 0;
+    while (start <= text.size()
+           && pcre2_match(code, subject, text.size(), start, 0, data, nullptr) > 0) {
+        const PCRE2_SIZE* ovector = pcre2_get_ovector_pointer(data);
+        if (ovector[1] == ovector[0]) {
+            ++start;
+            continue;
+        }
+        matches.emplace_back(ovector[0], ovector[1]);
+        start = ovector[1];
+    }
+    pcre2_match_data_free(data);
+    return matches;
 }
 
 static bool isSchemeCharacter(char c)
@@ -29,72 +105,44 @@ static bool isAddressCharacter(char c)
             || c == '%';
 }
 
-// Punctuation after a link belongs to the sentence, and a closing bracket to
-// the text around it unless the link opened one.
+// What ends a link written without a scheme: space, and the quotes and
+// brackets text puts around one.
+static bool endsLink(char c)
+{
+    return static_cast<unsigned char>(c) <= ' ' || c == '"' || c == '\'' || c == '<' || c == '>' || c == '`'
+            || c == 0x7f;
+}
+
+// Punctuation after a link belongs to the sentence.
 static size_t trimEnd(std::string_view text, size_t begin, size_t end)
 {
-    while (end > begin) {
-        const char last = text[end - 1];
-        if (std::string_view(".,:;!?").find(last) != std::string_view::npos) {
-            --end;
-            continue;
-        }
-        const char open = last == ')' ? '(' : last == ']' ? '[' : last == '}' ? '{' : 0;
-        if (open) {
-            const std::string_view link = text.substr(begin, end - begin);
-            const auto opened = std::count(link.begin(), link.end(), open);
-            const auto closed = std::count(link.begin(), link.end(), last);
-            if (closed > opened) {
-                --end;
-                continue;
-            }
-        }
-        break;
-    }
+    while (end > begin && std::string_view(".,:;!?").find(text[end - 1]) != std::string_view::npos)
+        --end;
     return end;
 }
 
+// "www." with no scheme, opened over http.
 static Link webLink(std::string_view text, size_t offset)
 {
-    // The run of text around the offset that could hold a link.
-    size_t runBegin = offset;
-    while (runBegin > 0 && !endsLink(text[runBegin - 1]))
-        --runBegin;
-    size_t runEnd = offset;
-    while (runEnd < text.size() && !endsLink(text[runEnd]))
-        ++runEnd;
-    const std::string_view run = text.substr(runBegin, runEnd - runBegin);
-
-    // Every start of a link in the run, nearest before the offset wins.
-    for (size_t at = run.size(); at-- > 0;) {
-        size_t begin = std::string_view::npos;
-        std::string prefix;
-        if (run.substr(at).starts_with("://") && at > 0) {
-            size_t scheme = at;
-            while (scheme > 0 && isSchemeCharacter(run[scheme - 1]))
-                --scheme;
-            while (scheme < at && !strings::isAsciiAlpha(run[scheme]))
-                ++scheme;
-            if (scheme < at && at + 3 < run.size())
-                begin = scheme;
-        } else if ((at == 0 || !isSchemeCharacter(run[at - 1]))
-                   && strings::startsWith(run.substr(at), "www.", strings::CaseSensitivity::Insensitive)
-                   && at + 4 < run.size()) {
-            begin = at;
-            prefix = "http://";
+    size_t begin = offset;
+    while (begin > 0 && !endsLink(text[begin - 1]))
+        --begin;
+    for (size_t at = offset + 1; at-- > begin;) {
+        if ((at == 0 || !isSchemeCharacter(text[at - 1]))
+            && strings::startsWith(text.substr(at), "www.", strings::CaseSensitivity::Insensitive)) {
+            size_t end = at;
+            while (end < text.size() && !endsLink(text[end]))
+                ++end;
+            end = trimEnd(text, at, end);
+            if (end <= at + 4 || offset >= end)
+                return {};
+            return Link{at, end, "http://" + std::string(text.substr(at, end - at)), false};
         }
-        if (begin == std::string_view::npos || runBegin + begin > offset)
-            continue;
-        const size_t end = runBegin + trimEnd(run, begin, run.size());
-        if (offset >= end)
-            return {};
-        Link link{runBegin + begin, end, std::string()};
-        link.url = prefix + std::string(text.substr(link.begin, link.end - link.begin));
-        return link;
     }
     return {};
 }
 
+// A mail address with no scheme, opened as mailto:.
 static Link mailLink(std::string_view text, size_t offset)
 {
     size_t begin = offset;
@@ -116,12 +164,28 @@ static Link mailLink(std::string_view text, size_t offset)
         if (!strings::isAsciiAlpha(domain[i]))
             return {};
     }
-    return Link{begin, end, "mailto:" + std::string(address)};
+    return Link{begin, end, "mailto:" + std::string(address), false};
+}
+
+static bool hasScheme(std::string_view text)
+{
+    const size_t colon = text.find(':');
+    if (colon == std::string_view::npos || colon == 0)
+        return false;
+    return std::all_of(text.begin(), text.begin() + colon, isSchemeCharacter);
 }
 
 Link linkAt(std::string_view text, size_t offset)
 {
-    if (offset >= text.size() || endsLink(text[offset]))
+    if (offset >= text.size())
+        return {};
+    for (const auto& [begin, end] : linkMatches(text)) {
+        if (offset < begin || offset >= end)
+            continue;
+        const std::string_view written = text.substr(begin, end - begin);
+        return Link{begin, end, std::string(written), !hasScheme(written)};
+    }
+    if (endsLink(text[offset]))
         return {};
     if (Link link = webLink(text, offset); link.isValid())
         return link;

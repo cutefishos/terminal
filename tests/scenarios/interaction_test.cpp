@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <string>
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -193,4 +194,24 @@ TEST(InteractionTest, AKeyHeldAsTheKeyboardLeavesIsReleasedForTheProgram)
     EXPECT_TRUE(waitFor([&] {
         return contents(path) == pressed + "\033[97;2:3u\033[57441;1:3u\033[57447;1:3u";
     })) << contents(path);
+}
+
+TEST(InteractionTest, APathLinkOpensFromTheShellsDirectory)
+{
+    Scenario scenario;
+    std::filesystem::create_directories(scenario.directory() + "/notes.d");
+    ASSERT_TRUE(cutefish::base::file::writeAtomically(scenario.directory() + "/notes.d/today.txt", "x"));
+    ui::TestDriver& driver = scenario.open(printer(scenario, "see notes.d/today.txt and /nowhere/else.txt\\r\\n"));
+    ASSERT_TRUE(waitFor([&] { return shows(driver, "else.txt"); }));
+    term::TerminalView* view = shownTab(driver)->terminal();
+    const auto pointAt = [&](const char* text) {
+        const ui::PointF window = cellCentre(driver, cellOf(driver, text));
+        const ui::PointF origin = view->mapToWindow({0, 0});
+        return ui::PointF{window.x - origin.x, window.y - origin.y};
+    };
+    // Relative and there: from the directory. Not there: as written.
+    ui::PointF relative = pointAt("today");
+    EXPECT_EQ(view->linkAt(relative.x, relative.y), scenario.directory() + "/notes.d/today.txt");
+    ui::PointF absolute = pointAt("else");
+    EXPECT_EQ(view->linkAt(absolute.x, absolute.y), "/nowhere/else.txt");
 }

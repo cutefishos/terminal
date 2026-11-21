@@ -126,6 +126,7 @@ private:
     void applyPosition(cutefish::ui::PointF position) override;
 
     Terminal* terminal() const;
+    std::string resolvedPath(const std::string& path) const;
     double scale() const;
     double cellHeightLogical() const;
     // The grid's top left in device pixels from the view's.
