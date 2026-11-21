@@ -70,3 +70,31 @@ TEST(InteractionTest, ShiftClickExtendsTheSelection)
     EXPECT_EQ(selection(driver), "bravo charlie");
     EXPECT_EQ(primarySelection(), "bravo charlie");
 }
+
+TEST(InteractionTest, AProgramTakingTheMouseGetsClicksAndShiftedWheelsAndClearsTheSelection)
+{
+    Scenario scenario;
+    const std::string path = scenario.directory() + "/received";
+    ui::TestDriver& driver = scenario.open(scenario.recorder(path, "alpha bravo\\r\\n\\033[?1000h\\033[?1006h"));
+    ASSERT_TRUE(waitFor([&] { return takesTheMouse(driver); }));
+
+    // Shift keeps clicks for selecting.
+    const ui::PointF word = cellCentre(driver, cellOf(driver, "ravo"));
+    ui::TestInput::movePointer(driver.window(), word);
+    for (int i = 0; i < 2; ++i) {
+        ui::TestInput::press(driver.window(), word, ui::MouseButton::Left, ui::ShiftModifier);
+        ui::TestInput::release(driver.window(), word);
+    }
+    ASSERT_EQ(selection(driver), "bravo");
+
+    ui::TestInput::click(driver.window(), cellCentre(driver, cellOf(driver, "lpha")));
+    EXPECT_TRUE(waitFor([&] { return contents(path).find("\033[<0;") != std::string::npos; })) << contents(path);
+    EXPECT_EQ(selection(driver), "");
+
+    // The wheel goes to the program with Shift as well.
+    ui::ScrollEvent wheel;
+    wheel.value120Y = -120;
+    wheel.modifiers = ui::ShiftModifier;
+    ui::TestInput::scroll(driver.window(), word, wheel);
+    EXPECT_TRUE(waitFor([&] { return contents(path).find("\033[<68;") != std::string::npos; })) << contents(path);
+}

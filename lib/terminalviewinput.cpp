@@ -179,7 +179,9 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
     if (window() && (!m_scroller || m_scroller->window() != window()))
         m_scroller = std::make_unique<ui::Scroller>(window(), this);
 
-    const bool program = programTakesMouse(event.modifiers);
+    // Shift keeps clicks for selecting, but the wheel always goes to a
+    // program that takes the mouse.
+    const bool program = terminal() && terminal()->tracksMouse();
     // A touchpad drags the history by the pixel, coasts and stretches at the ends.
     if (!program && event.precise && scrollbarMaximum() > 0 && m_scroller) {
         m_scroller->handleScroll(event);
@@ -202,6 +204,7 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
         return true;
 
     if (program) {
+        clearSelection();
         sendMouse(MouseInput::Press, lines > 0 ? 4 : 5, m_lastPointer, event.modifiers);
         return true;
     }
@@ -367,6 +370,8 @@ void TerminalView::pointerPress(const ui::PointerEvent& event)
         return;
 
     if (programTakesMouse(event.modifiers)) {
+        // What the program does with the click may move the text under the selection.
+        clearSelection();
         m_mousePress = true;
         sendMouse(MouseInput::Press, programButton(event.button), event.position, event.modifiers);
         return;
