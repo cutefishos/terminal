@@ -362,3 +362,17 @@ TEST(TerminalTest, AClickOnTheCommandLineMovesTheShellsCursorThere)
     EXPECT_EQ(terminal.promptClickInput(5, 2), "\033[<0;6;3M");
     EXPECT_EQ(terminal.promptClickInput(1, 1), "");
 }
+
+TEST(TerminalTest, PromptClickOptionsHoldUntilAReset)
+{
+    Pty pty;
+    Terminal& terminal = pty.terminal();
+    // A mark cut across two writes still counts.
+    pty.print("\033]133;A;cl=li");
+    pty.print("ne\a$ ");
+    EXPECT_EQ(terminal.promptClick(), Terminal::PromptClick::Line);
+    pty.print("\033]133;A\a$ ");
+    EXPECT_EQ(terminal.promptClick(), Terminal::PromptClick::Line);
+    terminal.reset();
+    EXPECT_EQ(terminal.promptClick(), Terminal::PromptClick::None);
+}

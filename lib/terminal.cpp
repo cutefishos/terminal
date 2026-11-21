@@ -33,6 +33,14 @@ struct TerminalCallbacks
     static void bell(GhosttyTerminal, void* userdata) { of(userdata).m_bell = true; }
     static void title(GhosttyTerminal, void* userdata) { of(userdata).m_titleChanged = true; }
 
+    static void semanticPrompt(GhosttyTerminal, void* userdata, const GhosttyTerminalSemanticPrompt* event)
+    {
+        Terminal& terminal = of(userdata);
+        terminal.m_promptMarks = true;
+        if (event->kind == GHOSTTY_SEMANTIC_PROMPT_PROMPT_START)
+            terminal.m_promptStarted = true;
+    }
+
     static GhosttyString version(GhosttyTerminal, void* userdata)
     {
         const std::string& text = of(userdata).m_xtversion;
@@ -82,6 +90,8 @@ Terminal::Terminal(int columns, int lines)
                          reinterpret_cast<const void*>(&TerminalCallbacks::colorScheme));
     ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_RENDER_HOLD,
                          reinterpret_cast<const void*>(&TerminalCallbacks::renderHold));
+    ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_SEMANTIC_PROMPT,
+                         reinterpret_cast<const void*>(&TerminalCallbacks::semanticPrompt));
     const GhosttyString terminfo{reinterpret_cast<const uint8_t*>("xterm-256color"), 14};
     ghostty_terminal_set(m_terminal, GHOSTTY_TERMINAL_OPT_TERMINFO_NAME, &terminfo);
     setScrollbackLines(10000);
@@ -106,8 +116,8 @@ Terminal::~Terminal()
 
 void Terminal::write(std::string_view output)
 {
-    notePromptMarks(output);
     ghostty_terminal_vt_write(m_terminal, reinterpret_cast<const uint8_t*>(output.data()), output.size());
+    notePromptMarks(output);
     if (m_titleChanged) {
         m_titleChanged = false;
         if (onTitleChanged)
@@ -120,36 +130,34 @@ void Terminal::write(std::string_view output)
     }
 }
 
-// libghostty-vt reads OSC 133 but does not tell whether a shell marks its
-// prompts, or what it does with clicks there: the cl and click_events
-// options of A and N, which hold until another prompt sets them.
+// libghostty-vt reports each prompt the shell marks (OSC 133) but not what
+// the shell does with clicks there: the cl and click_events options of A
+// and N, which hold until another prompt sets them. Only output in which a
+// prompt started is read for them, with the end of the output before it
+// for a mark cut in two.
 void Terminal::notePromptMarks(std::string_view output)
 {
     static constexpr std::string_view kStart = "\033]133;";
-    std::string joined;
-    if (!m_pendingMark.empty()) {
-        joined = std::exchange(m_pendingMark, std::string()) + std::string(output);
-        output = joined;
-    }
-    size_t at = 0;
-    while ((at = output.find(kStart, at)) != std::string_view::npos) {
-        const size_t begin = at + kStart.size();
-        const size_t end = output.find_first_of("\a\033", begin);
-        if (end == std::string_view::npos) {
-            // Cut by the end of this output; a long one is not a mark.
-            if (output.size() - at < 256)
-                m_pendingMark = output.substr(at);
-            return;
+    static constexpr size_t kTail = 64;
+    if (m_promptStarted) {
+        m_promptStarted = false;
+        const std::string text = m_outputTail + std::string(output);
+        size_t at = 0;
+        while ((at = text.find(kStart, at)) != std::string::npos) {
+            const size_t begin = at + kStart.size();
+            const size_t end = text.find_first_of("\a\033", begin);
+            if (end == std::string::npos)
+                break;
+            notePromptMark(std::string_view(text).substr(begin, end - begin));
+            at = end;
         }
-        m_promptMarks = true;
-        notePromptMark(output.substr(begin, end - begin));
-        at = end;
     }
-    for (size_t length = std::min(kStart.size() - 1, output.size()); length > 0; --length) {
-        if (kStart.starts_with(output.substr(output.size() - length))) {
-            m_pendingMark = output.substr(output.size() - length);
-            break;
-        }
+    if (output.size() >= kTail) {
+        m_outputTail.assign(output.substr(output.size() - kTail));
+    } else {
+        m_outputTail.append(output);
+        if (m_outputTail.size() > kTail)
+            m_outputTail.erase(0, m_outputTail.size() - kTail);
     }
 }
 
@@ -375,6 +383,7 @@ bool Terminal::paste(std::string_view text, bool typed, bool allowUnsafe)
 void Terminal::reset()
 {
     ghostty_terminal_reset(m_terminal);
+    m_promptClick = PromptClick::None;
     // Colours a program set outlive the reset; the scheme's come back.
     write("\033]104\033\\\033]110\033\\\033]111\033\\\033]112\033\\");
 }

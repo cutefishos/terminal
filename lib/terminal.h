@@ -192,8 +192,9 @@ private:
     bool m_bell = false;
     std::string m_xtversion;
     bool m_promptMarks = false;
+    bool m_promptStarted = false;
     PromptClick m_promptClick = PromptClick::None;
-    std::string m_pendingMark;
+    std::string m_outputTail;
 };
 
 }
