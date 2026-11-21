@@ -146,7 +146,8 @@ private:
     bool handleScrollKey(const cutefish::ui::KeyEvent& event);
     bool sendMouse(MouseInput::Action action, int button, cutefish::ui::PointF position, uint32_t modifiers);
     bool programTakesMouse(uint32_t modifiers) const;
-    void selectionPress(const cutefish::ui::PointerEvent& event);
+    // Without `apply` the gesture only counts the press, leaving the selection.
+    void selectionPress(const cutefish::ui::PointerEvent& event, bool apply = true);
     void selectionDrag(cutefish::ui::PointF position);
     void selectionRelease(cutefish::ui::PointF position);
     void startTextDrag();

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <map>
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -218,7 +219,7 @@ static uint64_t monotonicNanoseconds()
                             .count());
 }
 
-void TerminalView::selectionPress(const ui::PointerEvent& event)
+void TerminalView::selectionPress(const ui::PointerEvent& event, bool apply)
 {
     Terminal* terminal = this->terminal();
     bool ok = false;
@@ -231,8 +232,18 @@ void TerminalView::selectionPress(const ui::PointerEvent& event)
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REF, &ref);
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_POSITION, &position);
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_TIME_NS, &time);
+    // The window counts the clicks; the gesture, whose interval and distance
+    // are 0 unless set, takes a press as a repeat only when the window did.
+    const bool repeat = event.clickCount > 1;
+    const uint64_t interval = repeat ? UINT64_MAX : 0;
+    const double distance = repeat ? HUGE_VAL : 0;
+    ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_INTERVAL_NS, &interval);
+    ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_DISTANCE, &distance);
     GhosttySelection selection{};
-    if (ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_pressEvent, &selection) == GHOSTTY_SUCCESS)
+    const GhosttyResult result = ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_pressEvent, &selection);
+    if (!apply)
+        return;
+    if (result == GHOSTTY_SUCCESS)
         terminal->setSelection(selection);
     else
         terminal->clearSelection();
@@ -352,6 +363,8 @@ void TerminalView::pointerPress(const ui::PointerEvent& event)
         if (event.clickCount == 1 && isSelectedAt(event.position.x, event.position.y)) {
             m_drag = Drag::Pending;
             m_dragStart = event.position;
+            // Counted all the same, so that a second click selects a word there.
+            selectionPress(event, false);
             return;
         }
         selectionPress(event);
