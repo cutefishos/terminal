@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "base/strings.h"
+#include "base/url.h"
 
 #include "colorschemes.h"
 
@@ -164,6 +165,29 @@ std::string Terminal::title() const
         return {};
     return cutefish::base::strings::sanitizedUtf8(
             std::string_view(reinterpret_cast<const char*>(title.ptr), title.len));
+}
+
+std::string Terminal::reportedDirectory() const
+{
+    GhosttyString pwd{};
+    if (ghostty_terminal_get(m_terminal, GHOSTTY_TERMINAL_DATA_PWD, &pwd) != GHOSTTY_SUCCESS || !pwd.ptr)
+        return {};
+    std::string_view text(reinterpret_cast<const char*>(pwd.ptr), pwd.len);
+    // OSC 7 gives a URL, file:// or kitty-shell-cwd://, whose host part is
+    // the shell's machine.
+    bool encoded = false;
+    for (const std::string_view scheme : {"file://", "kitty-shell-cwd://"}) {
+        if (text.starts_with(scheme)) {
+            encoded = scheme == "file://";
+            text.remove_prefix(scheme.size());
+            const size_t slash = text.find('/');
+            text = slash == std::string_view::npos ? std::string_view() : text.substr(slash);
+            break;
+        }
+    }
+    if (!text.starts_with('/'))
+        return {};
+    return encoded ? cutefish::base::url::percentDecoded(text) : std::string(text);
 }
 
 bool Terminal::mode(GhosttyMode mode) const

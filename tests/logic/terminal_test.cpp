@@ -330,3 +330,13 @@ TEST(TerminalTest, ColorSchemesFallBackToTheDefault)
     EXPECT_EQ(colorScheme("Linux").name, "TokyoNight");
     EXPECT_EQ(colorSchemes().size(), 13u);
 }
+
+TEST(TerminalTest, TheShellsReportedDirectoryIsAPath)
+{
+    Pty pty;
+    EXPECT_EQ(pty.terminal().reportedDirectory(), "");
+    pty.print("\033]7;file://host/tmp/a%20b\a");
+    EXPECT_EQ(pty.terminal().reportedDirectory(), "/tmp/a b");
+    pty.print("\033]7;kitty-shell-cwd://host/tmp/c d\a");
+    EXPECT_EQ(pty.terminal().reportedDirectory(), "/tmp/c d");
+}

@@ -81,6 +81,8 @@ public:
     bool darkBackground() const { return m_dark; }
 
     std::string title() const;
+    // The directory the shell last reported (OSC 7), as a path; empty for none.
+    std::string reportedDirectory() const;
     bool mode(GhosttyMode mode) const;
     bool usesAlternateScreen() const;
     bool bracketedPaste() const { return mode(GHOSTTY_MODE_BRACKETED_PASTE); }
