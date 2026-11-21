@@ -239,3 +239,23 @@ TEST(InteractionTest, ControlShiftUpAndDownGoFromPromptToPrompt)
     EXPECT_EQ(topLine().substr(0, 10), "$ command3");
     EXPECT_LT(view->scrollbarValue(), view->scrollbarMaximum());
 }
+
+TEST(InteractionTest, ControlTripleClickSelectsACommandsOutput)
+{
+    Scenario scenario;
+    std::string text;
+    for (int command = 0; command < 3; ++command) {
+        text += "\\033]133;A\\a$ \\033]133;B\\acommand" + std::to_string(command) + "\\r\\n\\033]133;C\\a";
+        for (int line = 0; line < 3; ++line)
+            text += "output " + std::to_string(command) + "." + std::to_string(line) + "\\r\\n";
+    }
+    ui::TestDriver& driver = scenario.open(printer(scenario, text));
+    ASSERT_TRUE(waitFor([&] { return shows(driver, "output 2.2"); }));
+    const ui::PointF point = cellCentre(driver, cellOf(driver, "output 1.1"));
+    ui::TestInput::movePointer(driver.window(), point);
+    for (int i = 0; i < 3; ++i) {
+        ui::TestInput::press(driver.window(), point, ui::MouseButton::Left, ui::ControlModifier);
+        ui::TestInput::release(driver.window(), point);
+    }
+    EXPECT_EQ(selection(driver), "output 1.0\noutput 1.1\noutput 1.2");
+}

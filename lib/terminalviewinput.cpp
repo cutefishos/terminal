@@ -304,6 +304,12 @@ void TerminalView::selectionPress(const ui::PointerEvent& event, bool apply)
     const double distance = repeat ? HUGE_VAL : 0;
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_INTERVAL_NS, &interval);
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_DISTANCE, &distance);
+    // With Control a triple click takes a command's whole output, as the shell marked it.
+    const GhosttySelectionGestureBehaviors behaviors{
+            GHOSTTY_SELECTION_GESTURE_BEHAVIOR_CELL, GHOSTTY_SELECTION_GESTURE_BEHAVIOR_WORD,
+            (event.modifiers & ui::ControlModifier) ? GHOSTTY_SELECTION_GESTURE_BEHAVIOR_OUTPUT
+                                                    : GHOSTTY_SELECTION_GESTURE_BEHAVIOR_LINE};
+    ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_BEHAVIORS, &behaviors);
     GhosttySelection selection{};
     GhosttyResult result = ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_pressEvent, &selection);
     if (!apply)
