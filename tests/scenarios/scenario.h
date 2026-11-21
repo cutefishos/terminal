@@ -6,18 +6,24 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <cmath>
 #include <deque>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/file.h"
+#include "ui/clipboard.h"
 #include "ui/keys.h"
+#include "ui/test_input.h"
 #include "ui/test_driver.h"
 #include "ui/window.h"
 
+#include "session.h"
 #include "terminalpage.h"
 #include "terminalsettings.h"
+#include "terminalview.h"
 #include "terminalwindow.h"
 #include "windows.h"
 
@@ -123,4 +129,82 @@ inline bool waitFor(const std::function<bool()>& condition)
 inline std::string contents(const std::string& path)
 {
     return cutefish::base::file::read(path).value_or(std::string());
+}
+
+// A program that prints the text and then sits there, so nothing else lands on the screen.
+inline TerminalWindow::Options printer(const Scenario& scenario, const std::string& text)
+{
+    TerminalWindow::Options options = scenario.shell();
+    options.command = {"/bin/sh", "-c", "printf '" + text + "'; exec sleep 30"};
+    return options;
+}
+
+inline bool shows(cutefish::ui::TestDriver& driver, const std::string& text)
+{
+    TerminalPage* page = shownTab(driver);
+    if (!page)
+        return false;
+    term::Terminal& terminal = page->session().terminal();
+    for (int line = 0; line < terminal.lines(); ++line) {
+        if (terminal.logicalLine(line).text.find(text) != std::string::npos)
+            return true;
+    }
+    return false;
+}
+
+inline std::string selection(cutefish::ui::TestDriver& driver)
+{
+    return shownTab(driver)->terminal()->selectedText();
+}
+
+// The viewport cell where the text starts, in (column, line); (-1, -1) when
+// it shows nowhere.
+inline std::pair<int, int> cellOf(cutefish::ui::TestDriver& driver, const std::string& text)
+{
+    term::Terminal& terminal = shownTab(driver)->session().terminal();
+    for (int line = 0; line < terminal.lines(); ++line) {
+        const term::Terminal::LogicalLine logical = terminal.logicalLine(line);
+        const size_t at = logical.text.find(text);
+        if (at != std::string::npos)
+            return {logical.cells[at].second, logical.cells[at].first};
+    }
+    return {-1, -1};
+}
+
+// The middle of a viewport cell, in the window's coordinates.
+inline cutefish::ui::PointF cellCentre(cutefish::ui::TestDriver& driver, std::pair<int, int> cell)
+{
+    term::TerminalView* view = shownTab(driver)->terminal();
+    const term::CellMetrics& metrics = view->cellMetrics();
+    const double scale = driver.window().scale();
+    const double margin = std::lround(scale);
+    return view->mapToWindow({(margin + (cell.first + 0.5) * metrics.width) / scale,
+                              (margin + (cell.second + 0.5) * metrics.height) / scale});
+}
+
+// Pressed as many times as the count, released but for the last when held.
+inline void clickAt(cutefish::ui::TestDriver& driver, cutefish::ui::PointF point, int count, bool hold = false)
+{
+    cutefish::ui::TestInput::movePointer(driver.window(), point);
+    for (int i = 0; i < count; ++i) {
+        cutefish::ui::TestInput::press(driver.window(), point);
+        if (!hold || i + 1 < count)
+            cutefish::ui::TestInput::release(driver.window(), point);
+    }
+}
+
+inline std::string primarySelection()
+{
+    std::string text;
+    cutefish::ui::Clipboard::requestText([&](std::string received) { text = std::move(received); },
+                                         cutefish::ui::ClipboardMode::Selection);
+    return text;
+}
+
+inline std::string copied(cutefish::ui::TestDriver& driver)
+{
+    driver.chooseMenuItem("Edit", "Copy");
+    std::string text;
+    cutefish::ui::Clipboard::requestText([&](std::string received) { text = std::move(received); });
+    return text;
 }

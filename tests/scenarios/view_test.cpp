@@ -3,9 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include <cmath>
 #include <string>
-#include <utility>
 
 #include "ui/clipboard.h"
 #include "ui/event.h"
@@ -18,83 +16,6 @@
 #include "scenario.h"
 
 using namespace cutefish;
-
-// A program that prints the text and then sits there, so nothing else lands on the screen.
-static TerminalWindow::Options printer(const Scenario& scenario, const std::string& text)
-{
-    TerminalWindow::Options options = scenario.shell();
-    options.command = {"/bin/sh", "-c", "printf '" + text + "'; exec sleep 30"};
-    return options;
-}
-
-static bool shows(ui::TestDriver& driver, const std::string& text)
-{
-    TerminalPage* page = shownTab(driver);
-    if (!page)
-        return false;
-    term::Terminal& terminal = page->session().terminal();
-    for (int line = 0; line < terminal.lines(); ++line) {
-        if (terminal.logicalLine(line).text.find(text) != std::string::npos)
-            return true;
-    }
-    return false;
-}
-
-static std::string selection(ui::TestDriver& driver)
-{
-    return shownTab(driver)->terminal()->selectedText();
-}
-
-// The viewport cell where the text starts, in (column, line); (-1, -1) when
-// it shows nowhere.
-static std::pair<int, int> cellOf(ui::TestDriver& driver, const std::string& text)
-{
-    term::Terminal& terminal = shownTab(driver)->session().terminal();
-    for (int line = 0; line < terminal.lines(); ++line) {
-        const term::Terminal::LogicalLine logical = terminal.logicalLine(line);
-        const size_t at = logical.text.find(text);
-        if (at != std::string::npos)
-            return {logical.cells[at].second, logical.cells[at].first};
-    }
-    return {-1, -1};
-}
-
-// The middle of a viewport cell, in the window's coordinates.
-static ui::PointF cellCentre(ui::TestDriver& driver, std::pair<int, int> cell)
-{
-    term::TerminalView* view = shownTab(driver)->terminal();
-    const term::CellMetrics& metrics = view->cellMetrics();
-    const double scale = driver.window().scale();
-    const double margin = std::lround(scale);
-    return view->mapToWindow({(margin + (cell.first + 0.5) * metrics.width) / scale,
-                              (margin + (cell.second + 0.5) * metrics.height) / scale});
-}
-
-// Pressed as many times as the count, released but for the last when held.
-static void clickAt(ui::TestDriver& driver, ui::PointF point, int count, bool hold = false)
-{
-    ui::TestInput::movePointer(driver.window(), point);
-    for (int i = 0; i < count; ++i) {
-        ui::TestInput::press(driver.window(), point);
-        if (!hold || i + 1 < count)
-            ui::TestInput::release(driver.window(), point);
-    }
-}
-
-static std::string primarySelection()
-{
-    std::string text;
-    ui::Clipboard::requestText([&](std::string received) { text = std::move(received); }, ui::ClipboardMode::Selection);
-    return text;
-}
-
-static std::string copied(ui::TestDriver& driver)
-{
-    driver.chooseMenuItem("Edit", "Copy");
-    std::string text;
-    ui::Clipboard::requestText([&](std::string received) { text = std::move(received); });
-    return text;
-}
 
 TEST(ViewTest, FindGoesFromNewestToOlderWithSmartCase)
 {
