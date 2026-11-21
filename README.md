@@ -42,6 +42,16 @@ values taken over unchanged: [Catppuccin](https://github.com/catppuccin/catppucc
 [Tokyo Night](https://github.com/folke/tokyonight.nvim) (Apache-2.0, copyright Folke Lemaitre)
 and [Tomorrow Night](https://github.com/chriskempson/tomorrow-theme) (MIT, copyright 2011 Chris Kempson).
 
+The view's pointer, selection, paste, link, focus and cursor blink behaviour
+(`lib/terminalview.cpp`, `lib/terminalviewinput.cpp`, `lib/terminalviewpaint.cpp`)
+follows [Ghostty](https://github.com/ghostty-org/ghostty)'s `src/Surface.zig`
+and its default configuration as of v1.4.0 (MIT): Shift+click extending the
+selection, a double click taking a whole link, typing letting the selection
+go, the wheel and alternate scroll mode under a program taking the mouse,
+links shown with Control, focus reports with the held key released on focus
+loss. The behaviour was reimplemented; the 600 ms cursor blink interval was
+taken over unchanged.
+
 ## License
 
 MIT; see [LICENSE](LICENSE).
