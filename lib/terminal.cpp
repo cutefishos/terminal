@@ -416,6 +416,149 @@ void Terminal::clearKeepingCursorLine()
     write(sequence);
 }
 
+// A cell of the whole screen, scrollback included, from 0 at its top.
+struct ScreenCell
+{
+    GhosttyCellSemanticContent content = GHOSTTY_CELL_SEMANTIC_OUTPUT;
+    GhosttyRow row = 0;
+    bool ok = false;
+};
+
+static ScreenCell screenCell(GhosttyTerminal terminal, int column, uint64_t line)
+{
+    GhosttyPoint point{};
+    point.tag = GHOSTTY_POINT_TAG_SCREEN;
+    point.value.coordinate.x = uint16_t(column);
+    point.value.coordinate.y = uint32_t(line);
+    GhosttyGridRef ref{};
+    ScreenCell result;
+    if (ghostty_terminal_grid_ref(terminal, point, &ref) != GHOSTTY_SUCCESS)
+        return result;
+    GhosttyCell cell = 0;
+    result.ok = ghostty_grid_ref_cell(&ref, &cell) == GHOSTTY_SUCCESS
+            && ghostty_grid_ref_row(&ref, &result.row) == GHOSTTY_SUCCESS;
+    if (result.ok)
+        ghostty_cell_get(cell, GHOSTTY_CELL_DATA_SEMANTIC_CONTENT, &result.content);
+    return result;
+}
+
+static bool rowFlag(GhosttyRow row, GhosttyRowData data)
+{
+    bool value = false;
+    ghostty_row_get(row, data, &value);
+    return value;
+}
+
+static GhosttyRowSemanticPrompt rowPrompt(GhosttyRow row)
+{
+    GhosttyRowSemanticPrompt prompt = GHOSTTY_ROW_SEMANTIC_NONE;
+    ghostty_row_get(row, GHOSTTY_ROW_DATA_SEMANTIC_PROMPT, &prompt);
+    return prompt;
+}
+
+// Ported from the reference terminal's prompt click (Screen.promptClickLine);
+// see the README. Arrow keys only cross the input cells of one command line,
+// soft-wrapped over rows or continued on rows the shell marked.
+std::string Terminal::promptClickInput(int column, int line) const
+{
+    if (m_promptClick == PromptClick::None || !cursorAtPrompt())
+        return {};
+    const Scrollbar bar = scrollbar();
+    const uint64_t clickRow = bar.offset + uint64_t(std::max(0, line));
+    const uint64_t cursorRow = bar.total - uint64_t(m_lines) + uint64_t(cursorLine());
+    const int cursorX = cursorColumn();
+
+    // The prompt the cursor is at; a click above it moves nothing.
+    uint64_t promptRow = cursorRow;
+    while (true) {
+        const ScreenCell cell = screenCell(m_terminal, 0, promptRow);
+        if (cell.ok && rowPrompt(cell.row) == GHOSTTY_ROW_SEMANTIC_PROMPT)
+            break;
+        if (promptRow == 0)
+            return {};
+        --promptRow;
+    }
+    if (clickRow < promptRow)
+        return {};
+
+    if (m_promptClick != PromptClick::Line) {
+        const uint64_t y = m_promptClick == PromptClick::AbsoluteEvents ? uint64_t(line) + 1 : clickRow - promptRow + 1;
+        return "\033[<0;" + std::to_string(column + 1) + ";" + std::to_string(y) + "M";
+    }
+
+    if (clickRow == cursorRow && column == cursorX)
+        return {};
+    const std::string right = mode(GHOSTTY_MODE_CURSOR_KEYS) ? "\033OC" : "\033[C";
+    const std::string left = mode(GHOSTTY_MODE_CURSOR_KEYS) ? "\033OD" : "\033[D";
+    const bool cursorOnInput = screenCell(m_terminal, cursorX, cursorRow).content == GHOSTTY_CELL_SEMANTIC_INPUT;
+    size_t count = 0;
+    std::string keys;
+
+    if (cursorRow < clickRow || (cursorRow == clickRow && cursorX < column)) {
+        for (uint64_t row = cursorRow; row <= clickRow; ++row) {
+            const ScreenCell first = screenCell(m_terminal, 0, row);
+            if (!first.ok)
+                break;
+            if (row != cursorRow && rowPrompt(first.row) != GHOSTTY_ROW_SEMANTIC_PROMPT_CONTINUATION)
+                break;
+            int start = m_columns;
+            if (row == cursorRow) {
+                start = cursorX + 1;
+            } else {
+                for (int x = 0; x < m_columns; ++x) {
+                    if (screenCell(m_terminal, x, row).content == GHOSTTY_CELL_SEMANTIC_INPUT) {
+                        start = x;
+                        break;
+                    }
+                }
+            }
+            bool found = false;
+            for (int x = start; x < m_columns; ++x) {
+                if (screenCell(m_terminal, x, row).content != GHOSTTY_CELL_SEMANTIC_INPUT)
+                    continue;
+                ++count;
+                if (row == clickRow && x == column) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
+                break;
+            if (!rowFlag(first.row, GHOSTTY_ROW_DATA_WRAP)) {
+                // Past the end: one more, to the empty cell after the text.
+                if (cursorOnInput)
+                    ++count;
+                break;
+            }
+        }
+        for (size_t i = 0; i < count; ++i)
+            keys += right;
+        return keys;
+    }
+
+    for (uint64_t row = cursorRow + 1; row-- > clickRow;) {
+        const ScreenCell first = screenCell(m_terminal, 0, row);
+        if (!first.ok)
+            break;
+        const int end = row == cursorRow ? cursorX : m_columns;
+        bool found = false;
+        for (int x = end; x-- > 0;) {
+            if (screenCell(m_terminal, x, row).content != GHOSTTY_CELL_SEMANTIC_INPUT)
+                continue;
+            ++count;
+            if (row == clickRow && x == column) {
+                found = true;
+                break;
+            }
+        }
+        if (found || !rowFlag(first.row, GHOSTTY_ROW_DATA_WRAP_CONTINUATION))
+            break;
+    }
+    for (size_t i = 0; i < count; ++i)
+        keys += left;
+    return keys;
+}
+
 GhosttyGridRef Terminal::viewportRef(int column, int line, bool* ok) const
 {
     GhosttyPoint point{};

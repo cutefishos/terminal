@@ -7,7 +7,9 @@ A terminal emulator for Cutefish.
 The terminal's state, its parsing, scrollback, selection, search and input
 encoding come from [libghostty-vt](https://github.com/ghostty-org/ghostty)
 (MIT). The pty, the drawing on cutefish-toolkit and the windows are this
-repository's own.
+repository's own. `Terminal::promptClickInput` in `lib/terminal.cpp` ports
+the click-to-move logic of Ghostty's `Screen.promptClickLine` and
+`Surface.maybePromptClick` to libghostty-vt's C API.
 
 ## Dependencies
 

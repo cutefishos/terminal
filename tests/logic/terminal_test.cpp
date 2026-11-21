@@ -340,3 +340,25 @@ TEST(TerminalTest, TheShellsReportedDirectoryIsAPath)
     pty.print("\033]7;kitty-shell-cwd://host/tmp/c d\a");
     EXPECT_EQ(pty.terminal().reportedDirectory(), "/tmp/c d");
 }
+
+TEST(TerminalTest, AClickOnTheCommandLineMovesTheShellsCursorThere)
+{
+    Pty pty;
+    Terminal& terminal = pty.terminal();
+    EXPECT_EQ(terminal.promptClickInput(5, 0), "");
+
+    // "$ echo hello" with the cursor after it: back to the h.
+    pty.print("\033]133;A;cl=line\a$ \033]133;B\aecho hello");
+    EXPECT_EQ(terminal.promptClickInput(7, 0), "\033[D\033[D\033[D\033[D\033[D");
+    // From the h forwards, and past the end to the cell after the text.
+    pty.print("\033[8G");
+    EXPECT_EQ(terminal.promptClickInput(10, 0), "\033[C\033[C\033[C");
+    EXPECT_EQ(terminal.promptClickInput(30, 0), "\033[C\033[C\033[C\033[C\033[C");
+    // On the prompt's own text: to the start of the input.
+    EXPECT_EQ(terminal.promptClickInput(0, 0), "\033[D\033[D\033[D\033[D\033[D");
+
+    // Output is no prompt; a prompt that asks for events gets the click.
+    pty.print("\r\n\033]133;C\aout\r\n\033]133;A;click_events=1\a$ \033]133;B\a");
+    EXPECT_EQ(terminal.promptClickInput(5, 2), "\033[<0;6;3M");
+    EXPECT_EQ(terminal.promptClickInput(1, 1), "");
+}

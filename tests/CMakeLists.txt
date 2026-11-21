@@ -36,6 +36,7 @@ add_executable(terminal-scenario-tests
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-scenario-tests PRIVATE ../src)
+target_compile_definitions(terminal-scenario-tests PRIVATE TERMINAL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(terminal-scenario-tests PRIVATE terminal-display GTest::gtest)
 gtest_discover_tests(terminal-scenario-tests PROPERTIES LABELS scenario)
 

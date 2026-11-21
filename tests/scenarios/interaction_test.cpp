@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <filesystem>
 #include <string>
 
@@ -258,4 +259,33 @@ TEST(InteractionTest, ControlTripleClickSelectsACommandsOutput)
         ui::TestInput::release(driver.window(), point);
     }
     EXPECT_EQ(selection(driver), "output 1.0\noutput 1.1\noutput 1.2");
+}
+
+TEST(InteractionTest, AClickOnTheCommandLineMovesBashsCursor)
+{
+    Scenario scenario;
+    // bash with the integration, reading the scenario's own startup files.
+    const char* home = std::getenv("HOME");
+    const std::string savedHome = home ? home : "";
+    ::setenv("HOME", scenario.directory().c_str(), 1);
+    ASSERT_TRUE(cutefish::base::file::writeAtomically(scenario.directory() + "/.bashrc", "PS1='$ '\n"));
+    term::Session::setShellIntegrationDirectory(TERMINAL_SOURCE_DIR "/shell-integration");
+    TerminalWindow::Options options = scenario.shell();
+    options.command = {"/usr/bin/bash"};
+    struct RestoreHome
+    {
+        std::string home;
+        ~RestoreHome() { ::setenv("HOME", home.c_str(), 1); }
+    } restore{savedHome};
+    ui::TestDriver& driver = scenario.open(std::move(options));
+    term::Terminal& terminal = shownTab(driver)->session().terminal();
+    ASSERT_TRUE(waitFor([&] { return terminal.cursorAtPrompt() && shows(driver, "$ "); }));
+
+    driver.typeText("echo hello");
+    ASSERT_TRUE(waitFor([&] { return shows(driver, "$ echo hello"); }));
+    ui::TestInput::click(driver.window(), cellCentre(driver, cellOf(driver, "hello")));
+    driver.typeText("X");
+    driver.typeKey(ui::key::Return, ui::NoModifier, "\r");
+    EXPECT_TRUE(waitFor([&] { return shows(driver, "Xhello"); }));
+    EXPECT_FALSE(shows(driver, "helloX"));
 }

@@ -418,8 +418,23 @@ void TerminalView::selectionRelease(ui::PointF point)
     GhosttyGridRef ref = refAt(point, &ok);
     ghostty_selection_gesture_event_set(m_releaseEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REF, ok ? &ref : nullptr);
     ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_releaseEvent, nullptr);
-    if (terminal->hasSelection())
+    if (terminal->hasSelection()) {
         ui::Clipboard::setText(terminal->selectedText(), ui::ClipboardMode::Selection);
+        return;
+    }
+
+    // A click that selected nothing, on the shell's command line, moves its
+    // cursor there.
+    uint8_t clicks = 0;
+    bool dragged = false;
+    ghostty_selection_gesture_get(m_gesture, terminal->handle(), GHOSTTY_SELECTION_GESTURE_DATA_CLICK_COUNT, &clicks);
+    ghostty_selection_gesture_get(m_gesture, terminal->handle(), GHOSTTY_SELECTION_GESTURE_DATA_DRAGGED, &dragged);
+    if (clicks == 0 || dragged)
+        return;
+    const auto [column, line] = cellAt(point);
+    const std::string input = terminal->promptClickInput(column, line);
+    if (!input.empty())
+        terminal->send(input);
 }
 
 void TerminalView::startTextDrag()

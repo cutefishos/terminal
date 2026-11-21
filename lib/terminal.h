@@ -91,6 +91,10 @@ public:
     // with the row counted from the screen's top or the prompt's.
     enum class PromptClick { None, Line, AbsoluteEvents, RelativeEvents };
     PromptClick promptClick() const { return m_promptClick; }
+    // What a click on a viewport cell sends the shell to move its cursor
+    // there: arrow keys or a mouse event, as its prompt asked; empty when the
+    // cursor is not at a prompt or the click is above it.
+    std::string promptClickInput(int column, int line) const;
     // The directory the shell last reported (OSC 7), as a path; empty for none.
     std::string reportedDirectory() const;
     bool mode(GhosttyMode mode) const;
