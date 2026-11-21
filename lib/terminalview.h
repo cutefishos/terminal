@@ -162,7 +162,8 @@ private:
     GhosttyGridRef refAt(cutefish::ui::PointF position, bool* ok) const;
 
     void scrollLines(int lines);
-    void scrollChanged();
+    void scrollChanged(bool byOutput = false);
+    void syncScroll();
     void setScrollOffset(double offset);
     void applyCursorStyle();
     void restartCursorBlink();
@@ -210,6 +211,9 @@ private:
     double m_scrollOffset = 0;
     bool m_applyingScroll = false;
     std::unique_ptr<cutefish::ui::Scroller> m_scroller;
+    // Rows the scroller's positions lead the scrollback's by: output that
+    // moves the view during a scroll moves the scroller's origin with it.
+    int64_t m_scrollerShift = 0;
     double m_wheelRemainder = 0;
     cutefish::ui::PointF m_lastPointer;
 

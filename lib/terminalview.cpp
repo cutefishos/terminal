@@ -293,7 +293,9 @@ void TerminalView::setScrollOffset(double offset)
     requestPaint();
 }
 
-void TerminalView::scrollChanged()
+// Output only grows the history, follows it at the bottom or drops its
+// oldest rows: a scroll in progress goes on and the scroll bar stays hidden.
+void TerminalView::scrollChanged(bool byOutput)
 {
     Terminal* terminal = this->terminal();
     if (!terminal)
@@ -302,13 +304,31 @@ void TerminalView::scrollChanged()
     if (bar == m_scrollbar)
         return;
     const bool moved = bar.offset != m_scrollbar.offset;
+    if (moved && byOutput && m_scroller && m_scroller->isActive())
+        m_scrollerShift += int64_t(m_scrollbar.offset) - int64_t(bar.offset);
     m_scrollbar = bar;
-    if (m_scroller && !m_applyingScroll)
+    if (moved && !byOutput && m_scroller && !m_applyingScroll) {
         m_scroller->viewMoved();
+        m_scrollerShift = 0;
+    }
     scrollbarParamsChanged();
-    if (moved)
+    if (moved && !byOutput)
         scrollbarValueChanged();
-    scheduleUpdate();
+    // The scroller moves the view while a frame is prepared, and that frame
+    // has to show the rows moved to.
+    if (moved && !byOutput)
+        updateRenderState();
+    else
+        scheduleUpdate();
+}
+
+// Takes in output read since the last update, before the scroller reads or
+// moves the view.
+void TerminalView::syncScroll()
+{
+    scrollChanged(true);
+    if (m_scroller && !m_scroller->isActive())
+        m_scrollerShift = 0;
 }
 
 ui::Scroller::Axis TerminalView::horizontalAxis() const
@@ -318,13 +338,14 @@ ui::Scroller::Axis TerminalView::horizontalAxis() const
 
 ui::Scroller::Axis TerminalView::verticalAxis() const
 {
-    const double maximum = scrollbarMaximum() * cellHeightLogical();
-    return {0, maximum, geometry().height, maximum > 0};
+    const double line = cellHeightLogical();
+    const double minimum = double(m_scrollerShift) * line;
+    return {minimum, minimum + scrollbarMaximum() * line, geometry().height, scrollbarMaximum() > 0};
 }
 
 ui::PointF TerminalView::position() const
 {
-    return {0, m_scrollbar.offset * cellHeightLogical() + m_scrollOffset};
+    return {0, double(int64_t(m_scrollbar.offset) + m_scrollerShift) * cellHeightLogical() + m_scrollOffset};
 }
 
 void TerminalView::applyPosition(ui::PointF position)
@@ -332,15 +353,17 @@ void TerminalView::applyPosition(ui::PointF position)
     Terminal* terminal = this->terminal();
     if (!terminal)
         return;
+    syncScroll();
     const double line = cellHeightLogical();
-    const int row = std::clamp(int(std::floor(position.y / line)), 0, scrollbarMaximum());
+    const int64_t shifted = int64_t(std::floor(position.y / line)) - m_scrollerShift;
+    const int row = int(std::clamp<int64_t>(shifted, 0, scrollbarMaximum()));
     m_applyingScroll = true;
     if (uint64_t(row) != m_scrollbar.offset) {
         terminal->scrollToRow(uint64_t(row));
         scrollChanged();
     }
     m_applyingScroll = false;
-    setScrollOffset(position.y - row * line);
+    setScrollOffset(position.y - double(row + m_scrollerShift) * line);
 }
 
 bool TerminalView::hasKeyboard() const

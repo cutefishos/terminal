@@ -38,7 +38,7 @@ void TerminalView::updateRenderState()
         return;
     if (!m_held)
         ghostty_render_state_update(m_state, terminal->handle());
-    scrollChanged();
+    scrollChanged(true);
     if (terminal->tracksMouse() != m_tracksMouse) {
         m_tracksMouse = !m_tracksMouse;
         updatePointerShape();

@@ -235,6 +235,7 @@ bool TerminalView::scroll(const ui::ScrollEvent& event)
             && terminal()->mode(GHOSTTY_MODE_MOUSE_ALTERNATE_SCROLL);
     // A touchpad drags the history by the pixel, coasts and stretches at the ends.
     if (!program && !arrows && event.precise && scrollbarMaximum() > 0 && m_scroller) {
+        syncScroll();
         m_scroller->handleScroll(event);
         return true;
     }

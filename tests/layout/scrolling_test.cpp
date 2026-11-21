@@ -235,6 +235,90 @@ TEST_P(ScrollingTest, TouchpadToTheTopRedrawsEveryLine)
     EXPECT_EQ(m_view->scrollbarValue(), 0);
 }
 
+// The scroller moves the view in the frame callback, so the frame it moves
+// in has to show the rows it moved to.
+TEST_P(ScrollingTest, TouchpadFrameShowsTheRowsItScrolledTo)
+{
+    const ui::PointF centre = m_view->mapToWindow({m_view->geometry().width / 2, m_view->geometry().height / 2});
+    const double line = m_view->cellMetrics().height / scale();
+    const term::Terminal& terminal = m_page->session().terminal();
+    for (int step = 0; step < 40; ++step) {
+        ui::ScrollEvent drag;
+        drag.precise = true;
+        drag.deltaY = -0.37 * line;
+        drag.time = uint32_t(m_now / 1'000'000);
+        ui::TestInput::scroll(window(), centre, drag);
+        ui::TestInput::presentFrame(window(), m_now += kFrameNs);
+        SCOPED_TRACE("step " + std::to_string(step) + ", row " + std::to_string(m_view->scrollbarValue()));
+        for (int line = 0; line < m_view->lines(); ++line)
+            ASSERT_EQ(utf8(m_view->drawnText(line)), utf8(terminalText(terminal, line))) << "line " << line;
+    }
+}
+
+// Output that moves the history under a touchpad scroll leaves the
+// rows under the fingers where they are.
+TEST_P(ScrollingTest, OutputUnderATouchpadScrollKeepsTheRowsInPlace)
+{
+    const ui::PointF centre = m_view->mapToWindow({m_view->geometry().width / 2, m_view->geometry().height / 2});
+    const double line = m_view->cellMetrics().height / scale();
+    term::Session& session = m_page->session();
+    // History over several pages, so the rows in view outlive the oldest.
+    for (int i = 0; i < 3000; ++i)
+        session.terminal().write("Setting up package " + std::to_string(i) + " ...\r\n");
+    session.outputReceived();
+    present();
+    session.setScrollbackLines(m_view->scrollbarMaximum());
+    const auto drag = [&] {
+        ui::ScrollEvent event;
+        event.precise = true;
+        event.deltaY = -0.25 * line;
+        event.time = uint32_t(m_now / 1'000'000);
+        ui::TestInput::scroll(window(), centre, event);
+        present();
+    };
+    for (int step = 0; step < 8; ++step)
+        drag();
+    const std::u32string top = m_view->drawnText(0);
+    const int row = m_view->scrollbarValue();
+    ASSERT_LT(row, m_view->scrollbarMaximum());
+
+    // The history is full, and drops its oldest rows a page at a time.
+    for (int step = 0; m_view->scrollbarValue() == row && step < 400; ++step) {
+        for (int i = 0; i < 50; ++i)
+            session.terminal().write("Unpacking package " + std::to_string(step * 50 + i) + " ...\r\n");
+        session.outputReceived();
+        present();
+    }
+    ASSERT_LT(m_view->scrollbarValue(), row);
+    ASSERT_EQ(utf8(m_view->drawnText(0)), utf8(top));
+
+    // A quarter of a line at a time: the top row moves down by at most one.
+    for (int step = 0; step < 4; ++step) {
+        drag();
+        const bool kept = m_view->drawnText(0) == top || m_view->drawnText(1) == top;
+        EXPECT_TRUE(kept) << "step " << step << ": " << utf8(m_view->drawnText(0));
+    }
+}
+
+TEST_P(ScrollingTest, OutputKeepsATouchpadScrollGoing)
+{
+    const ui::PointF centre = m_view->mapToWindow({m_view->geometry().width / 2, m_view->geometry().height / 2});
+    const double line = m_view->cellMetrics().height / scale();
+    const int start = m_view->scrollbarValue();
+    term::Session& session = m_page->session();
+    for (int step = 0; step < 40; ++step) {
+        ui::ScrollEvent drag;
+        drag.precise = true;
+        drag.deltaY = -0.5 * line;
+        drag.time = uint32_t(m_now / 1'000'000);
+        ui::TestInput::scroll(window(), centre, drag);
+        session.terminal().write("Unpacking package " + std::to_string(step) + " ...\r\n");
+        session.outputReceived();
+        present();
+    }
+    EXPECT_LE(m_view->scrollbarValue(), start - 15);
+}
+
 TEST_P(ScrollingTest, ScrollBarDragToTheTopRedrawsEveryLine)
 {
     ui::ScrollBar* bar = nullptr;
