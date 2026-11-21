@@ -53,6 +53,9 @@ public:
     int lines() const { return m_lines; }
     int columns() const { return m_columns; }
     const CellMetrics& cellMetrics() const { return m_font.metrics(); }
+    // The characters drawn on a line of the viewport, blank cells as spaces,
+    // trailing ones dropped; empty for a line the view holds nothing for.
+    std::u32string drawnText(int line) const;
 
     // The first line shown, from 0 at the top of the scrollback.
     int scrollbarValue() const { return int(m_scrollbar.offset); }

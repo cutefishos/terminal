@@ -39,6 +39,7 @@ gtest_discover_tests(terminal-scenario-tests PROPERTIES LABELS scenario)
 add_executable(terminal-layout-tests
     layout/display_test.cpp
     layout/layout_test.cpp
+    layout/scrolling_test.cpp
     ${TERMINAL_WINDOW_SOURCES}
 )
 target_include_directories(terminal-layout-tests PRIVATE ../src)

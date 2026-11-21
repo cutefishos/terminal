@@ -39,8 +39,9 @@ TerminalView::TerminalView()
     ghostty_render_state_new(nullptr, &m_state);
     ghostty_render_state_row_iterator_new(nullptr, &m_rows);
     ghostty_render_state_row_cells_new(nullptr, &m_cells);
-    // A row above and below the viewport, for a touchpad scroll between lines.
-    const GhosttyRenderStateOverscan overscan{1, 1};
+    // The row below the viewport, which a touchpad scroll between lines
+    // shows part of; the grid only ever moves up from the viewport's top.
+    const GhosttyRenderStateOverscan overscan{0, 1};
     ghostty_render_state_set(m_state, GHOSTTY_RENDER_STATE_OPT_OVERSCAN, &overscan);
 
     ghostty_selection_gesture_new(nullptr, &m_gesture);

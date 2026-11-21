@@ -144,8 +144,15 @@ void TerminalView::paint(ui::Painter& painter)
     }
     if (!terminal())
         return;
+    // Rows shifted by a touchpad scroll, and the row below the viewport,
+    // reach past the grid's margins: the header and the window's edge are
+    // not the view's to draw over.
+    const double margin = gridTop() / m_font.scale();
+    painter.save();
+    painter.clip({margin, margin, geometry().width - 2 * margin, geometry().height - 2 * margin});
     paintRows(painter);
     paintPreedit(painter);
+    painter.restore();
 }
 
 void TerminalView::paintRows(ui::Painter& painter)
@@ -322,6 +329,33 @@ void TerminalView::paintRows(ui::Painter& painter)
             m_textHidden = false;
         }
     }
+}
+
+std::u32string TerminalView::drawnText(int line) const
+{
+    GhosttyRenderStateRowIterator rows = m_rows;
+    GhosttyRenderStateRowCells cells = m_cells;
+    ghostty_render_state_get(m_state, GHOSTTY_RENDER_STATE_DATA_ROW_ITERATOR, &rows);
+    while (ghostty_render_state_row_iterator_next(rows)) {
+        int32_t y = 0;
+        ghostty_render_state_row_get(rows, GHOSTTY_RENDER_STATE_ROW_DATA_VIEWPORT_Y, &y);
+        if (y != line)
+            continue;
+        std::u32string text;
+        ghostty_render_state_row_get(rows, GHOSTTY_RENDER_STATE_ROW_DATA_CELLS, &cells);
+        uint32_t codepoints[16];
+        while (ghostty_render_state_row_cells_next(cells)) {
+            GhosttyCodepointBuffer graphemes{codepoints, 16, 0};
+            ghostty_render_state_row_cells_get(cells, GHOSTTY_RENDER_STATE_ROW_CELLS_DATA_GRAPHEMES_BUF, &graphemes);
+            if (graphemes.len == 0)
+                text.push_back(U' ');
+            else
+                text.append(reinterpret_cast<const char32_t*>(codepoints), std::min<size_t>(graphemes.len, 16));
+        }
+        text.erase(text.find_last_not_of(U' ') + 1);
+        return text;
+    }
+    return {};
 }
 
 // The input method's text over the cells at the cursor, underlined.
