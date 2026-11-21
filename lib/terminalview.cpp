@@ -18,7 +18,7 @@ namespace ui = cutefish::ui;
 
 namespace term {
 
-static constexpr auto kCursorBlinkInterval = std::chrono::milliseconds(500);
+static constexpr auto kCursorBlinkInterval = std::chrono::milliseconds(600);
 static constexpr auto kTextBlinkInterval = std::chrono::milliseconds(500);
 // A program that holds the screen longer than this is drawn anyway.
 static constexpr auto kRenderHoldLimit = std::chrono::seconds(1);
@@ -116,7 +116,7 @@ void TerminalView::setSession(Session* session)
         m_held = held;
     };
     setColorScheme(m_colorScheme);
-    setCursorShape(m_cursorShape);
+    applyCursorStyle();
     updateGeometry();
     scheduleUpdate();
 }
@@ -158,31 +158,32 @@ void TerminalView::setTerminalFont(const std::string& family, double pointSize)
 void TerminalView::setBlinkingCursor(bool blinking)
 {
     m_blinkingCursor = blinking;
-    if (!blinking) {
-        m_cursorBlinkTimer.stop();
-        m_cursorHidden = false;
-    } else if (hasKeyboard() && !m_cursorBlinkTimer.isActive()) {
-        m_cursorBlinkTimer.start();
-    }
-    if (m_lastCursor.second >= 0)
-        requestPaint(rowRect(m_lastCursor.second));
+    applyCursorStyle();
 }
 
 void TerminalView::setCursorShape(int shape)
 {
     m_cursorShape = std::clamp(shape, 0, 2);
+    applyCursorStyle();
+}
+
+// The settings are the cursor's defaults; a program's DECSCUSR overrides them.
+void TerminalView::applyCursorStyle()
+{
     Terminal* terminal = this->terminal();
-    if (terminal && m_cursorShape != m_appliedCursorShape) {
-        m_appliedCursorShape = m_cursorShape;
-        const GhosttyCursorStyle style = m_cursorShape == 1 ? GHOSTTY_CURSOR_STYLE_UNDERLINE
-                : m_cursorShape == 2                       ? GHOSTTY_CURSOR_STYLE_BAR
-                                                           : GHOSTTY_CURSOR_STYLE_BLOCK;
-        ghostty_terminal_set(terminal->handle(), GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_STYLE, &style);
-        // DECSCUSR 0 takes the default, until a program sets a shape of its own.
-        if (!terminal->usesAlternateScreen())
-            terminal->write("\033[0 q");
-        scheduleUpdate();
-    }
+    const std::pair<int, bool> style{m_cursorShape, m_blinkingCursor};
+    if (!terminal || style == m_appliedCursorStyle)
+        return;
+    m_appliedCursorStyle = style;
+    const GhosttyCursorStyle shape = m_cursorShape == 1 ? GHOSTTY_CURSOR_STYLE_UNDERLINE
+            : m_cursorShape == 2                       ? GHOSTTY_CURSOR_STYLE_BAR
+                                                       : GHOSTTY_CURSOR_STYLE_BLOCK;
+    ghostty_terminal_set(terminal->handle(), GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_STYLE, &shape);
+    ghostty_terminal_set(terminal->handle(), GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_BLINK, &m_blinkingCursor);
+    // DECSCUSR 0 takes the defaults, until a program sets a style of its own.
+    if (!terminal->usesAlternateScreen())
+        terminal->write("\033[0 q");
+    scheduleUpdate();
 }
 
 double TerminalView::scale() const
@@ -349,7 +350,7 @@ bool TerminalView::hasKeyboard() const
 void TerminalView::restartCursorBlink()
 {
     m_cursorHidden = false;
-    if (m_blinkingCursor && hasKeyboard())
+    if (m_cursorBlinks && hasKeyboard())
         m_cursorBlinkTimer.start();
     if (m_lastCursor.second >= 0)
         requestPaint(rowRect(m_lastCursor.second));

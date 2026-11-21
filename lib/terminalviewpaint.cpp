@@ -66,6 +66,14 @@ void TerminalView::updateRenderState()
     const std::pair<int, int> position = cursor.viewport_has_value
             ? std::pair<int, int>{cursor.viewport_x, cursor.viewport_y}
             : std::pair<int, int>{-1, -1};
+    if (cursor.blinking != m_cursorBlinks) {
+        m_cursorBlinks = cursor.blinking;
+        if (!m_cursorBlinks) {
+            m_cursorBlinkTimer.stop();
+            m_cursorHidden = false;
+        }
+        restartCursorBlink();
+    }
     if (position != m_lastCursor) {
         if (m_lastCursor.second >= 0)
             requestPaint(rowRect(m_lastCursor.second));
@@ -128,7 +136,7 @@ void TerminalView::paint(ui::Painter& painter)
     // The window repaints its focus view when the keyboard comes or goes.
     reportFocus();
     if (hasKeyboard()) {
-        if (m_blinkingCursor && !m_cursorBlinkTimer.isActive())
+        if (m_cursorBlinks && !m_cursorBlinkTimer.isActive())
             m_cursorBlinkTimer.start();
     } else if (m_cursorBlinkTimer.isActive()) {
         m_cursorBlinkTimer.stop();

@@ -160,6 +160,7 @@ private:
     void scrollLines(int lines);
     void scrollChanged();
     void setScrollOffset(double offset);
+    void applyCursorStyle();
     void restartCursorBlink();
     void blinkCursor();
     void selectionChanged();
@@ -183,8 +184,10 @@ private:
     std::string m_fontFamily = "Monospace";
     double m_fontPointSize = 10;
     int m_cursorShape = 0;
-    int m_appliedCursorShape = -1;
     bool m_blinkingCursor = true;
+    std::pair<int, bool> m_appliedCursorStyle{-1, false};
+    // Whether the cursor blinks now, by the settings or the program.
+    bool m_cursorBlinks = false;
 
     int m_columns = 1;
     int m_lines = 1;

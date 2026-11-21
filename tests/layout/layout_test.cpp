@@ -94,6 +94,8 @@ TEST_F(WindowTest, CursorBlinksOnlyWithTheKeyboard)
     ui::Window& surface = window->window();
     term::TerminalView* terminal = window->currentPage()->terminal();
     ASSERT_TRUE(terminal->hasFocus());
+    // The terminal's cursor style reaches the view with its first update.
+    base::EventLoop::current()->dispatch();
 
     ui::TestInput::setKeyboardFocus(surface, true);
     surface.grab();
@@ -127,6 +129,34 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     ui::TestInput::setKeyboardFocus(surface, false);
     surface.grab();
     EXPECT_FALSE(terminal->isCursorBlinking());
+}
+
+// The setting is the default; a program's DECSCUSR asks for blinking or not.
+TEST_F(WindowTest, CursorBlinksAsTheProgramAsks)
+{
+    for (const bool setting : {true, false}) {
+        SCOPED_TRACE(setting ? "blinking by default" : "steady by default");
+        m_settings.setBlinkingCursor(setting);
+        Windows windows(m_settings);
+        TerminalWindow::Options options = shell();
+        options.command = {"/bin/sleep", "30"};
+        TerminalWindow* window = windows.create(std::move(options));
+        ui::Window& surface = window->window();
+        TerminalPage* page = window->currentPage();
+        term::TerminalView* terminal = page->terminal();
+        ui::TestInput::setKeyboardFocus(surface, true);
+        const auto show = [&](const char* sequence) {
+            page->session().terminal().write(sequence);
+            page->session().outputReceived();
+            base::EventLoop::current()->dispatch();
+            surface.grab();
+            return terminal->isCursorBlinking();
+        };
+        EXPECT_EQ(show(""), setting);
+        EXPECT_FALSE(show("\033[2 q"));
+        EXPECT_TRUE(show("\033[1 q"));
+        EXPECT_EQ(show("\033[0 q"), setting);
+    }
 }
 
 // Links are underlined under the pointer only while Control is held.
