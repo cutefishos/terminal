@@ -12,3 +12,4 @@ jobs:
     with:
       dependencies: icons cutefish-toolkit
       released: cutefish-ghostty-vt
+      packages: zsh fish
