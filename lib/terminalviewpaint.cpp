@@ -126,6 +126,7 @@ struct PaintFrame
 void TerminalView::paint(ui::Painter& painter)
 {
     // The window repaints its focus view when the keyboard comes or goes.
+    reportFocus();
     if (hasKeyboard()) {
         if (m_blinkingCursor && !m_cursorBlinkTimer.isActive())
             m_cursorBlinkTimer.start();

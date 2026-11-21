@@ -368,18 +368,28 @@ void TerminalView::blinkCursor()
         requestPaint(rowRect(m_lastCursor.second));
 }
 
+// A program that asked hears when the keyboard comes or goes, the view's
+// focus or the window's.
+void TerminalView::reportFocus()
+{
+    const bool focused = hasKeyboard();
+    if (focused == m_reportedFocus)
+        return;
+    m_reportedFocus = focused;
+    if (Terminal* terminal = this->terminal())
+        terminal->sendFocus(focused);
+}
+
 void TerminalView::focusIn(ui::FocusReason)
 {
-    if (Terminal* terminal = this->terminal())
-        terminal->sendFocus(true);
+    reportFocus();
     restartCursorBlink();
     requestPaint();
 }
 
 void TerminalView::focusOut()
 {
-    if (Terminal* terminal = this->terminal())
-        terminal->sendFocus(false);
+    reportFocus();
     m_cursorBlinkTimer.stop();
     m_cursorHidden = false;
     requestPaint();

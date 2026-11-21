@@ -166,6 +166,7 @@ private:
     void clearLinkHover();
     void updatePointerShape();
     bool hasKeyboard() const;
+    void reportFocus();
 
     Session* m_session = nullptr;
     std::vector<cutefish::base::Subscription> m_sessionConnections;
@@ -209,6 +210,8 @@ private:
     cutefish::base::Timer m_textBlinkTimer;
     bool m_textHidden = false;
     bool m_hasBlinkingText = false;
+
+    bool m_reportedFocus = false;
 
     bool m_notifiesBell = false;
     bool m_confirmMultilinePaste = true;

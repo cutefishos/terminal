@@ -134,3 +134,20 @@ TEST(InteractionTest, OnlyAPasteThatCouldRunCommandsAsksFirst)
     other.chooseMenuItem("Edit", "Paste");
     EXPECT_NE(other.dialog(), nullptr);
 }
+
+TEST(InteractionTest, FocusReportsFollowTheWindowsKeyboard)
+{
+    Scenario scenario;
+    const std::string path = scenario.directory() + "/received";
+    ui::TestDriver& driver = scenario.open(scenario.recorder(path, "\\033[?1004h"));
+    ASSERT_TRUE(waitFor([&] { return shownTab(driver)->session().terminal().mode(GHOSTTY_MODE_FOCUS_EVENT); }));
+    // The window draws a frame for each change, as on screen.
+    driver.window().grab();
+    const std::string before = contents(path);
+    driver.setKeyboardFocus(false);
+    driver.window().grab();
+    EXPECT_TRUE(waitFor([&] { return contents(path) == before + "\033[O"; })) << contents(path);
+    driver.setKeyboardFocus(true);
+    driver.window().grab();
+    EXPECT_TRUE(waitFor([&] { return contents(path) == before + "\033[O\033[I"; })) << contents(path);
+}
