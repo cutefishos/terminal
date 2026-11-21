@@ -11,10 +11,13 @@
 #include <string>
 #include <vector>
 
+#include <xkbcommon/xkbcommon-keysyms.h>
+
 #include "base/event_loop.h"
 #include "base/file.h"
 #include "base/timer.h"
 #include "ui/application.h"
+#include "ui/event.h"
 #include "ui/test_input.h"
 #include "ui/view.h"
 #include "ui/window.h"
@@ -124,6 +127,50 @@ TEST_F(WindowTest, CursorWithoutBlinkingNeverStartsTheTimer)
     ui::TestInput::setKeyboardFocus(surface, false);
     surface.grab();
     EXPECT_FALSE(terminal->isCursorBlinking());
+}
+
+// Links are underlined under the pointer only while Control is held.
+TEST_F(WindowTest, LinksShowWithControl)
+{
+    Windows windows(m_settings);
+    TerminalWindow::Options options = shell();
+    options.command = {"/bin/sleep", "30"};
+    TerminalWindow* window = windows.create(std::move(options));
+    ui::Window& surface = window->window();
+    TerminalPage* page = window->currentPage();
+    term::TerminalView* view = page->terminal();
+    ui::TestInput::setKeyboardFocus(surface, true);
+    page->session().terminal().write("\033[?25lsee https://example.com/x here");
+    page->session().outputReceived();
+    base::EventLoop::current()->dispatch();
+    surface.grab();
+    const ui::Color mark = ui::Color::rgb(0xff00ff);
+    view->setLinkColor(mark);
+
+    const auto marked = [&] {
+        base::EventLoop::current()->dispatch();
+        const ui::Image frame = surface.grab();
+        int count = 0;
+        for (int y = 0; y < frame.height(); ++y) {
+            for (int x = 0; x < frame.width(); ++x)
+                count += frame.pixel(x, y) == mark;
+        }
+        return count;
+    };
+    const term::CellMetrics& cell = view->cellMetrics();
+    const double scale = surface.scale();
+    const ui::PointF over = view->mapToWindow({(1 + 8.5 * cell.width) / scale, (1 + 0.5 * cell.height) / scale});
+    // Entering, then moving over the link.
+    ui::TestInput::movePointer(surface, {over.x - 1, over.y});
+    ui::TestInput::movePointer(surface, over);
+    EXPECT_EQ(marked(), 0);
+
+    ui::KeyEvent control;
+    control.key = XKB_KEY_Control_L;
+    ui::TestInput::pressKey(surface, control);
+    EXPECT_GT(marked(), 0);
+    ui::TestInput::releaseKey(surface, control);
+    EXPECT_EQ(marked(), 0);
 }
 
 TEST_F(WindowTest, PointerShowsWhetherTheProgramTakesTheMouse)

@@ -151,3 +151,18 @@ TEST(InteractionTest, FocusReportsFollowTheWindowsKeyboard)
     driver.window().grab();
     EXPECT_TRUE(waitFor([&] { return contents(path) == before + "\033[O\033[I"; })) << contents(path);
 }
+
+TEST(InteractionTest, ControlClickOnALinkGoesToAProgramTakingTheMouse)
+{
+    Scenario scenario;
+    const std::string path = scenario.directory() + "/received";
+    ui::TestDriver& driver =
+            scenario.open(scenario.recorder(path, "ftp://example.com/x\\r\\n\\033[?1000h\\033[?1006h"));
+    ASSERT_TRUE(waitFor([&] { return takesTheMouse(driver); }));
+    const ui::PointF link = cellCentre(driver, cellOf(driver, "example"));
+    ui::TestInput::movePointer(driver.window(), link);
+    ui::TestInput::press(driver.window(), link, ui::MouseButton::Left, ui::ControlModifier);
+    ui::TestInput::release(driver.window(), link);
+    EXPECT_TRUE(waitFor([&] { return contents(path).find("\033[<16;") != std::string::npos; })) << contents(path);
+    EXPECT_EQ(driver.dialog(), nullptr);
+}

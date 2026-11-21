@@ -162,6 +162,7 @@ private:
     void blinkCursor();
     void selectionChanged();
     void sendPaste(const std::string& text, bool typed);
+    bool showsLinks(uint32_t modifiers) const;
     void updateLinkHover(cutefish::ui::PointF position, uint32_t modifiers);
     void clearLinkHover();
     void updatePointerShape();
@@ -244,7 +245,6 @@ private:
     };
     std::vector<Segment> m_linkSegments;
     cutefish::ui::Color m_linkColor;
-    bool m_controlHeld = false;
     bool m_tracksMouse = false;
     std::pair<int, int> m_hoverCell{-1, -1};
 

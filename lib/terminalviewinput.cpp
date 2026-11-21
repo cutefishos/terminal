@@ -84,10 +84,8 @@ static bool isModifierKey(uint32_t key)
 
 bool TerminalView::keyPress(const ui::KeyEvent& event)
 {
-    if (event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R) {
-        m_controlHeld = true;
-        updatePointerShape();
-    }
+    if ((event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R) && isHovered())
+        updateLinkHover(m_lastPointer, m_lastModifiers | ui::ControlModifier);
     if (onShortcut && onShortcut(event))
         return true;
     if (handleScrollKey(event))
@@ -107,10 +105,8 @@ bool TerminalView::keyPress(const ui::KeyEvent& event)
 
 bool TerminalView::keyRelease(const ui::KeyEvent& event)
 {
-    if (event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R) {
-        m_controlHeld = false;
-        updatePointerShape();
-    }
+    if (event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R)
+        updateLinkHover(m_lastPointer, m_lastModifiers & ~ui::ControlModifier);
     // Only a program that asked for key releases hears them.
     if (Terminal* terminal = this->terminal()) {
         KeyInput key;
@@ -366,7 +362,7 @@ void TerminalView::pointerPress(const ui::PointerEvent& event)
 
     m_menuPress = event.button == ui::MouseButton::Right
             && (!terminal()->tracksMouse() || (event.modifiers & ui::ShiftModifier));
-    m_pressedLink = event.button == ui::MouseButton::Left && (event.modifiers & ui::ControlModifier)
+    m_pressedLink = event.button == ui::MouseButton::Left && showsLinks(event.modifiers)
             ? linkAt(event.position.x, event.position.y)
             : std::string();
     if (!m_pressedLink.empty() || m_menuPress)
@@ -467,6 +463,7 @@ void TerminalView::pointerRelease(const ui::PointerEvent& event)
 void TerminalView::hoverMove(const ui::PointerEvent& event)
 {
     m_lastPointer = event.position;
+    m_lastModifiers = event.modifiers;
     if (m_buttons != 0)
         return;
     updateLinkHover(event.position, event.modifiers);
@@ -482,23 +479,33 @@ void TerminalView::hoverChanged()
 
 void TerminalView::updatePointerShape()
 {
-    if (!m_linkSegments.empty() && m_controlHeld)
+    if (!m_linkSegments.empty())
         View::setCursorShape(ui::CursorShape::Pointer);
     else
         View::setCursorShape(terminal() && terminal()->tracksMouse() ? ui::CursorShape::Default : ui::CursorShape::Text);
 }
 
-// Only a move to another cell can change the link under the pointer.
+// Links show, and open on a click, with Control alone held; a program
+// taking the mouse leaves them to Shift as well.
+bool TerminalView::showsLinks(uint32_t modifiers) const
+{
+    Terminal* terminal = this->terminal();
+    if (!terminal || (terminal->tracksMouse() && !(modifiers & ui::ShiftModifier)))
+        return false;
+    return (modifiers & ~ui::ShiftModifier) == ui::ControlModifier;
+}
+
+// Only a move to another cell, or the modifiers, can change the link under the pointer.
 void TerminalView::updateLinkHover(ui::PointF position, uint32_t modifiers)
 {
-    const bool control = modifiers & ui::ControlModifier;
-    if (control != m_controlHeld) {
-        m_controlHeld = control;
-        updatePointerShape();
+    m_lastModifiers = modifiers;
+    if (!showsLinks(modifiers)) {
+        clearLinkHover();
+        return;
     }
     Terminal* terminal = this->terminal();
     const std::pair<int, int> cell = cellAt(position);
-    if (!terminal || cell == m_hoverCell)
+    if (cell == m_hoverCell)
         return;
     m_hoverCell = cell;
 
@@ -515,7 +522,7 @@ void TerminalView::updateLinkHover(ui::PointF position, uint32_t modifiers)
     } else {
         const Terminal::LogicalLine text = terminal->logicalLine(line);
         for (size_t i = 0; i < text.cells.size(); ++i) {
-            if (text.cells[i] != cell)
+            if (text.cells[i] != std::pair<int, int>{line, column})
                 continue;
             const Link link = term::linkAt(text.text, i);
             if (!link.isValid())
