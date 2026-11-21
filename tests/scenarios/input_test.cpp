@@ -29,7 +29,9 @@ TEST(InputTest, PasteCannotEndTheBracketEarly)
 
     ui::Clipboard::setText("echo \033[201~touch pwned");
     driver.chooseMenuItem("Edit", "Paste");
-    // The ESC that would end the paste reaches the program as a space.
+    // The end of a bracketed paste in the text asks first; the ESC that would
+    // end it reaches the program as a space.
+    scenario.confirm(driver);
     const std::string expected = "\033[200~echo  [201~touch pwned\033[201~";
     EXPECT_TRUE(waitFor([&] { return contents(path) == expected; })) << contents(path);
 }

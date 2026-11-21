@@ -456,13 +456,14 @@ void TerminalView::sendPaste(const std::string& text, bool typed)
     Terminal* terminal = this->terminal();
     if (!terminal || text.empty())
         return;
-    if (m_confirmMultilinePaste && text.find_first_of("\r\n") != std::string::npos) {
+    // The library refuses what could run commands: line breaks outside a
+    // bracketed paste, or the end of the brackets inside one.
+    if (!terminal->paste(text, typed, !m_confirmMultilinePaste)) {
         m_pendingPaste = text;
         multilinePasteRequested(text);
         return;
     }
     terminal->scrollToBottom();
-    terminal->paste(text, typed);
     scrollChanged();
 }
 

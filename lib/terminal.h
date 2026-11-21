@@ -108,8 +108,9 @@ public:
     void sendFocus(bool focused);
     // Pasted as the modes ask: bracketed for a program that wants it, unsafe
     // control characters made spaces; a paste of text, not of a clipboard,
-    // when `typed`.
-    void paste(std::string_view text, bool typed = false);
+    // when `typed`. Unless `allowUnsafe`, text that could run commands is
+    // refused and false returned.
+    bool paste(std::string_view text, bool typed = false, bool allowUnsafe = true);
     // Bytes for the program as they are.
     void send(std::string_view bytes);
 

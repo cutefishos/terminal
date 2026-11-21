@@ -115,3 +115,22 @@ TEST(InteractionTest, WheelOnTheAlternateScreenSendsArrowsOnlyInAlternateScrollM
     driver.typeText("x");
     EXPECT_TRUE(waitFor([&] { return contents(path) == "x"; })) << contents(path);
 }
+
+TEST(InteractionTest, OnlyAPasteThatCouldRunCommandsAsksFirst)
+{
+    Scenario scenario;
+    const std::string bracketed = scenario.directory() + "/bracketed";
+    ui::TestDriver& driver = scenario.open(scenario.recorder(bracketed));
+    ASSERT_TRUE(waitFor([&] { return shownTab(driver)->session().terminal().bracketedPaste(); }));
+    // Bracketed, the lines arrive as one paste the program handles.
+    ui::Clipboard::setText("one\ntwo");
+    driver.chooseMenuItem("Edit", "Paste");
+    EXPECT_EQ(driver.dialog(), nullptr);
+    EXPECT_TRUE(waitFor([&] { return contents(bracketed) == "\033[200~one\ntwo\033[201~"; })) << contents(bracketed);
+
+    const std::string plain = scenario.directory() + "/plain";
+    ui::TestDriver& other = scenario.open(scenario.recorder(plain, "ready"));
+    ASSERT_TRUE(waitFor([&] { return shows(other, "ready"); }));
+    other.chooseMenuItem("Edit", "Paste");
+    EXPECT_NE(other.dialog(), nullptr);
+}

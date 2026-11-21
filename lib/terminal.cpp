@@ -262,10 +262,10 @@ static bool readPaste(void* userdata, GhosttyString, GhosttyWriter writer)
     return writer.write(writer.userdata, reinterpret_cast<const uint8_t*>(source.text.data()), source.text.size());
 }
 
-void Terminal::paste(std::string_view text, bool typed)
+bool Terminal::paste(std::string_view text, bool typed, bool allowUnsafe)
 {
     if (text.empty())
-        return;
+        return true;
     PasteSource source{text};
     const GhosttyString mime{reinterpret_cast<const uint8_t*>("text/plain"), 10};
     GhosttyPaste paste = GHOSTTY_INIT_SIZED(GhosttyPaste);
@@ -274,9 +274,8 @@ void Terminal::paste(std::string_view text, bool typed)
     paste.mimes = &mime;
     paste.mimes_len = 1;
     paste.reader = GhosttyMimeReader{&readPaste, &source};
-    // The window asks before a paste of several lines, so nothing is refused here.
-    paste.allow_unsafe = true;
-    ghostty_terminal_paste(m_terminal, &paste, nullptr);
+    paste.allow_unsafe = allowUnsafe;
+    return ghostty_terminal_paste(m_terminal, &paste, nullptr) != GHOSTTY_REJECTED;
 }
 
 void Terminal::reset()
