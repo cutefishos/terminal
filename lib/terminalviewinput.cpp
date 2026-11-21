@@ -254,15 +254,44 @@ void TerminalView::selectionPress(const ui::PointerEvent& event, bool apply)
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_INTERVAL_NS, &interval);
     ghostty_selection_gesture_event_set(m_pressEvent, GHOSTTY_SELECTION_GESTURE_EVENT_OPT_REPEAT_DISTANCE, &distance);
     GhosttySelection selection{};
-    const GhosttyResult result = ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_pressEvent, &selection);
+    GhosttyResult result = ghostty_selection_gesture_event(m_gesture, terminal->handle(), m_pressEvent, &selection);
     if (!apply)
         return;
+    // A double click on a link takes the link whole, past the characters
+    // that end a word.
+    uint8_t clicks = 0;
+    ghostty_selection_gesture_get(m_gesture, terminal->handle(), GHOSTTY_SELECTION_GESTURE_DATA_CLICK_COUNT, &clicks);
+    if (clicks == 2 && linkSelection(event.position, &selection))
+        result = GHOSTTY_SUCCESS;
     if (result == GHOSTTY_SUCCESS)
         terminal->setSelection(selection);
     else
         terminal->clearSelection();
     m_selecting = true;
     selectionChanged();
+}
+
+bool TerminalView::linkSelection(ui::PointF position, GhosttySelection* selection) const
+{
+    Terminal* terminal = this->terminal();
+    const auto [column, line] = cellAt(position);
+    const Terminal::LogicalLine text = terminal->logicalLine(line);
+    for (size_t i = 0; i < text.cells.size(); ++i) {
+        if (text.cells[i] != std::pair<int, int>{line, column})
+            continue;
+        const Link link = term::linkAt(text.text, i);
+        if (!link.isValid())
+            return false;
+        const auto [firstLine, firstColumn] = text.cells[link.begin];
+        const auto [lastLine, lastColumn] = text.cells[link.end - 1];
+        bool startOk = false;
+        bool endOk = false;
+        selection->start = terminal->viewportRef(firstColumn, firstLine, &startOk);
+        selection->end = terminal->viewportRef(lastColumn, lastLine, &endOk);
+        selection->rectangle = false;
+        return startOk && endOk;
+    }
+    return false;
 }
 
 void TerminalView::selectionDrag(ui::PointF point)
@@ -401,6 +430,7 @@ void TerminalView::pointerPress(const ui::PointerEvent& event)
 
 void TerminalView::pointerMove(const ui::PointerEvent& event)
 {
+    const bool moved = event.position != m_lastPointer;
     m_lastPointer = event.position;
     m_lastModifiers = event.modifiers;
     if (!m_pressedLink.empty() || m_menuPress || !terminal())
@@ -416,7 +446,9 @@ void TerminalView::pointerMove(const ui::PointerEvent& event)
         }
         return;
     }
-    if (m_selecting && (m_buttons & buttonBit(ui::MouseButton::Left)))
+    // A move that goes nowhere, as one before a release, keeps what the
+    // click selected, such as a whole link.
+    if (moved && m_selecting && (m_buttons & buttonBit(ui::MouseButton::Left)))
         selectionDrag(event.position);
 }
 

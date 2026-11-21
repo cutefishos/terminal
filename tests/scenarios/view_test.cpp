@@ -101,8 +101,8 @@ static const char kWords[] = "alpha bravo charlie\\r\\n"
                              "see /usr/local/share/doc/file.txt here\\r\\n"
                              "open https://example.com/path?q=1 now\\r\\n";
 
-// Word characters are the library's: a path is one word, and a colon ends
-// one, so a URL's scheme and the rest are two.
+// Word characters are the library's: a path is one word. A URL is whole
+// whatever its colon, as a link.
 TEST(ViewTest, DoubleClickSelectsAWord)
 {
     Scenario scenario;
@@ -113,8 +113,8 @@ TEST(ViewTest, DoubleClickSelectsAWord)
         {"ravo", "bravo"},
         {"local", "/usr/local/share/doc/file.txt"},
         {"file.txt", "/usr/local/share/doc/file.txt"},
-        {"ttps", "https"},
-        {"ample.com", "//example.com/path?q=1"},
+        {"ttps", "https://example.com/path?q=1"},
+        {"ample.com", "https://example.com/path?q=1"},
     };
     for (const auto& [at, word] : cases) {
         SCOPED_TRACE(at);

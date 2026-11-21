@@ -149,6 +149,8 @@ private:
     bool programTakesMouse(uint32_t modifiers) const;
     // Without `apply` the gesture only counts the press, leaving the selection.
     void selectionPress(const cutefish::ui::PointerEvent& event, bool apply = true);
+    // The link under the position, as a selection.
+    bool linkSelection(cutefish::ui::PointF position, GhosttySelection* selection) const;
     void selectionDrag(cutefish::ui::PointF position);
     void selectionRelease(cutefish::ui::PointF position);
     void startTextDrag();
