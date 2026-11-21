@@ -59,10 +59,18 @@ bool TerminalView::sendKey(const ui::KeyEvent& event)
 }
 
 // Shift with the arrows, the page keys, Home and End scrolls the history
-// while no full-screen program has the screen.
+// while no full-screen program has the screen; Control+Shift with Up and
+// Down goes from prompt to prompt the shell marked, whatever has the screen.
 bool TerminalView::handleScrollKey(const ui::KeyEvent& event)
 {
     Terminal* terminal = this->terminal();
+    if (terminal && event.modifiers == (ui::ControlModifier | ui::ShiftModifier)
+        && (event.key == XKB_KEY_Up || event.key == XKB_KEY_Down)) {
+        terminal->scrollToPrompt(event.key == XKB_KEY_Up ? -1 : 1);
+        setScrollOffset(0);
+        scrollChanged();
+        return true;
+    }
     if (!terminal || event.modifiers != ui::ShiftModifier || terminal->usesAlternateScreen())
         return false;
     switch (event.key) {

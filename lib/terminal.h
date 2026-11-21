@@ -112,6 +112,8 @@ public:
     uint64_t scrollbackLines() const;
     void scrollToRow(uint64_t row);
     void scrollBy(int lines);
+    // The viewport's top to a marked prompt that many before or after it.
+    void scrollToPrompt(int prompts);
     void scrollToBottom();
 
     // Whether anything went to the program.

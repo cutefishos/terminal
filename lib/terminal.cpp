@@ -317,6 +317,14 @@ void Terminal::scrollBy(int lines)
     ghostty_terminal_scroll_viewport(m_terminal, scroll);
 }
 
+void Terminal::scrollToPrompt(int prompts)
+{
+    GhosttyTerminalScrollViewport scroll{};
+    scroll.tag = GHOSTTY_TERMINAL_SCROLL_VIEWPORT_DELTA_PROMPT;
+    scroll.value.delta_prompt = prompts;
+    ghostty_terminal_scroll_viewport(m_terminal, scroll);
+}
+
 void Terminal::scrollToBottom()
 {
     GhosttyTerminalScrollViewport scroll{};

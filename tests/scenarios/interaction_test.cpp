@@ -215,3 +215,27 @@ TEST(InteractionTest, APathLinkOpensFromTheShellsDirectory)
     ui::PointF absolute = pointAt("else");
     EXPECT_EQ(view->linkAt(absolute.x, absolute.y), "/nowhere/else.txt");
 }
+
+TEST(InteractionTest, ControlShiftUpAndDownGoFromPromptToPrompt)
+{
+    Scenario scenario;
+    std::string text;
+    for (int command = 0; command < 4; ++command) {
+        text += "\\033]133;A\\a$ \\033]133;B\\acommand" + std::to_string(command) + "\\r\\n\\033]133;C\\a";
+        for (int line = 0; line < 40; ++line)
+            text += "output " + std::to_string(command) + "." + std::to_string(line) + "\\r\\n";
+    }
+    ui::TestDriver& driver = scenario.open(printer(scenario, text));
+    ASSERT_TRUE(waitFor([&] { return shows(driver, "output 3.39"); }));
+    term::TerminalView* view = shownTab(driver)->terminal();
+    term::Terminal& terminal = shownTab(driver)->session().terminal();
+    const auto topLine = [&] { return terminal.logicalLine(0).text; };
+
+    driver.typeKey(ui::key::Up, ui::ControlModifier | ui::ShiftModifier);
+    EXPECT_EQ(topLine().substr(0, 10), "$ command3");
+    driver.typeKey(ui::key::Up, ui::ControlModifier | ui::ShiftModifier);
+    EXPECT_EQ(topLine().substr(0, 10), "$ command2");
+    driver.typeKey(ui::key::Down, ui::ControlModifier | ui::ShiftModifier);
+    EXPECT_EQ(topLine().substr(0, 10), "$ command3");
+    EXPECT_LT(view->scrollbarValue(), view->scrollbarMaximum());
+}
