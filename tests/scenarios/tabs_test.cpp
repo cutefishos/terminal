@@ -3,6 +3,9 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <string>
+
 #include "ui/application.h"
 #include "ui/keys.h"
 #include "ui/view.h"
@@ -130,4 +133,30 @@ TEST(TabsTest, LanguageChangeKeepsTheShellsAndTheSearch)
     scenario.confirm(driver);
     ASSERT_EQ(tabs(driver).size(), 1u);
     EXPECT_EQ(shownTab(driver), page);
+}
+
+// A new tab starts where the shell last said it is (OSC 7), and else where
+// the program in front is.
+TEST(TabsTest, NewTabsStartInTheDirectoryTheShellReported)
+{
+    Scenario scenario;
+    const std::string reported = scenario.directory() + "/reported";
+    std::filesystem::create_directories(reported);
+    // The new tab's shell, once it runs where it was started.
+    const auto startsIn = [&](const std::string& output, const std::string& expected) {
+        ui::TestDriver& driver = scenario.open(printer(scenario, output + "ready"));
+        EXPECT_TRUE(waitFor([&] { return shows(driver, "ready"); }));
+        TerminalPage* first = shownTab(driver);
+        EXPECT_TRUE(waitFor([&] { return first->session().foregroundProcessName() == "sleep"; }));
+        driver.chooseMenuItem("Shell", "New Tab");
+        std::string directory;
+        const bool started = waitFor([&] {
+            TerminalPage* added = shownTab(driver);
+            directory = added && added != first ? added->session().currentDir() : std::string();
+            return directory == expected;
+        });
+        EXPECT_TRUE(started) << directory;
+    };
+    startsIn("\\033]7;file://host" + reported + "\\a", reported);
+    startsIn("", scenario.directory());
 }

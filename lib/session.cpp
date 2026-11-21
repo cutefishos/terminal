@@ -282,6 +282,15 @@ void Session::clearScrollback()
     outputReceived();
 }
 
+std::string Session::inheritedDirectory()
+{
+    const std::string reported = m_terminal.reportedDirectory();
+    std::error_code error;
+    if (!reported.empty() && std::filesystem::is_directory(reported, error))
+        return reported;
+    return currentDir();
+}
+
 bool Session::isAtPrompt() const
 {
     return m_terminal.hasPromptMarks() ? m_terminal.cursorAtPrompt() : !hasActiveProcess();

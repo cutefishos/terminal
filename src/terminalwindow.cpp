@@ -559,7 +559,7 @@ void TerminalWindow::showPage(int index)
 void TerminalWindow::openNewTab()
 {
     if (TerminalPage* page = currentPage())
-        openTab(page->session().currentDir(), {}, m_currentIndex + 1);
+        openTab(page->session().inheritedDirectory(), {}, m_currentIndex + 1);
     else
         openTab("$HOME");
 }
@@ -792,7 +792,7 @@ void TerminalWindow::moveTab(int from, int to)
 void TerminalWindow::newWindow()
 {
     TerminalPage* page = currentPage();
-    const std::string directory = page ? page->session().currentDir() : std::string();
+    const std::string directory = page ? page->session().inheritedDirectory() : std::string();
     Options options;
     options.startDirectory = directory.empty() ? "$HOME" : directory;
     m_windows.create(std::move(options));

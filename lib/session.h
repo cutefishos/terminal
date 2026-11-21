@@ -56,6 +56,9 @@ public:
     bool hasActiveProcess() const;
     std::string foregroundProcessName();
     std::string currentDir();
+    // Where a new tab or window from this one starts: the directory the shell
+    // reported (OSC 7) while it is there, else currentDir().
+    std::string inheritedDirectory();
 
     // Bytes for the program as they are.
     void sendText(std::string_view text);
