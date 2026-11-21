@@ -53,3 +53,20 @@ TEST(InteractionTest, TypingClearsTheSelection)
     ui::TestInput::inputMethod(driver.window(), composing);
     EXPECT_EQ(selection(driver), "");
 }
+
+TEST(InteractionTest, ShiftClickExtendsTheSelection)
+{
+    Scenario scenario;
+    ui::TestDriver& driver = scenario.open(printer(scenario, kText));
+    ASSERT_TRUE(waitFor([&] { return shows(driver, "charlie"); }));
+    clickAt(driver, cellCentre(driver, cellOf(driver, "ravo")), 2);
+    ASSERT_EQ(selection(driver), "bravo");
+
+    // By words, as the double click selected.
+    const ui::PointF end = cellCentre(driver, cellOf(driver, "arlie"));
+    ui::TestInput::movePointer(driver.window(), end);
+    ui::TestInput::press(driver.window(), end, ui::MouseButton::Left, ui::ShiftModifier);
+    ui::TestInput::release(driver.window(), end);
+    EXPECT_EQ(selection(driver), "bravo charlie");
+    EXPECT_EQ(primarySelection(), "bravo charlie");
+}

@@ -372,6 +372,16 @@ void TerminalView::pointerPress(const ui::PointerEvent& event)
         return;
     }
     if (event.button == ui::MouseButton::Left) {
+        // Shift+click carries the selection's far end to the pointer, by
+        // the unit the selection was made in.
+        uint8_t clicks = 0;
+        ghostty_selection_gesture_get(m_gesture, terminal()->handle(), GHOSTTY_SELECTION_GESTURE_DATA_CLICK_COUNT,
+                                      &clicks);
+        if ((event.modifiers & ui::ShiftModifier) && event.clickCount == 1 && clicks > 0 && hasSelection()) {
+            m_selecting = true;
+            selectionDrag(event.position);
+            return;
+        }
         if (event.clickCount == 1 && isSelectedAt(event.position.x, event.position.y)) {
             m_drag = Drag::Pending;
             m_dragStart = event.position;
