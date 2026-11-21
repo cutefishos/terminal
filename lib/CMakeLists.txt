@@ -12,10 +12,13 @@ add_library(terminal-emulator STATIC
     pty.cpp
     search.cpp
     session.cpp
+    shellintegration.cpp
     terminal.cpp
     terminalinput.cpp
 )
 target_include_directories(terminal-emulator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(terminal-emulator PRIVATE
+    SHELL_INTEGRATION_DIR="${CMAKE_INSTALL_FULL_DATADIR}/cutefish-terminal/shell-integration")
 target_link_libraries(terminal-emulator
     PUBLIC
         Cutefish::ToolkitBase

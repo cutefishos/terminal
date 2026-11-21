@@ -30,6 +30,10 @@ public:
     Terminal& terminal() { return m_terminal; }
     const Terminal& terminal() const { return m_terminal; }
 
+    // Where the shells' integration scripts are, for every session; the
+    // installed ones unless set.
+    static void setShellIntegrationDirectory(const std::string& directory);
+
     // "$PWD" is this process's directory and "$HOME" the home directory; a
     // directory that does not exist gives the home directory.
     void setInitialWorkingDirectory(const std::string& directory);

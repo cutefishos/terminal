@@ -54,6 +54,15 @@ static std::vector<std::string> childEnvironment(const Pty::Options& options)
         if (equals != std::string_view::npos && equals > 0)
             variables.emplace(std::string(text.substr(0, equals)), std::string(text.substr(equals + 1)));
     }
+    for (const auto& [name, source] : options.copies) {
+        if (const auto found = variables.find(source); found != variables.end())
+            variables[name] = found->second;
+    }
+    for (const auto& [name, prefix] : options.prefixes) {
+        const auto found = variables.find(name);
+        const std::string& rest = found != variables.end() ? found->second : prefix.second;
+        variables[name] = rest.empty() ? prefix.first : prefix.first + ":" + rest;
+    }
     for (const auto& [name, value] : options.environment) {
         if (value)
             variables[name] = *value;

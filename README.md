@@ -57,6 +57,13 @@ taken over unchanged.
 restructured for PCRE2; `tests/logic/links_test.cpp` runs that file's test
 cases unchanged.
 
+The shell integration in `shell-integration/` starts shells the way
+Ghostty's (v1.4.0) does: bash in POSIX mode reading the script through
+`ENV`, zsh through `ZDOTDIR`, fish through `XDG_DATA_DIRS`. The fish script
+is adapted from Ghostty's `src/shell-integration/fish` (MIT, copyright 2024
+Mitchell Hashimoto, Ghostty contributors); the bash and zsh scripts are this
+repository's own.
+
 ## License
 
 MIT; see [LICENSE](LICENSE).

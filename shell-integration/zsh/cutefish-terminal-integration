@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+# SPDX-License-Identifier: MIT
+#
+# Marks the prompt, the command line and its output (OSC 133) and reports
+# the working directory (OSC 7) for cutefish-terminal. Read from .zshenv,
+# before the user's .zshrc, so the hooks put themselves last again at each
+# prompt, after whatever the .zshrc or a prompt theme adds.
+
+'builtin' 'autoload' -Uz add-zsh-hook
+
+typeset -g __cft_prompted=
+typeset -g __cft_directory=
+
+__cft_precmd() {
+    builtin local cmd_status=$?
+    builtin emulate -L zsh
+
+    # A command line ran since the last prompt: its status ends its output.
+    if [[ $__cft_prompted == ran ]]; then
+        builtin print -n "\e]133;D;$cmd_status\a"
+    fi
+    __cft_prompted=prompt
+
+    # A new prompt, on a line of its own; the terminal moves the cursor
+    # within the command line with arrow keys.
+    builtin print -n '\e]133;A;cl=line\a'
+
+    if [[ $__cft_directory != $PWD ]]; then
+        __cft_directory=$PWD
+        builtin print -rn -- $'\e]7;kitty-shell-cwd://'"${HOST//[[:cntrl:]]/}${PWD//[[:cntrl:]]/}"$'\a'
+    fi
+
+    # The prompt as prompt text, the rest of the line as the command; again
+    # whenever a theme has set the prompt anew.
+    if [[ $PS1 != *'133;P;k=i'* ]]; then
+        PS1=$'%{\e]133;P;k=i\a%}'$PS1$'%{\e]133;B\a%}'
+    fi
+    if [[ $PS2 != *'133;P;k=s'* ]]; then
+        PS2=$'%{\e]133;P;k=s\a%}'$PS2$'%{\e]133;B\a%}'
+    fi
+
+    # Last at the next prompt too.
+    if [[ ${precmd_functions[-1]} != __cft_precmd ]]; then
+        add-zsh-hook -d precmd __cft_precmd
+        add-zsh-hook precmd __cft_precmd
+    fi
+}
+
+__cft_preexec() {
+    builtin emulate -L zsh
+    # Output starts as the command runs.
+    builtin print -n '\e]133;C\a'
+    __cft_prompted=ran
+}
+
+add-zsh-hook precmd __cft_precmd
+add-zsh-hook preexec __cft_preexec

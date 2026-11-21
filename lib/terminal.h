@@ -81,6 +81,9 @@ public:
     bool darkBackground() const { return m_dark; }
 
     std::string title() const;
+    // The cursor is on a prompt or its command line, as the shell marked them
+    // (OSC 133); false without marks.
+    bool cursorAtPrompt() const;
     // The directory the shell last reported (OSC 7), as a path; empty for none.
     std::string reportedDirectory() const;
     bool mode(GhosttyMode mode) const;

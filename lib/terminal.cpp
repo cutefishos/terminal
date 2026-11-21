@@ -167,6 +167,13 @@ std::string Terminal::title() const
             std::string_view(reinterpret_cast<const char*>(title.ptr), title.len));
 }
 
+bool Terminal::cursorAtPrompt() const
+{
+    bool atPrompt = false;
+    ghostty_terminal_get(m_terminal, GHOSTTY_TERMINAL_DATA_CURSOR_AT_PROMPT, &atPrompt);
+    return atPrompt;
+}
+
 std::string Terminal::reportedDirectory() const
 {
     GhosttyString pwd{};

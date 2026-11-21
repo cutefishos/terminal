@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <sys/types.h>
+#include <utility>
 #include <vector>
 
 namespace cutefish::base {
@@ -35,6 +36,12 @@ public:
         std::map<std::string, std::optional<std::string>> environment;
         // Set only where the environment has no such variable.
         std::map<std::string, std::string> defaults;
+        // Before the above: each variable named on the right, where there is
+        // one, also under the name on the left.
+        std::map<std::string, std::string> copies;
+        // Before the above: a path put first in a colon-separated list, with
+        // the second value standing in for a list that is not there.
+        std::map<std::string, std::pair<std::string, std::string>> prefixes;
         int columns = 80;
         int lines = 24;
     };

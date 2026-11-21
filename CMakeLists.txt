@@ -28,6 +28,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_link_libraries(${PROJECT_NAME} PRIVATE terminal-display)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY shell-integration DESTINATION ${CMAKE_INSTALL_DATADIR}/cutefish-terminal)
 
 cutefish_add_translations(cutefish-terminal SOURCES src DESKTOP_FILES cutefish-terminal.desktop)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cutefish-terminal.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)

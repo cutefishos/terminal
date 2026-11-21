@@ -14,6 +14,7 @@
 #include "base/strings.h"
 
 #include "proxyenvironment.h"
+#include "shellintegration.h"
 
 namespace strings = cutefish::base::strings;
 
@@ -104,6 +105,17 @@ Session::~Session()
     close();
 }
 
+static std::string& shellIntegrationDirectory()
+{
+    static std::string directory = SHELL_INTEGRATION_DIR;
+    return directory;
+}
+
+void Session::setShellIntegrationDirectory(const std::string& directory)
+{
+    shellIntegrationDirectory() = directory;
+}
+
 void Session::setInitialWorkingDirectory(const std::string& directory)
 {
     std::string path = expandDirectory(directory);
@@ -153,6 +165,7 @@ void Session::start()
     options.environment["COLORFGBG"] = "15;0";
     options.environment["WINDOWID"] = "0";
     options.defaults["LANGUAGE"] = "";
+    integrateShell(shellIntegrationDirectory(), options);
     if (m_pty.start(options))
         checkForegroundLater();
 }

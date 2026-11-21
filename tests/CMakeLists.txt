@@ -7,9 +7,11 @@ add_executable(terminal-logic-tests
     logic/links_test.cpp
     logic/proxy_test.cpp
     logic/session_test.cpp
+    logic/shellintegration_test.cpp
     logic/terminal_test.cpp
 )
 target_link_libraries(terminal-logic-tests PRIVATE terminal-emulator GTest::gtest)
+target_compile_definitions(terminal-logic-tests PRIVATE TERMINAL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 gtest_discover_tests(terminal-logic-tests PROPERTIES LABELS logic)
 
 # The windows and tabs on the headless platform.
