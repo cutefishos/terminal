@@ -377,6 +377,8 @@ void TerminalView::reportFocus()
     if (focused == m_reportedFocus)
         return;
     m_reportedFocus = focused;
+    if (!focused)
+        releaseHeldKey();
     if (Terminal* terminal = this->terminal())
         terminal->sendFocus(focused);
 }

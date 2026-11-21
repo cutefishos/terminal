@@ -166,3 +166,31 @@ TEST(InteractionTest, ControlClickOnALinkGoesToAProgramTakingTheMouse)
     EXPECT_TRUE(waitFor([&] { return contents(path).find("\033[<16;") != std::string::npos; })) << contents(path);
     EXPECT_EQ(driver.dialog(), nullptr);
 }
+
+TEST(InteractionTest, AKeyHeldAsTheKeyboardLeavesIsReleasedForTheProgram)
+{
+    Scenario scenario;
+    const std::string path = scenario.directory() + "/received";
+    // Every key as an escape code, with its release.
+    ui::TestDriver& driver = scenario.open(scenario.recorder(path, "\\033[>11u"));
+    ASSERT_TRUE(waitFor([&] {
+        uint8_t flags = 0;
+        ghostty_terminal_get(shownTab(driver)->session().terminal().handle(),
+                             GHOSTTY_TERMINAL_DATA_KITTY_KEYBOARD_FLAGS, &flags);
+        return flags == 11;
+    }));
+    driver.window().grab();
+    ui::KeyEvent key;
+    key.key = 'a';
+    key.text = "A";
+    key.modifiers = ui::ShiftModifier;
+    driver.pressKey(key);
+    ASSERT_TRUE(waitFor([&] { return !contents(path).empty(); }));
+    const std::string pressed = contents(path);
+    driver.setKeyboardFocus(false);
+    driver.window().grab();
+    // The key, then Shift on both sides.
+    EXPECT_TRUE(waitFor([&] {
+        return contents(path) == pressed + "\033[97;2:3u\033[57441;1:3u\033[57447;1:3u";
+    })) << contents(path);
+}

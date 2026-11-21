@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -144,6 +145,8 @@ private:
 
     // terminalviewinput.cpp
     bool sendKey(const cutefish::ui::KeyEvent& event);
+    void sendKeyRelease(const cutefish::ui::KeyEvent& event);
+    void releaseHeldKey();
     bool handleScrollKey(const cutefish::ui::KeyEvent& event);
     bool sendMouse(MouseInput::Action action, int button, cutefish::ui::PointF position, uint32_t modifiers);
     bool programTakesMouse(uint32_t modifiers) const;
@@ -218,6 +221,8 @@ private:
     bool m_hasBlinkingText = false;
 
     bool m_reportedFocus = false;
+    // The last key pressed and not yet released.
+    std::optional<cutefish::ui::KeyEvent> m_pressedKey;
 
     bool m_notifiesBell = false;
     bool m_confirmMultilinePaste = true;

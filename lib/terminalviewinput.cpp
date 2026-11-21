@@ -90,6 +90,7 @@ bool TerminalView::keyPress(const ui::KeyEvent& event)
         return true;
     if (handleScrollKey(event))
         return true;
+    m_pressedKey = event;
     if (sendKey(event)) {
         // Typing lets the selection go, as anything but a modifier the
         // program hears does.
@@ -107,7 +108,15 @@ bool TerminalView::keyRelease(const ui::KeyEvent& event)
 {
     if (event.key == XKB_KEY_Control_L || event.key == XKB_KEY_Control_R)
         updateLinkHover(m_lastPointer, m_lastModifiers & ~ui::ControlModifier);
-    // Only a program that asked for key releases hears them.
+    if (m_pressedKey && m_pressedKey->key == event.key)
+        m_pressedKey.reset();
+    sendKeyRelease(event);
+    return false;
+}
+
+// Only a program that asked for key releases hears them.
+void TerminalView::sendKeyRelease(const ui::KeyEvent& event)
+{
     if (Terminal* terminal = this->terminal()) {
         KeyInput key;
         key.keysym = event.key;
@@ -117,7 +126,41 @@ bool TerminalView::keyRelease(const ui::KeyEvent& event)
         key.release = true;
         terminal->sendKey(key);
     }
-    return false;
+}
+
+// Keys held as the keyboard leaves are released for the program, which will
+// not hear it otherwise: the last key pressed, then each modifier it held,
+// both sides.
+void TerminalView::releaseHeldKey()
+{
+    if (!m_pressedKey)
+        return;
+    ui::KeyEvent event = *m_pressedKey;
+    m_pressedKey.reset();
+    sendKeyRelease(event);
+    static constexpr struct {
+        uint32_t modifier;
+        uint32_t keys[2];
+    } modifiers[] = {
+        {ui::ShiftModifier, {XKB_KEY_Shift_L, XKB_KEY_Shift_R}},
+        {ui::ControlModifier, {XKB_KEY_Control_L, XKB_KEY_Control_R}},
+        {ui::AltModifier, {XKB_KEY_Alt_L, XKB_KEY_Alt_R}},
+        {ui::SuperModifier, {XKB_KEY_Super_L, XKB_KEY_Super_R}},
+    };
+    const uint32_t original = event.key;
+    for (const auto& [modifier, keys] : modifiers) {
+        if (!(event.modifiers & modifier))
+            continue;
+        event.modifiers &= ~modifier;
+        event.text.clear();
+        event.keycode = 0;
+        for (const uint32_t key : keys) {
+            if (key == original)
+                continue;
+            event.key = key;
+            sendKeyRelease(event);
+        }
+    }
 }
 
 ui::TextInputState TerminalView::textInputState() const
