@@ -175,6 +175,43 @@ TEST(SessionTest, ClearAllAtAPromptAsksTheShellToRedraw)
     EXPECT_FALSE(session.clearScreenAndScrollback());
 }
 
+// The shell's prompt marks decide, over what runs in front.
+TEST(SessionTest, ClearAndCloseFollowThePromptMarks)
+{
+    cutefish::base::EventLoop loop;
+    cutefish::base::file::TemporaryDirectory directory("/tmp", "session-marks");
+    ASSERT_TRUE(directory.isValid());
+    const std::string output = directory.path() + "/received";
+
+    Session session;
+    session.setCommand({"/bin/sh", "-c", "stty raw -echo; exec cat > '" + output + "'"});
+    session.start();
+    ASSERT_TRUE(waitFor(loop, [&] { return session.foregroundProcessGroup() == session.processId(); }));
+    Terminal& terminal = session.terminal();
+
+    // At a marked prompt the shell redraws it.
+    terminal.write("a\r\nb\r\n\033]133;A;cl=line\a$ \033]133;B\a");
+    EXPECT_TRUE(session.isAtPrompt());
+    EXPECT_FALSE(session.needsConfirmClose());
+    EXPECT_EQ(terminal.promptClick(), Terminal::PromptClick::Line);
+    EXPECT_TRUE(session.clearScreenAndScrollback());
+    EXPECT_TRUE(waitFor(loop, [&] { return cutefish::base::file::read(output).value_or("") == "\x0c"; }));
+
+    // In a command's output the lines above go, and the cursor's stays put.
+    terminal.write("ls\r\n\033]133;C\aone\r\ntwo\r\nthree");
+    EXPECT_FALSE(session.isAtPrompt());
+    EXPECT_TRUE(session.needsConfirmClose());
+    const int line = terminal.cursorLine();
+    ASSERT_GT(line, 0);
+    EXPECT_TRUE(session.clearScreenAndScrollback());
+    EXPECT_EQ(terminal.cursorLine(), line);
+    for (int above = 0; above < line; ++above)
+        EXPECT_EQ(terminal.logicalLine(above).text.find_first_not_of(' '), std::string::npos) << above;
+    EXPECT_EQ(terminal.logicalLine(line).text.substr(0, 5), "three");
+    loop.dispatch();
+    EXPECT_EQ(cutefish::base::file::read(output).value_or(""), "\x0c");
+}
+
 TEST(SessionTest, DirectoriesExpandAndFallBack)
 {
     cutefish::base::EventLoop loop;

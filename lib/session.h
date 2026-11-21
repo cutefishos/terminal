@@ -60,9 +60,17 @@ public:
     // Bytes for the program as they are.
     void sendText(std::string_view text);
 
+    // At the shell's prompt: as the shell marks it, or else with no program
+    // in front of the shell.
+    bool isAtPrompt() const;
+    // Closing would stop something that runs: not at the prompt.
+    bool needsConfirmClose() const;
+
     void clearScrollback();
     // False on the alternate screen, which keeps the key for its program. At
-    // a prompt the shell is asked to draw its prompt again.
+    // a prompt the shell is asked to draw its prompt again; elsewhere the
+    // lines above the cursor go, or with no prompt marks the cursor's line
+    // moves to the top.
     bool clearScreenAndScrollback();
     // A full reset; the program is told the size again so it redraws.
     void resetTerminal();

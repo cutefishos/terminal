@@ -81,9 +81,16 @@ public:
     bool darkBackground() const { return m_dark; }
 
     std::string title() const;
-    // The cursor is on a prompt or its command line, as the shell marked them
-    // (OSC 133); false without marks.
+    // The shell marks its prompts (OSC 133).
+    bool hasPromptMarks() const { return m_promptMarks; }
+    // The cursor is on a prompt or its command line, as the shell marked them;
+    // false without marks.
     bool cursorAtPrompt() const;
+    // What a click on the command line asks of the terminal, as the shell
+    // said at its prompt: nothing, arrow keys to the cell, or a mouse event
+    // with the row counted from the screen's top or the prompt's.
+    enum class PromptClick { None, Line, AbsoluteEvents, RelativeEvents };
+    PromptClick promptClick() const { return m_promptClick; }
     // The directory the shell last reported (OSC 7), as a path; empty for none.
     std::string reportedDirectory() const;
     bool mode(GhosttyMode mode) const;
@@ -122,6 +129,8 @@ public:
     // A full reset, scrollback and the colours programs set included.
     void reset();
     void clearScrollback();
+    // Clears the scrollback and the lines above the cursor's, which stays where it is.
+    void clearAboveCursor();
     // Clears the screen and the scrollback, keeping the cursor's line at the top.
     void clearKeepingCursorLine();
     void clearScreen();
@@ -160,6 +169,9 @@ public:
 private:
     friend struct TerminalCallbacks;
 
+    void notePromptMarks(std::string_view output);
+    void notePromptMark(std::string_view mark);
+
     GhosttyTerminal m_terminal = nullptr;
     GhosttyKeyEncoder m_keyEncoder = nullptr;
     GhosttyKeyEvent m_keyEvent = nullptr;
@@ -173,6 +185,9 @@ private:
     bool m_titleChanged = false;
     bool m_bell = false;
     std::string m_xtversion;
+    bool m_promptMarks = false;
+    PromptClick m_promptClick = PromptClick::None;
+    std::string m_pendingMark;
 };
 
 }

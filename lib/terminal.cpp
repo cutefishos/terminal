@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 
 #include "base/strings.h"
 #include "base/url.h"
@@ -105,6 +106,7 @@ Terminal::~Terminal()
 
 void Terminal::write(std::string_view output)
 {
+    notePromptMarks(output);
     ghostty_terminal_vt_write(m_terminal, reinterpret_cast<const uint8_t*>(output.data()), output.size());
     if (m_titleChanged) {
         m_titleChanged = false;
@@ -116,6 +118,59 @@ void Terminal::write(std::string_view output)
         if (onBell)
             onBell();
     }
+}
+
+// libghostty-vt reads OSC 133 but does not tell whether a shell marks its
+// prompts, or what it does with clicks there: the cl and click_events
+// options of A and N, which hold until another prompt sets them.
+void Terminal::notePromptMarks(std::string_view output)
+{
+    static constexpr std::string_view kStart = "\033]133;";
+    std::string joined;
+    if (!m_pendingMark.empty()) {
+        joined = std::exchange(m_pendingMark, std::string()) + std::string(output);
+        output = joined;
+    }
+    size_t at = 0;
+    while ((at = output.find(kStart, at)) != std::string_view::npos) {
+        const size_t begin = at + kStart.size();
+        const size_t end = output.find_first_of("\a\033", begin);
+        if (end == std::string_view::npos) {
+            // Cut by the end of this output; a long one is not a mark.
+            if (output.size() - at < 256)
+                m_pendingMark = output.substr(at);
+            return;
+        }
+        m_promptMarks = true;
+        notePromptMark(output.substr(begin, end - begin));
+        at = end;
+    }
+    for (size_t length = std::min(kStart.size() - 1, output.size()); length > 0; --length) {
+        if (kStart.starts_with(output.substr(output.size() - length))) {
+            m_pendingMark = output.substr(output.size() - length);
+            break;
+        }
+    }
+}
+
+void Terminal::notePromptMark(std::string_view mark)
+{
+    if (!mark.starts_with('A') && !mark.starts_with('N'))
+        return;
+    std::optional<PromptClick> events;
+    std::optional<PromptClick> line;
+    for (const std::string_view option : cutefish::base::strings::splitViews(mark, ';')) {
+        if (option == "click_events=1")
+            events = PromptClick::AbsoluteEvents;
+        else if (option == "click_events=2")
+            events = PromptClick::RelativeEvents;
+        else if (option.starts_with("cl="))
+            line = PromptClick::Line;
+    }
+    if (events)
+        m_promptClick = *events;
+    else if (line)
+        m_promptClick = *line;
 }
 
 void Terminal::resize(int columns, int lines, int cellWidth, int cellHeight)
@@ -325,6 +380,18 @@ void Terminal::clearScrollback()
 void Terminal::clearScreen()
 {
     write("\030\033[H\033[2J\033[3J");
+}
+
+void Terminal::clearAboveCursor()
+{
+    const int line = cursorLine();
+    const int column = cursorColumn();
+    std::string sequence = "\030\033[3J";
+    // From the top to the end of the line above.
+    if (line > 0)
+        sequence += "\033[" + std::to_string(line) + ";" + std::to_string(m_columns) + "H\033[1J";
+    sequence += "\033[" + std::to_string(line + 1) + ";" + std::to_string(column + 1) + "H";
+    write(sequence);
 }
 
 void Terminal::clearKeepingCursorLine()

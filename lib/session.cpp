@@ -282,16 +282,28 @@ void Session::clearScrollback()
     outputReceived();
 }
 
+bool Session::isAtPrompt() const
+{
+    return m_terminal.hasPromptMarks() ? m_terminal.cursorAtPrompt() : !hasActiveProcess();
+}
+
+bool Session::needsConfirmClose() const
+{
+    return isRunning() && !isAtPrompt();
+}
+
 bool Session::clearScreenAndScrollback()
 {
     if (m_terminal.usesAlternateScreen())
         return false;
-    if (hasActiveProcess()) {
-        m_terminal.clearKeepingCursorLine();
-    } else {
+    if (isAtPrompt()) {
         m_terminal.clearScreen();
         // Ctrl+L: the shell draws its prompt and what was typed again.
         m_terminal.send("\x0c");
+    } else if (m_terminal.hasPromptMarks()) {
+        m_terminal.clearAboveCursor();
+    } else {
+        m_terminal.clearKeepingCursorLine();
     }
     outputReceived();
     return true;

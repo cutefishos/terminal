@@ -696,7 +696,7 @@ void TerminalWindow::closeTab(int index)
 void TerminalWindow::confirmClose(const std::vector<TerminalPage*>& pages, std::function<void()> action)
 {
     const bool active = std::any_of(pages.begin(), pages.end(),
-                                    [](TerminalPage* page) { return page->session().hasActiveProcess(); });
+                                    [](TerminalPage* page) { return page->session().needsConfirmClose(); });
     if (!active) {
         action();
         return;
@@ -802,7 +802,7 @@ void TerminalWindow::close()
 {
     if (!m_quitting) {
         if (std::any_of(m_pages.begin(), m_pages.end(),
-                        [](TerminalPage* page) { return page->session().hasActiveProcess(); })) {
+                        [](TerminalPage* page) { return page->session().needsConfirmClose(); })) {
             confirmClose(m_pages, [this] {
                 m_quitting = true;
                 close();
