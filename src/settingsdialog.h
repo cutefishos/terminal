@@ -10,8 +10,8 @@
 #include "base/signal.h"
 
 namespace cutefish::ui {
-class ComboBox;
 class DialogWindow;
+class RowComboBox;
 class Slider;
 class Switch;
 class Label;

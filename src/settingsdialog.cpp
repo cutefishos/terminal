@@ -9,10 +9,10 @@
 
 #include "base/event_loop.h"
 #include "base/i18n.h"
-#include "ui/combo_box.h"
 #include "ui/dialog_window.h"
 #include "ui/label.h"
 #include "ui/painter.h"
+#include "ui/row_combo_box.h"
 #include "ui/cell_layout.h"
 #include "ui/slider.h"
 #include "ui/switch.h"
@@ -83,8 +83,13 @@ protected:
             const SizeF size = control->sizeHint();
             const auto fixed = m_widths.find(control);
             const double controlWidth = fixed != m_widths.end() ? fixed->second : size.width;
+            // A choice reaches past the edge so its chevron ends where a switch does.
+            const auto* box = dynamic_cast<const RowComboBox*>(control);
+            const double overhang = box ? box->trailingOverhang() : 0;
+            x += overhang;
             x -= controlWidth;
             control->setGeometry({x, (kRowHeight - size.height) / 2, controlWidth, size.height});
+            x -= overhang;
             x -= Theme::current().largeSpacing;
         }
     }
@@ -274,15 +279,13 @@ public:
         TerminalSettings& settings = window->settings();
 
         Card* appearance = addCard();
-        theme = appearance->addRow(tr("Theme"))->addControl<ComboBox>(themeLabels());
-        setWidth(theme, 200);
+        theme = appearance->addRow(tr("Theme"))->addControl<RowComboBox>(themeLabels());
         theme->onActivated = [&settings](int index) {
             settings.setColorScheme(std::string(term::colorSchemes()[size_t(index)].name));
         };
 
         SettingRow* fontRow = appearance->addRow(tr("Font"));
-        font = fontRow->addControl<ComboBox>();
-        setWidth(font, 200);
+        font = fontRow->addControl<RowComboBox>();
         font->onActivated = [this, &settings](int index) {
             if (index >= 0 && index < int(m_families.size()))
                 settings.setFontName(m_families[size_t(index)]);
@@ -313,15 +316,13 @@ public:
 
         Card* behaviour = addCard();
         // In the order of the cursorShape values.
-        cursorShape = behaviour->addRow(tr("Cursor Shape"))->addControl<ComboBox>(std::vector<std::string>{
+        cursorShape = behaviour->addRow(tr("Cursor Shape"))->addControl<RowComboBox>(std::vector<std::string>{
             // TRANSLATORS: the shapes of the text cursor.
             tr("Block"), tr("Underline"), tr("I-Beam")});
-        setWidth(cursorShape, 160);
         cursorShape->onActivated = [&settings](int index) { settings.setCursorShape(index); };
 
-        scrollback = behaviour->addRow(tr("Scrollback"))->addControl<ComboBox>(std::vector<std::string>{
+        scrollback = behaviour->addRow(tr("Scrollback"))->addControl<RowComboBox>(std::vector<std::string>{
             tr("1,000 lines"), tr("10,000 lines"), tr("100,000 lines"), tr("Unlimited")});
-        setWidth(scrollback, 160);
         scrollback->onActivated = [&settings](int index) { settings.setScrollbackLines(kScrollbackLines[size_t(index)]); };
 
         visualBell = behaviour->addRow(tr("Flash on Bell"))->addControl<Switch>();
@@ -377,16 +378,16 @@ public:
     }
 
     Preview* preview;
-    ComboBox* theme;
-    ComboBox* font;
+    RowComboBox* theme;
+    RowComboBox* font;
     Slider* fontSize;
     ValueLabel* fontSizeValue;
     Switch* blinking;
     Slider* opacity;
     ValueLabel* opacityValue;
     Switch* blur;
-    ComboBox* cursorShape;
-    ComboBox* scrollback;
+    RowComboBox* cursorShape;
+    RowComboBox* scrollback;
     Switch* visualBell;
     Switch* confirmPaste;
 
@@ -413,11 +414,6 @@ private:
         Card* card = addChild<Card>();
         m_cards.push_back(card);
         return card;
-    }
-
-    void setWidth(ComboBox* box, double width)
-    {
-        static_cast<SettingRow*>(box->parent())->setControlWidth(box, width);
     }
 
     // A value shown beside its slider, in a fixed width so the slider does not shift.
