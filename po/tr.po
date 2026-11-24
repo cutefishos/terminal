@@ -1,0 +1,222 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cutefish-terminal\n"
+"Report-Msgid-Bugs-To: https://github.com/cutefishos\n"
+"POT-Creation-Date: 2026-10-31 16:05+0800\n"
+"PO-Revision-Date: 2026-11-22 22:25+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Find"
+msgstr "Bul"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Font"
+msgstr "Yazı Tipi"
+
+msgid "Font Size"
+msgstr "Yazı Tipi Boyutu"
+
+msgid "Blinking Cursor"
+msgstr "Yanıp Sönen İmleç"
+
+msgid "Opacity"
+msgstr "Opaklık"
+
+msgid "Window Blur"
+msgstr "Pencere Bulanıklığı"
+
+msgid "Cursor Shape"
+msgstr "İmleç Şekli"
+
+msgid "Block"
+msgstr "Blok"
+
+msgid "Underline"
+msgstr "Alt Çizgi"
+
+msgid "I-Beam"
+msgstr "Dikey Çizgi"
+
+msgid "Scrollback"
+msgstr "Geri Kaydırma"
+
+msgid "1,000 lines"
+msgstr "1.000 satır"
+
+msgid "10,000 lines"
+msgstr "10.000 satır"
+
+msgid "100,000 lines"
+msgstr "100.000 satır"
+
+msgid "Unlimited"
+msgstr "Sınırsız"
+
+msgid "Flash on Bell"
+msgstr "Uyarıda Ekranı Parlat"
+
+msgid "Warn Before Pasting Multiple Lines"
+msgstr "Çoklu Satır Yapıştırmadan Önce Uyar"
+
+msgid "{size} pt"
+msgstr "{size} pt"
+
+msgid "{percent}%"
+msgstr "%{percent}"
+
+msgid "Settings"
+msgstr "Ayarlar"
+
+msgid "Open Link"
+msgstr "Bağlantıyı Aç"
+
+msgid "Copy Link"
+msgstr "Bağlantıyı Kopyala"
+
+msgid "Open “{name}”"
+msgstr "“{name}” Öğesini Aç"
+
+msgid "Show in File Manager"
+msgstr "Dosya Yöneticisinde Göster"
+
+msgid "Copy"
+msgstr "Kopyala"
+
+msgid "Paste"
+msgstr "Yapıştır"
+
+msgid "Select All"
+msgstr "Tümünü Seç"
+
+msgid "Find…"
+msgstr "Bul…"
+
+msgid "Clear Scrollback"
+msgstr "Geri Kaydırmayı Temizle"
+
+msgid "Reset Terminal"
+msgstr "Terminali Sıfırla"
+
+msgid "New Tab"
+msgstr "Yeni Sekme"
+
+msgid "New Window"
+msgstr "Yeni Pencere"
+
+msgid "Open File Manager"
+msgstr "Dosya Yöneticisini Aç"
+
+msgid "Exit full screen"
+msgstr "Tam ekrandan çık"
+
+msgid "Full screen"
+msgstr "Tam ekran"
+
+msgid "Rename Tab…"
+msgstr "Sekmeyi Yeniden Adlandır…"
+
+msgid "Close Tab"
+msgstr "Sekmeyi Kapat"
+
+msgid "Close Other Tabs"
+msgstr "Diğer Sekmeleri Kapat"
+
+msgid "Process is running, are you sure you want to quit?"
+msgstr "Çalışan bir işlem var, çıkmak istediğinizden emin misiniz?"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "OK"
+msgstr "Tamam"
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "Runs a shell and the programs started in it."
+msgstr "Bir kabuk ve içinde başlatılan programları çalıştırır."
+
+msgid "Open this link?"
+msgstr "Bu bağlantı açılsın mı?"
+
+msgid "Open"
+msgstr "Aç"
+
+msgid "Paste {n} line?"
+msgid_plural "Paste {n} lines?"
+msgstr[0] "{n} satır yapıştırılsın mı?"
+msgstr[1] "{n} satır yapıştırılsın mı?"
+
+msgid "Paste this line and press Enter?"
+msgstr "Bu satır yapıştırılıp Enter tuşuna basılsın mı?"
+
+msgid "About Terminal"
+msgstr "Uçbirim Hakkında"
+
+msgid "Settings…"
+msgstr "Ayarlar…"
+
+msgid "Hide Terminal"
+msgstr "Uçbirimi Gizle"
+
+msgid "Quit Terminal"
+msgstr "Uçbirimden Çık"
+
+msgid "Shell"
+msgstr "Kabuk"
+
+msgid "Close Window"
+msgstr "Pencereyi Kapat"
+
+msgid "Edit"
+msgstr "Düzenle"
+
+msgid "Clear Screen and Scrollback"
+msgstr "Ekranı ve Geri Kaydırmayı Temizle"
+
+msgid "View"
+msgstr "Görünüm"
+
+msgid "Bigger"
+msgstr "Büyüt"
+
+msgid "Smaller"
+msgstr "Küçült"
+
+msgid "Actual Size"
+msgstr "Gerçek Boyut"
+
+msgid "Enter Full Screen"
+msgstr "Tam Ekrana Geç"
+
+msgid "Exit Full Screen"
+msgstr "Tam Ekrandan Çık"
+
+msgid "Window"
+msgstr "Pencere"
+
+msgid "Minimize"
+msgstr "Simge Durumuna Küçült"
+
+msgid "Zoom"
+msgstr "Yakınlaştır"
+
+msgid "Show Previous Tab"
+msgstr "Önceki Sekmeyi Göster"
+
+msgid "Show Next Tab"
+msgstr "Sonraki Sekmeyi Göster"
+
+msgid "Move Tab Left"
+msgstr "Sekmeyi Sola Taşı"
+
+msgid "Move Tab Right"
+msgstr "Sekmeyi Sağa Taşı"
